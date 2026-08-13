@@ -89,10 +89,21 @@ pnpm typecheck
 pnpm lint
 pnpm build
 
+pnpm db:check          # ตรวจว่าฐานข้อมูลรองรับ (ดูด้านล่าง)
 pnpm db:generate       # สร้าง migration จาก lib/db/schema.ts
 pnpm db:migrate
 pnpm db:seed
 ```
+
+### ก่อนย้ายไปฐานข้อมูลอื่น ให้ตรวจก่อนเสมอ
+
+```bash
+pnpm db:check "postgresql://user:pass@host:5432/dbname"
+```
+
+ไม่ได้แค่เช็คว่ามี extension — มัน**สร้าง EXCLUDE constraint จริงแล้วลองจองซ้อน**
+ว่าถูกปฏิเสธด้วย `23P01` ไหม ถ้าไม่ผ่านคือใช้กับ Chairtime ไม่ได้
+รายละเอียดการ deploy อยู่ใน [`docs/deploy.md`](docs/deploy.md)
 
 ### cron ที่ต้องตั้ง
 

@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx lib/db/migrate.ts",
+    "db:check": "tsx lib/db/doctor.ts",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx lib/db/seed/index.ts",
     "db:reset": "tsx lib/db/reset.ts",
