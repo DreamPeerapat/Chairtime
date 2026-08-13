@@ -77,6 +77,35 @@ claude
 
 ---
 
+## 5.5 Self-serve signup (Phase 2.5)
+
+> อ่าน docs/logic.md ข้อ 1.5 ให้ละเอียด และ docs/roadmap.md Phase 2.5
+> implement OAuth login ด้วย LINE Login และ Google
+> ทำ /auth/callback ตาม logic ที่กำหนดไว้ทุกขั้นตอน
+> ทำหน้าเลือกแพ็กเกจ + ประเภทธุรกิจ และ copy_business_template()
+> ห้ามมีจุดไหนที่ต้องรอผมสร้างข้อมูลให้ด้วยมือ — ต้อง provision อัตโนมัติทั้งหมด
+> เขียน test: signup ด้วย LINE ใหม่ทั้งหมด, signup คนเดิม login รอบสอง
+> ต้องเข้า tenant เดิม, สอง identity คนละ provider ต้องไม่ auto-merge กัน
+
+**ทดสอบด้วยตัวเองก่อนไปต่อ:** เปิด browser ใหม่ (ไม่มี session) → เดิน
+signup flow ทั้งหมดด้วยมือตัวเองจนเห็นปฏิทินร้าน ถ้าติดตรงไหนที่ต้องแตะ
+database เอง แปลว่ายังไม่จบ Phase 2.5 จริง
+
+---
+
+## 5.7 เชื่อมต่อ LINE OA ของร้าน (manual wizard)
+
+> อ่าน docs/logic.md ข้อ 1.6 ให้ละเอียด
+> implement หน้า settings เชื่อมต่อ LINE OA ตาม 4 step ที่กำหนดไว้
+> เก็บ token/secret แบบเข้ารหัสเสมอ ใช้ pgcrypto หรือแนะนำวิธีที่เหมาะกับ stack นี้
+> ปุ่ม "ทดสอบเชื่อมต่อ" ต้องยิง LINE API จริง (เช่น getBotInfo) ไม่ใช่แค่ตรวจรูปแบบ token
+> ถ้า error ให้โชว์เป็นภาษาไทยที่เข้าใจง่าย พร้อมเก็บ error ดิบไว้ debug
+> ทำ checklist state 4 ค่าแยกกันตามที่ระบุไว้ ไม่ใช่ boolean เดียว
+> เขียน test: token ผิด → ได้ error ที่ถูกต้อง, token ถูก → is_verified = true,
+> ปิดหน้าเว็บกลาง step แล้วเปิดใหม่ → ต้องกลับมาที่ step เดิมที่ค้างไว้
+
+---
+
 ## 6. ระบบแต้ม (Phase 5)
 
 > อ่าน docs/logic.md ข้อ 3 ทั้งหมด

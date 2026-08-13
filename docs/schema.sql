@@ -5,6 +5,7 @@
 --    1. resource-based ไม่ใช่ slot-based  → รองรับหลายเตียง/หลายช่าง
 --    2. service มี segment (active/passive) → รองรับย้อมผม, มาส์ก, รอสีติด
 --    3. แต้มใช้ ledger + lot           → หมดอายุแบบ FIFO, audit ได้, ไม่หาย
+--    4. auth เป็น OAuth เท่านั้น (LINE/Google) → self-serve signup ไม่ต้องรอแอดมิน
 -- =====================================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -15,6 +16,35 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;   -- จำเป็นสำหร�
 --  1. TENANT  (ร้านค้า)
 -- =====================================================================
 
+-- ---------------------------------------------------------------------
+--  แพ็กเกจ subscription — แยกออกจาก tenant เพื่อแก้ราคา/limit ได้โดยไม่ ALTER tenant
+-- ---------------------------------------------------------------------
+CREATE TABLE subscription_plan (
+    id                      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    code                    text UNIQUE NOT NULL,   -- trial | basic | pro
+    name                    text NOT NULL,
+    price_monthly           numeric(10,2),
+    price_yearly            numeric(10,2),
+    max_resources           int,                    -- NULL = ไม่จำกัด
+    max_bookings_per_month  int,
+    trial_days              int NOT NULL DEFAULT 0,
+    is_active               boolean NOT NULL DEFAULT true
+);
+
+-- ---------------------------------------------------------------------
+--  Template บริการมาตรฐานตามประเภทธุรกิจ
+--  ใช้ตอน onboarding เพื่อ copy ให้ tenant ใหม่ทันที ไม่ต้องพิมพ์เอง
+-- ---------------------------------------------------------------------
+CREATE TABLE business_type_template (
+    business_type   text PRIMARY KEY,     -- nail | hair | massage | clinic | other
+    display_name    text NOT NULL,        -- "ร้านทำเล็บ"
+    -- services_json: [{ name, category, price, duration_min,
+    --                    buffer_before_min, buffer_after_min }, ...]
+    services_json    jsonb NOT NULL DEFAULT '[]',
+    -- resource_types_json: [{ code, name, is_human }, ...]
+    resource_types_json jsonb NOT NULL DEFAULT '[]'
+);
+
 CREATE TABLE tenant (
     id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     slug            text UNIQUE NOT NULL,              -- nailbar-ari  → nailbar-ari.yourapp.com
@@ -24,10 +54,18 @@ CREATE TABLE tenant (
     currency        char(3) NOT NULL DEFAULT 'THB',
     phone           text,
     address         text,
-    plan            text NOT NULL DEFAULT 'trial',     -- trial | basic | pro
-    status          text NOT NULL DEFAULT 'active',    -- active | suspended | cancelled
+    plan_id         uuid REFERENCES subscription_plan(id),
+    -- pending_payment = เลือกแพ็กเกจเสียเงินแต่ยังไม่จ่าย (ยังใช้งานไม่ได้)
+    -- active          = ใช้งานได้ (trial หรือจ่ายแล้ว)
+    -- suspended       = trial/บิลหมดอายุ ไม่จ่ายต่อ
+    -- cancelled       = ยกเลิกเอง
+    status          text NOT NULL DEFAULT 'pending_payment'
+                    CHECK (status IN ('pending_payment','active','suspended','cancelled')),
+    trial_ends_at   timestamptz,
+    onboarded_at    timestamptz,     -- NULL = ยังไม่ผ่าน onboarding wizard
     created_at      timestamptz NOT NULL DEFAULT now()
 );
+CREATE INDEX ON tenant (status);
 
 -- ค่าตั้งนโยบายการจอง แยกออกมาเพื่อไม่ต้อง ALTER tenant บ่อย
 CREATE TABLE tenant_booking_policy (
@@ -489,19 +527,50 @@ CREATE INDEX ON notification_queue (status, scheduled_at)
 
 
 -- =====================================================================
---  12. AUDIT + STAFF USER
+--  12. AUTH + STAFF USER  (OAuth เท่านั้น — ไม่มี password)
+--      แยก identity (ตัวตนจริง) ออกจาก staff_user (บทบาทในระบบ)
+--      เพื่อรองรับ: คนเดียวเป็นเจ้าของหลายร้าน, login ได้ทั้ง LINE/Google
 -- =====================================================================
 
-CREATE TABLE staff_user (
+-- ตัวตนจริงจาก OAuth provider — ไม่ผูกกับร้านใดร้านหนึ่ง
+CREATE TABLE auth_identity (
     id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    provider      text NOT NULL CHECK (provider IN ('line','google')),
+    provider_uid  text NOT NULL,          -- LINE userId หรือ Google sub
+    email         text,
+    display_name  text,
+    avatar_url    text,
+    created_at    timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (provider, provider_uid)
+);
+
+-- ผู้ใช้ระบบ 1 คน อาจมีหลาย identity ถ้าเชื่อมบัญชี (LINE + Google) ในหน้า settings
+CREATE TABLE staff_user (
+    id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    primary_email     text,
+    display_name      text,
+    is_active         boolean NOT NULL DEFAULT true,
+    created_at        timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE staff_auth_identity (
+    staff_id          uuid NOT NULL REFERENCES staff_user(id) ON DELETE CASCADE,
+    auth_identity_id  uuid NOT NULL REFERENCES auth_identity(id) ON DELETE CASCADE,
+    PRIMARY KEY (staff_id, auth_identity_id),
+    UNIQUE (auth_identity_id)   -- 1 identity ผูกได้กับ 1 staff_user เท่านั้น
+);
+
+-- ความสัมพันธ์คน ↔ ร้าน (many-to-many รองรับหลายสาขา)
+CREATE TABLE staff_tenant (
+    staff_id      uuid NOT NULL REFERENCES staff_user(id) ON DELETE CASCADE,
     tenant_id     uuid NOT NULL REFERENCES tenant(id) ON DELETE CASCADE,
     resource_id   uuid REFERENCES resource(id),   -- ถ้าเป็นช่างด้วย
-    email         text NOT NULL,
-    password_hash text,
     role          text NOT NULL DEFAULT 'staff',  -- owner | manager | staff
     is_active     boolean NOT NULL DEFAULT true,
-    UNIQUE (tenant_id, email)
+    joined_at     timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (staff_id, tenant_id)
 );
+CREATE INDEX ON staff_tenant (tenant_id);
 
 CREATE TABLE audit_log (
     id          bigserial PRIMARY KEY,
@@ -518,13 +587,47 @@ CREATE INDEX ON audit_log (tenant_id, created_at DESC);
 
 
 -- =====================================================================
+--  12.5 LINE OA CONNECTION  (ร้านเชื่อม LINE OA ของตัวเองเข้าระบบ)
+--       connection_method รองรับ 2 ทาง เพื่อ migrate ได้ในอนาคตโดยไม่รื้อ schema:
+--         manual        = ร้านคัดลอก token/secret มาวางเอง (ใช้ตอนนี้)
+--         partner_oauth = เชื่อมผ่านปุ่มเดียวหลังได้ LINE Partner Program (อนาคต)
+-- =====================================================================
+
+CREATE TABLE tenant_line_oa (
+    tenant_id             uuid PRIMARY KEY REFERENCES tenant(id) ON DELETE CASCADE,
+    connection_method     text NOT NULL DEFAULT 'manual'
+                          CHECK (connection_method IN ('manual','partner_oauth')),
+    -- เข้ารหัสก่อนเก็บเสมอ (pgcrypto หรือ KMS) ห้าม plaintext เด็ดขาด
+    channel_access_token  text,
+    channel_secret        text,
+    oa_basic_id           text,            -- @xxxxx สำหรับโชว์ QR ให้ร้าน
+    webhook_url           text,            -- ที่ generate ให้ร้านไปวางใน LINE Developers Console
+    -- สถานะ wizard แต่ละขั้น เพื่อโชว์ checklist ความคืบหน้าให้ร้านเห็น
+    step_oa_created       boolean NOT NULL DEFAULT false,
+    step_api_enabled      boolean NOT NULL DEFAULT false,
+    step_token_saved      boolean NOT NULL DEFAULT false,
+    step_webhook_verified boolean NOT NULL DEFAULT false,
+    is_verified           boolean NOT NULL DEFAULT false,   -- ทดสอบยิงข้อความสำเร็จแล้ว
+    connected_at          timestamptz,
+    last_verified_at      timestamptz,
+    last_error            text,             -- ไว้โชว์ error ให้ร้านเห็นตอนกด "ทดสอบเชื่อมต่อ"
+    created_at            timestamptz NOT NULL DEFAULT now(),
+    updated_at            timestamptz NOT NULL DEFAULT now()
+);
+
+
+-- =====================================================================
 --  13. ROW LEVEL SECURITY  (กันข้อมูลข้ามร้าน — สำคัญมากสำหรับ multi-tenant)
 -- =====================================================================
 
-ALTER TABLE booking   ENABLE ROW LEVEL SECURITY;
-ALTER TABLE customer  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE point_lot ENABLE ROW LEVEL SECURITY;
+ALTER TABLE booking        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE customer       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE point_lot      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE staff_tenant   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenant_line_oa ENABLE ROW LEVEL SECURITY;
 -- ... ทำกับทุกตารางที่มี tenant_id
+-- หมายเหตุ: auth_identity, staff_user, subscription_plan, business_type_template
+--           ไม่มี tenant_id ตรงๆ (เป็น global/cross-tenant) ไม่ต้องเปิด RLS แบบนี้
 
 CREATE POLICY tenant_isolation ON booking
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
@@ -532,4 +635,39 @@ CREATE POLICY tenant_isolation ON customer
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
 CREATE POLICY tenant_isolation ON point_lot
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+CREATE POLICY tenant_isolation ON staff_tenant
+    USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+CREATE POLICY tenant_isolation ON tenant_line_oa
+    USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
 -- ก่อนทุก query ให้ตั้ง:  SET LOCAL app.tenant_id = '<uuid>';
+
+
+-- =====================================================================
+--  14. SEED — ข้อมูลเริ่มต้นที่ต้องมีก่อนระบบ signup ทำงานได้
+-- =====================================================================
+
+INSERT INTO subscription_plan (code, name, price_monthly, price_yearly, max_resources, max_bookings_per_month, trial_days) VALUES
+    ('trial', 'ทดลองใช้',   0,    0,    3,   100,  14),
+    ('basic', 'Basic',      590,  5900, 8,   1000, 0),
+    ('pro',   'Pro',        1200, 12000, NULL, NULL, 0);
+
+INSERT INTO business_type_template (business_type, display_name, services_json, resource_types_json) VALUES
+    ('nail', 'ร้านทำเล็บ',
+     '[{"name":"ทำเล็บมือ เจล","price":350,"duration_min":60},
+       {"name":"ทำเล็บเท้า เจล","price":400,"duration_min":75},
+       {"name":"ต่อเล็บ","price":600,"duration_min":90}]'::jsonb,
+     '[{"code":"staff","name":"ช่างทำเล็บ","is_human":true},
+       {"code":"table","name":"โต๊ะทำเล็บ","is_human":false}]'::jsonb),
+    ('hair', 'ร้านทำผม',
+     '[{"name":"สระ+ตัด","price":250,"duration_min":45},
+       {"name":"ย้อมสีผม","price":1200,"duration_min":150},
+       {"name":"ดัดผม","price":1500,"duration_min":180}]'::jsonb,
+     '[{"code":"staff","name":"ช่างผม","is_human":true},
+       {"code":"chair","name":"เก้าอี้ทำผม","is_human":false}]'::jsonb),
+    ('massage', 'ร้านนวด',
+     '[{"name":"นวดไทย 60 นาที","price":300,"duration_min":60},
+       {"name":"นวดน้ำมัน 90 นาที","price":600,"duration_min":90},
+       {"name":"นวดเท้า 45 นาที","price":250,"duration_min":45}]'::jsonb,
+     '[{"code":"staff","name":"หมอนวด","is_human":true},
+       {"code":"bed","name":"เตียงนวด","is_human":false}]'::jsonb),
+    ('other', 'อื่นๆ (เริ่มจากว่างเปล่า)', '[]'::jsonb, '[]'::jsonb);

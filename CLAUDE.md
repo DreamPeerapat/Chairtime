@@ -65,8 +65,27 @@
 - ห้ามยิง LINE API ตรงจาก HTTP request handler
 - ทุกข้อความต้องผ่าน `notification_queue` แล้วให้ worker ส่ง
 - ต้องมี `dedupe_key` ทุกครั้ง
-- แต่ละ tenant ใช้ LINE OA ของตัวเอง → channel token เก็บแบบเข้ารหัส
+- แต่ละ tenant ใช้ LINE OA ของตัวเอง เก็บใน `tenant_line_oa`
+  → `channel_access_token` และ `channel_secret` **ต้องเข้ารหัสก่อนเก็บเสมอ**
+    ห้าม plaintext ใน DB เด็ดขาดไม่มีข้อยกเว้น
 - ใช้ reply message แทน push ทุกครั้งที่ทำได้ (push นับโควตา, reply ฟรี)
+- ❌ ห้ามสับสน: **LINE Login** (คน login เข้าเว็บ) กับ **LINE OA ของร้าน**
+  (ส่ง reminder ให้ลูกค้า) เป็นคนละระบบ คนละ credential กันเด็ดขาด
+- การเชื่อม LINE OA ตอนนี้เป็นแบบ **manual wizard** (ร้านคัดลอก token/secret
+  มาวางเอง ตามขั้นตอนใน `docs/logic.md` ข้อ 1.6) — โค้ดต้องอ่าน credential
+  จาก `tenant_line_oa` เสมอ ห้าม hardcode หรือใส่ผ่าน env var เฉพาะร้าน
+  เพราะต้อง scale ไปหลายร้านได้ และต้องรองรับ `connection_method` แบบอื่น
+  ในอนาคต (`partner_oauth`) โดยไม่ต้องแก้โค้ดที่เรียกใช้ credential
+
+### 7. Auth / Self-serve signup
+- Auth เป็น **OAuth เท่านั้น** (LINE Login + Google) — ❌ ห้ามมี password ในระบบ
+- ห้ามมีขั้นตอนไหนใน signup flow ที่ต้องรอแอดมินสร้างข้อมูลให้ด้วยมือ
+  ทุกอย่างต้อง provision อัตโนมัติผ่านโค้ด (ดู `docs/logic.md` ข้อ 1.5)
+- `auth_identity` (ตัวตนจาก provider) กับ `staff_user` (ผู้ใช้ในระบบ) แยกกัน
+  เสมอ — 1 staff_user อาจมีหลาย identity ได้ (เชื่อมบัญชี LINE+Google)
+- ❌ ห้าม auto-merge บัญชีจาก email ที่ตรงกันโดยไม่ให้ user ยืนยันก่อน
+- เข้า dashboard ได้ก็ต่อเมื่อ `tenant.onboarded_at IS NOT NULL` เท่านั้น
+  ไม่งั้น redirect กลับไป onboarding wizard เสมอ
 
 ---
 
@@ -84,15 +103,20 @@
 
 ```
 app/
+  (marketing)/                # landing page สาธารณะ
+  (onboarding)/onboarding/    # เลือกแพ็กเกจ, ชำระเงิน, setup wizard
   (booking)/[tenantSlug]/     # หน้าจองสำหรับลูกค้า (LIFF)
   (admin)/dashboard/          # หลังบ้านร้าน
+  auth/callback/               # OAuth callback (LINE, Google)
   api/
     webhooks/line/
     cron/
 lib/
+  auth/            # ★ หัวใจ — identity, session, provisioning
   availability/    # ★ หัวใจ — อัลกอริทึมหาช่วงว่าง
   booking/
   loyalty/         # ★ หัวใจ — แต้ม lot + ledger
+  onboarding/      # copy_business_template, slug generation
   line/
   db/              # drizzle schema + migrations
   time/            # helper timezone ทั้งหมดรวมที่นี่
