@@ -20,3 +20,64 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/*
+ * FullCalendar theming.
+ *
+ * The library's defaults paint the whole of today's column in a strong yellow
+ * tint, which on a day view (where every column is today) means the entire grid
+ * is yellow and the bookings have to fight it. Toned right down, and the rest
+ * pulled into the app's own palette.
+ */
+.chairtime-calendar {
+  --fc-border-color: #e2e8f0;
+  --fc-today-bg-color: rgb(15 118 110 / 0.03);
+  --fc-now-indicator-color: #dc2626;
+  --fc-event-border-color: transparent;
+  --fc-page-bg-color: transparent;
+  font-size: 0.8125rem;
+}
+
+.chairtime-calendar .fc-timegrid-slot {
+  height: 1.75rem;
+}
+
+.chairtime-calendar .fc-col-header-cell {
+  /* One column, and the date is already in the page heading. */
+  display: none;
+}
+
+.chairtime-calendar .fc-timegrid-event {
+  border-radius: 0.375rem;
+  border-left-width: 3px;
+  box-shadow: none;
+}
+
+/* A 20-minute booking is barely two rows tall; clip its label rather than let
+   it bleed past the event box. */
+.chairtime-calendar .fc-timegrid-event .fc-event-main {
+  overflow: hidden;
+  padding: 0;
+}
+
+.chairtime-calendar .fc-event:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 1px;
+}
+
+.chairtime-calendar .fc-timegrid-axis,
+.chairtime-calendar .fc-timegrid-slot-label {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+@media (prefers-color-scheme: dark) {
+  .chairtime-calendar {
+    --fc-border-color: #1e293b;
+    --fc-today-bg-color: rgb(45 212 191 / 0.05);
+  }
+  .chairtime-calendar .fc-timegrid-axis,
+  .chairtime-calendar .fc-timegrid-slot-label {
+    color: #94a3b8;
+  }
+}

@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { DateTime } from 'luxon';
 import { cn } from '@/lib/utils';
 import { createTimeOff, deleteTimeOff, saveHours, saveResource } from '@/lib/admin/actions';
+import { thaiDayMonth } from '@/components/booking/format';
 
 const WEEKDAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 
@@ -559,8 +560,8 @@ function TimeOffTab({ resources, timeOff, timezone }: Props) {
                   <div>
                     <p className="text-sm font-medium">{person?.name ?? 'ปิดทั้งร้าน'}</p>
                     <p className="text-xs text-slate-500">
-                      {start.setLocale('th').toFormat('d LLL')}
-                      {start.hasSame(end, 'day') ? '' : ` – ${end.setLocale('th').toFormat('d LLL')}`}
+                      {thaiDayMonth(start)}
+                      {start.hasSame(end, 'day') ? '' : ` – ${thaiDayMonth(end)}`}
                       {off.reason ? ` · ${off.reason}` : ''}
                     </p>
                   </div>

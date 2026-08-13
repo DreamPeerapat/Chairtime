@@ -3,12 +3,20 @@
  * Money arrives as a numeric(10,2) string; it is never turned into a float for
  * arithmetic, only for display.
  */
-const THAI_MONTHS = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-];
-const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+import { DateTime } from 'luxon';
+import { THAI_MONTHS_SHORT, thaiWeekdayShort } from '@/lib/time/thai';
 
+export { thaiDateFull, thaiDateShort, thaiTimeRange, thaiDayMonth } from '@/lib/time/thai';
+
+/**
+ * Split the currency symbol off the digits. `tabular-nums` gives every glyph a
+ * digit's advance width, and ฿ is wider — left together they overlap.
+ */
+export function splitBaht(value: string): { symbol: string; digits: string } {
+  return value.startsWith('฿')
+    ? { symbol: '฿', digits: value.slice(1) }
+    : { symbol: '', digits: value };
+}
 export function formatBaht(value: string | number): string {
   const n = typeof value === 'string' ? Number(value) : value;
   return `฿${n.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
@@ -21,15 +29,16 @@ export function formatDuration(minutes: number): string {
   return rest === 0 ? `${hours} ชม.` : `${hours} ชม. ${rest} นาที`;
 }
 
+/**
+ * A bare calendar date for the day strip. The string is already the shop's
+ * local day, so it is parsed in that zone rather than converted.
+ */
 export function shortThaiDate(iso: string, zone: string): { day: string; date: string; month: string } {
-  const dt = new Date(`${iso}T00:00:00`);
-  // Rendering a bare calendar date needs no timezone conversion: the string is
-  // already the tenant-local day.
-  void zone;
+  const dt = DateTime.fromISO(iso, { zone });
   return {
-    day: THAI_DAYS[dt.getDay()] ?? '',
-    date: String(dt.getDate()),
-    month: THAI_MONTHS[dt.getMonth()] ?? '',
+    day: thaiWeekdayShort(dt),
+    date: String(dt.day),
+    month: THAI_MONTHS_SHORT[dt.month - 1] ?? '',
   };
 }
 

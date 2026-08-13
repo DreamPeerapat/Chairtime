@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { DateTime } from 'luxon';
 import { findBookingByCode, findTenantBySlug } from '@/lib/booking/queries';
-import { formatBaht, statusLabel } from '@/components/booking/format';
+import { formatBaht, statusLabel, thaiDateFull, thaiTimeRange } from '@/components/booking/format';
 import { CancelBookingButton } from '@/components/booking/cancel-button';
 
 export const dynamic = 'force-dynamic';
@@ -39,11 +39,8 @@ export default async function BookingDetailPage({
         </div>
 
         <dl className="mt-4 flex flex-col gap-2 text-sm">
-          <Row label="วันที่" value={booking.startsAt.setLocale('th').toFormat('cccc d LLLL yyyy')} />
-          <Row
-            label="เวลา"
-            value={`${booking.startsAt.toFormat('HH:mm')} - ${booking.endsAt.toFormat('HH:mm')} น.`}
-          />
+          <Row label="วันที่" value={thaiDateFull(booking.startsAt)} />
+          <Row label="เวลา" value={thaiTimeRange(booking.startsAt, booking.endsAt)} />
           <Row label="บริการ" value={booking.services.join(', ')} />
           {booking.staffName ? <Row label="ช่าง" value={booking.staffName} /> : null}
           <Row label="รวม" value={formatBaht(booking.total)} />

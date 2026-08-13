@@ -9,7 +9,7 @@ import { DateTime } from 'luxon';
 import { cn } from '@/lib/utils';
 import type { CalendarBooking } from '@/lib/admin/queries';
 import { setBookingStatus } from '@/lib/admin/actions';
-import { formatBaht, statusLabel } from '@/components/booking/format';
+import { formatBaht, statusLabel, thaiTimeRange } from '@/components/booking/format';
 
 const TRANSITIONS: Array<{ status: string; label: string; tone: string }> = [
   { status: 'confirmed', label: 'ยืนยันแล้ว', tone: 'bg-teal-700 text-white' },
@@ -68,7 +68,7 @@ export function BookingDrawer({
         </div>
 
         <dl className="mt-4 flex flex-col gap-1.5 text-sm">
-          <Row label="เวลา" value={`${start.toFormat('HH:mm')} - ${end.toFormat('HH:mm')} น.`} />
+          <Row label="เวลา" value={thaiTimeRange(start, end)} />
           <Row label="บริการ" value={booking.services.join(', ')} />
           {booking.staffName ? <Row label="ช่าง" value={booking.staffName} /> : null}
           {booking.spaceName ? <Row label="ที่นั่ง" value={booking.spaceName} /> : null}

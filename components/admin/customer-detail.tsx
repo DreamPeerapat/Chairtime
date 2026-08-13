@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { DateTime } from 'luxon';
 import { saveCustomerNote } from '@/lib/admin/actions';
-import { formatBaht, statusLabel } from '@/components/booking/format';
+import { formatBaht, statusLabel, thaiDateShort } from '@/components/booking/format';
 
 export function CustomerDetail({
   customer,
@@ -124,7 +124,7 @@ export function CustomerDetail({
                   className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm">{at.setLocale('th').toFormat('d LLL yyyy · HH:mm')}</p>
+                    <p className="text-sm">{`${thaiDateShort(at)} · ${at.toFormat('HH:mm')} น.`}</p>
                     <p className="mt-0.5 truncate text-xs text-slate-500">
                       {visit.services.join(', ')}
                     </p>

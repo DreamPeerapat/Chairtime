@@ -5,7 +5,7 @@ import { DateTime } from 'luxon';
 import { useRouter } from 'next/navigation';
 import type { ServiceListItem, StaffListItem } from '@/lib/booking/queries';
 import type { Slot } from './booking-flow';
-import { formatBaht, formatDuration } from './format';
+import { formatBaht, formatDuration, splitBaht, thaiDateFull, thaiTimeRange } from './format';
 
 export function ConfirmStep({
   tenantId,
@@ -83,8 +83,8 @@ export function ConfirmStep({
       <h2 className="text-base font-semibold">ยืนยันการจอง</h2>
 
       <dl className="rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-800">
-        <Row label="วันที่" value={start.setLocale('th').toFormat('cccc d LLLL yyyy')} />
-        <Row label="เวลา" value={`${start.toFormat('HH:mm')} - ${end.toFormat('HH:mm')} น.`} />
+        <Row label="วันที่" value={thaiDateFull(start)} />
+        <Row label="เวลา" value={thaiTimeRange(start, end)} />
         <Row label="ใช้เวลา" value={formatDuration(slot.durationMin)} />
         <Row label="บริการ" value={services.map((s) => s.name).join(', ')} />
         {staff ? <Row label="ช่าง" value={staff.name} /> : null}
@@ -151,10 +151,14 @@ export function ConfirmStep({
 }
 
 function Row({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
+  const { symbol, digits } = splitBaht(value);
   return (
     <div className="flex justify-between gap-4 border-b border-slate-100 py-2 last:border-0 dark:border-slate-800/60">
       <dt className="shrink-0 text-slate-500">{label}</dt>
-      <dd className={emphasis ? 'font-semibold tabular-nums' : 'text-right'}>{value}</dd>
+      <dd className={emphasis ? 'font-semibold' : 'text-right'}>
+        {symbol ? <span className="mr-0.5">{symbol}</span> : null}
+        <span className={emphasis ? 'tabular-nums' : ''}>{digits}</span>
+      </dd>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
 import type { DayCalendar, DayStats } from '@/lib/admin/queries';
-import { formatBaht } from '@/components/booking/format';
+import { formatBaht, thaiDateFull } from '@/components/booking/format';
 import { DayCalendar as CalendarGrid } from './day-calendar';
 import { WalkInForm } from './walk-in-form';
 
@@ -44,7 +44,7 @@ export function DayView({
           </button>
           <div>
             <h1 className="text-lg font-semibold">
-              {day.setLocale('th').toFormat('cccc d LLLL')}
+              {thaiDateFull(day)}
               {isToday ? <span className="ml-2 text-xs text-teal-700">วันนี้</span> : null}
             </h1>
             <p className="text-xs text-slate-500">{shopName}</p>
@@ -108,14 +108,25 @@ export function DayView({
   );
 }
 
+/**
+ * `tabular-nums` gives every glyph a digit's advance width — including the ฿
+ * sign, which is wider and ends up overlapping the first digit. So the tabular
+ * figures go on the digits only.
+ */
 function Stat({ label, value, tone }: { label: string; value: string; tone?: 'warn' }) {
+  const currency = value.startsWith('฿');
   return (
     <div className="rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-800">
       <dt className="text-xs text-slate-500">{label}</dt>
-      <dd
-        className={`text-lg font-semibold tabular-nums ${tone === 'warn' ? 'text-red-600' : ''}`}
-      >
-        {value}
+      <dd className={`text-lg font-semibold ${tone === 'warn' ? 'text-red-600' : ''}`}>
+        {currency ? (
+          <>
+            <span className="mr-0.5">฿</span>
+            <span className="tabular-nums">{value.slice(1)}</span>
+          </>
+        ) : (
+          <span className="tabular-nums">{value}</span>
+        )}
       </dd>
     </div>
   );

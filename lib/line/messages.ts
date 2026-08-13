@@ -9,6 +9,7 @@
  * the caller passing an already-zoned DateTime.
  */
 import type { DateTime } from 'luxon';
+import { thaiDateShort, thaiTimeRange } from '@/lib/time/thai';
 import type { FlexBubble, FlexComponent, LineFlexMessage, LineTextMessage } from './types';
 
 const BRAND = '#0f766e';
@@ -27,22 +28,9 @@ export interface BookingMessageData {
   manageUrl?: string | null;
 }
 
-const THAI_MONTHS = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-];
-const THAI_DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-
-/** "จันทร์ 16 มี.ค. 2569" — Thai day, month abbreviation and Buddhist year. */
-export function formatThaiDate(dt: DateTime): string {
-  const day = THAI_DAYS[dt.weekday % 7];
-  const month = THAI_MONTHS[dt.month - 1];
-  return `${day} ${dt.day} ${month} ${dt.year + 543}`;
-}
-
-export function formatThaiTimeRange(start: DateTime, end: DateTime): string {
-  return `${start.toFormat('HH:mm')} - ${end.toFormat('HH:mm')} น.`;
-}
+/** Re-exported so the message templates and the screens cannot drift apart. */
+export const formatThaiDate = thaiDateShort;
+export const formatThaiTimeRange = thaiTimeRange;
 
 function detailRows(data: BookingMessageData): FlexComponent[] {
   const rows: Array<[string, string]> = [

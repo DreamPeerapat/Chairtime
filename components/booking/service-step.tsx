@@ -27,7 +27,8 @@ export function ServiceStep({
     onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
 
   return (
-    <div className="flex flex-col gap-4">
+    // pb-28 keeps the last service clear of the sticky summary bar below.
+    <div className="flex flex-col gap-4 pb-28">
       <h2 className="text-base font-semibold">เลือกบริการ</h2>
 
       {grouped.map(([category, items]) => (
