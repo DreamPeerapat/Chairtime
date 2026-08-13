@@ -18,6 +18,7 @@ import { withTenant, type TenantTx } from '@/lib/db/tenant';
 import { toPlainDate, toTstzRange } from '@/lib/time';
 import { findSlots, loadAvailabilityContext } from '@/lib/availability';
 import type { AvailableSlot } from '@/lib/availability/types';
+import { enqueueBookingConfirmation } from '@/lib/notifications/queue';
 import { generateBookingCode } from './code';
 import { BookingPolicyError, SlotTakenError, SlotUnavailableError, isExclusionViolation } from './errors';
 
@@ -76,7 +77,20 @@ export async function createBookingInTx(
   const slot = slots.find((s) => s.start.toMillis() === startsAt.toMillis());
   if (!slot) throw new SlotUnavailableError();
 
-  return insertBooking(tx, input, ctx, slot);
+  const booking = await insertBooking(tx, input, ctx, slot);
+
+  // Iron rule #6: queue the messages, never send from here. They ride the same
+  // transaction as the booking, so a rolled-back booking cannot leave a
+  // confirmation behind.
+  await enqueueBookingConfirmation(tx, {
+    tenantId: input.tenantId,
+    bookingId: booking.id,
+    customerId: input.customerId ?? null,
+    startsAt: slot.start,
+    now: (input.now ?? DateTime.now()).setZone(ctx.timezone),
+  });
+
+  return booking;
 }
 
 async function tenantZone(tx: TenantTx, tenantId: string): Promise<string> {

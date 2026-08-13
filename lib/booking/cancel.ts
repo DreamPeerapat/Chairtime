@@ -10,6 +10,8 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import { DateTime } from 'luxon';
 import { schema } from '@/lib/db/client';
 import { withTenant, type TenantTx } from '@/lib/db/tenant';
+import { cancelBookingNotifications, enqueue } from '@/lib/notifications/queue';
+import { dedupeKey } from '@/lib/notifications/templates';
 import { BookingPolicyError } from './errors';
 
 export interface CancelBookingInput {
@@ -77,15 +79,37 @@ export async function cancelBookingInTx(tx: TenantTx, input: CancelBookingInput)
       );
   }
 
+  const now = input.now ?? DateTime.now();
+
   await tx
     .update(schema.booking)
     .set({
       status: 'cancelled',
-      cancelledAt: (input.now ?? DateTime.now()).toJSDate(),
+      cancelledAt: now.toJSDate(),
       cancelReason: input.reason ?? null,
-      updatedAt: (input.now ?? DateTime.now()).toJSDate(),
+      updatedAt: now.toJSDate(),
     })
     .where(and(eq(schema.booking.tenantId, input.tenantId), eq(schema.booking.id, input.bookingId)));
+
+  // Retract the reminders before telling the customer it is off, or they get a
+  // "see you tomorrow" for a booking that no longer exists.
+  await cancelBookingNotifications(tx, input.tenantId, input.bookingId);
+
+  const [customer] = await tx
+    .select({ id: schema.booking.customerId })
+    .from(schema.booking)
+    .where(eq(schema.booking.id, input.bookingId));
+
+  if (customer?.id) {
+    await enqueue(tx, {
+      tenantId: input.tenantId,
+      customerId: customer.id,
+      template: 'booking_cancelled',
+      scheduledAt: now,
+      payload: { bookingId: input.bookingId },
+      dedupeKey: dedupeKey('booking_cancelled', 'booking', input.bookingId),
+    });
+  }
 }
 
 /** Marking a no-show also frees the resources and bumps the customer counter. */
@@ -120,6 +144,8 @@ export async function markNoShow(input: { tenantId: string; bookingId: string; n
       .update(schema.booking)
       .set({ status: 'no_show', updatedAt: (input.now ?? DateTime.now()).toJSDate() })
       .where(eq(schema.booking.id, input.bookingId));
+
+    await cancelBookingNotifications(tx, input.tenantId, input.bookingId);
 
     if (bookingRow.customerId) {
       await tx

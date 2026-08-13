@@ -15,6 +15,13 @@
       "when": 1786605557697,
       "tag": "0001_exclusion_and_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786622936216,
+      "tag": "0002_line_channel",
+      "breakpoints": true
     }
   ]
 }

@@ -639,6 +639,34 @@ export const notificationQueue = pgTable(
 );
 
 // =====================================================================
+//  12b. LINE CHANNEL  (not in docs/schema.sql — see the note below)
+//
+//  CLAUDE.md iron rule #6 requires every tenant to use its own LINE OA with
+//  the channel token stored encrypted, but docs/schema.sql has nowhere to put
+//  it. Rather than bolt the columns onto `tenant`, they live here: secrets are
+//  read on a different path from shop settings, and keeping them in their own
+//  table means an admin screen that selects * from tenant never touches them.
+//
+//  Values are AES-256-GCM ciphertext produced by lib/crypto — never plaintext.
+// =====================================================================
+
+export const tenantLineChannel = pgTable('tenant_line_channel', {
+  tenantId: uuid('tenant_id')
+    .primaryKey()
+    .references(() => tenant.id, { onDelete: 'cascade' }),
+  channelId: text('channel_id').notNull(),
+  /** encrypted: LINE Messaging API channel access token */
+  channelAccessTokenEnc: text('channel_access_token_enc').notNull(),
+  /** encrypted: channel secret, used to verify webhook signatures */
+  channelSecretEnc: text('channel_secret_enc').notNull(),
+  liffId: text('liff_id'),
+  basicId: text('basic_id'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: createdAt(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// =====================================================================
 //  12. AUDIT + STAFF USER
 // =====================================================================
 
