@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { applyShopTemplate } from '@/lib/admin/actions';
 
@@ -84,10 +85,15 @@ export function SettingsView(props: Props) {
               <p className="text-slate-600 dark:text-slate-300">ยังไม่ได้เชื่อม LINE Official Account</p>
               <p className="mt-1 text-xs text-slate-500">
                 การแจ้งเตือนจะถูกเก็บไว้ในคิวจนกว่าจะเชื่อมต่อ แล้วจะทยอยส่งให้เอง
-                ติดต่อผู้ดูแลระบบเพื่อใส่ channel token
               </p>
             </>
           )}
+          <Link
+            href="/dashboard/settings/line"
+            className="mt-3 inline-block rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium dark:border-slate-700"
+          >
+            {props.lineConnected ? 'จัดการการเชื่อมต่อ LINE' : 'เชื่อมต่อ LINE OA'}
+          </Link>
         </div>
       </section>
 

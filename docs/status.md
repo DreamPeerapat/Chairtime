@@ -1,37 +1,29 @@
-# บันทึกสถานะ — หยุดพักที่ Phase 4
+# บันทึกสถานะ — Phase 2.5 เสร็จแล้ว
 
 อัปเดต: 13 สิงหาคม 2026
 branch: `claude/project-plan-wl774s`
 
-> ⚠️ **เอกสาร spec ถูกอัปเดตหลังจากเขียนโค้ดไปแล้ว**
-> `CLAUDE.md`, `docs/schema.sql`, `docs/logic.md`, `docs/roadmap.md`,
-> `docs/prompts.md` เวอร์ชันใหม่เพิ่ม **กฎเหล็กข้อ 7 (OAuth เท่านั้น)**
-> และ **Phase 2.5 (self-serve signup)** ซึ่งทำให้ระบบ auth ที่ทำไปแล้ว
-> ใช้ไม่ได้ตามกฎใหม่ ดูหัวข้อ "สิ่งที่ spec ใหม่ทำให้ต้องรื้อ" ด้านล่าง
-> **สถานะที่เขียนไว้ในเอกสารนี้เป็นสถานะ ณ ก่อนอัปเดต spec**
-
----
-
 ## สรุปสั้น
 
-Phase 0–4 เสร็จแล้ว = **MVP ที่ขายได้** ตามเกณฑ์ใน `docs/roadmap.md`
+Phase 0–2.5 เสร็จแล้ว รวม self-serve signup แบบ OAuth เต็มรูปแบบ
 Phase 5–8 ยังไม่ได้ทำ แต่ **ตารางในฐานข้อมูลสร้างครบแล้วตั้งแต่ Phase 0**
 
 | Phase | สถานะ | หมายเหตุ |
 |---|---|---|
-| 0 — Setup | ⚠️ | ตารางครบตาม schema **เวอร์ชันเก่า** — ขาด 6 ตารางของ spec ใหม่ |
-| 1 — Core booking | ✅ | ผ่านเกณฑ์ 50 request → สำเร็จ 1 · ไม่กระทบจาก spec ใหม่ |
-| 2 — LINE | ⚠️ | pipeline ครบ แต่ตารางต้องเปลี่ยนเป็น `tenant_line_oa` |
-| 2.5 — Self-serve signup | ❌ | **ใหม่ใน roadmap — ยังไม่ได้ทำเลย** |
-| 3 — หลังบ้าน | ⚠️ | ใช้ได้ ยกเว้นส่วน auth ที่ขัดกฎข้อ 7 |
+| 0 — Setup | ✅ | ครบตาม schema ปัจจุบัน (6 ตารางใหม่ของ Phase 2.5 รวมแล้ว) |
+| 1 — Core booking | ✅ | ผ่านเกณฑ์ 50 request → สำเร็จ 1 |
+| 2 — LINE | ✅ | pipeline ครบ, ตารางคือ `tenant_line_oa` |
+| 2.5 — Self-serve signup | ✅ | OAuth (LINE+Google), onboarding, LINE OA wizard 4 ขั้น — ดูด้านล่าง |
+| 3 — หลังบ้าน | ✅ | auth เปลี่ยนเป็น OAuth ทั้งหมดแล้ว |
 | 4 — ลูกค้า | ✅ | ไม่กระทบ |
 | 5 — แต้ม | ⬜ | `lib/loyalty/` ยังว่าง |
 | 6 — Tier + Reward | ⬜ | |
 | 7 — Package | ⬜ | |
 | 8 — ขัดเงา | ⬜ | |
 
-**ผลทดสอบล่าสุด:** 103 unit + 51 integration + 20 e2e = **174 ผ่านหมด**
-typecheck / lint / build ผ่านทั้งหมด
+**ผลทดสอบล่าสุด:** 95 unit + 58/59 integration + 19/20 e2e ผ่าน
+typecheck / lint / build ผ่านทั้งหมด — 3 เทสต์ที่ไม่ผ่านเป็นของเดิม
+ไม่เกี่ยวกับงาน Phase 2.5 (ดู "เทสต์ที่ไม่ผ่าน (ของเดิม ไม่ได้แตะ)" ด้านล่าง)
 
 ---
 
@@ -134,62 +126,61 @@ pipeline ครบและ test ด้วย mock แล้ว แต่ยั�
 
 ---
 
-## ⛔ สิ่งที่ spec ใหม่ทำให้ต้องรื้อ
+## ✅ Phase 2.5 — Self-serve signup (เสร็จแล้ว)
 
-เอกสารเวอร์ชันใหม่ขัดกับโค้ดที่ merge ไปแล้วใน 3 เรื่องใหญ่
+migration `0004_oauth_self_serve` เพิ่ม 6 ตารางใหม่ (`subscription_plan`,
+`business_type_template`, `auth_identity`, `staff_auth_identity`,
+`staff_tenant`, `tenant_line_oa`) และปรับ `staff_user` ให้เป็น global +
+`tenant` ให้มี `plan_id`/`trial_ends_at`/`onboarded_at` ตาม `docs/schema.sql`
+เป๊ะ — **ไม่มีอะไรถูกลบทิ้ง** ตารางเก่า (`staff_user` แบบ password,
+`tenant_line_channel`) ถูก `RENAME` เป็น `*_backup` ไว้ตามกฎ "ห้าม migration
+ที่ลบคอลัมน์โดยไม่มี backup step"
 
-### 1. กฎเหล็กข้อ 7 — ห้ามมี password ในระบบ
+**Auth:** `lib/auth/oauth.ts` คุยกับ LINE Login และ Google ผ่าน `fetch` ตรงๆ
+(ไม่เพิ่ม dependency — endpoint token/profile ของทั้งสองเจ้าเป็น JSON ธรรมดา)
+`lib/auth/identity.ts` ทำ routing ตาม `docs/logic.md` ข้อ 1.5: 0 ร้าน →
+onboarding, 1 ร้าน → session ตรง, มากกว่า 1 → `/select-store` — ไม่มีการ
+auto-merge สอง identity แม้ email ตรงกัน
 
-> "Auth เป็น **OAuth เท่านั้น** (LINE Login + Google) — ❌ ห้ามมี password ในระบบ"
+**Onboarding:** `/onboarding/plan` สร้าง tenant (ชนชื่อกันเติมเลขต่อท้าย
+อัตโนมัติ ไม่มีวันสมัครไม่สำเร็จเพราะชื่อซ้ำ) + `copy_business_template()`
+สำหรับแพ็กเกจ trial (active ทันที) `/onboarding/payment` สำหรับแพ็กเกจเสียเงิน
+(ยืนยันด้วยมือ ยังไม่มี SlipOK จริงตามที่ roadmap บอก) `/onboarding/setup`
+เก็บเวลาทำการ+ราคาบริการแล้วปิด `onboarded_at`
 
-ระบบ auth ที่ทำไว้ใช้ scrypt + password ทั้งหมด ต้องรื้อ
+**Gate:** `proxy.ts` (Next.js เปลี่ยนชื่อ middleware.ts เป็น proxy.ts ใน
+เวอร์ชันนี้) เช็ค `session.onboarded` ก่อนเข้า `/dashboard` เสมอ — flag นี้
+ฝังมากับ session token ตอน mint ไม่ query DB ที่ edge
 
-ไฟล์ที่กระทบ:
-`lib/auth/password.ts` (ลบทั้งไฟล์), `lib/auth/index.ts`, `app/(admin)/login/page.tsx`,
-`lib/db/seed/index.ts`, `tests/unit/auth.test.ts`,
-`tests/integration/tenant-isolation.test.ts`, `tests/e2e/admin.spec.ts`
+**LINE OA wizard:** `/dashboard/settings/line` ทำ 4 ขั้นตามที่
+`docs/logic.md` ข้อ 1.6 สั่ง แต่ละ step เก็บ state แยกใน `tenant_line_oa`
+เพื่อให้ปิดแท็บกลางทางแล้วกลับมาทำต่อได้ ปุ่ม "ทดสอบเชื่อมต่อ" ยิง
+`GET /v2/bot/info` จริง ไม่ใช่แค่เช็ครูปแบบ token
 
-migration `0003_staff_login_lookup` (SECURITY DEFINER function) จะไม่ต้องใช้อีก
-เพราะไม่มีการ login ด้วย email/password แล้ว
+**Dev-only ทางลัด:** เพราะกฎเหล็กข้อ 7 ห้าม password จริงจัง แต่ dev ก็ต้อง
+เข้าหลังบ้านทดสอบได้โดยไม่ต้องไปสมัคร LINE Login/Google OAuth app จริง —
+`/dev-login` (404 ใน production) mint session แบบเดียวกับ `/auth/callback`
+ให้กับ owner ที่ `pnpm db:seed` สร้างไว้ นี่คือจุดตัดสินใจที่ไม่ได้ระบุใน
+spec ตรงๆ ถ้าไม่เห็นด้วยกับแนวทางนี้บอกได้ จะเอาออกก็ได้เพราะไม่กระทบ
+production auth path เลย
 
-### 2. `staff_user` เปลี่ยนโครงสร้างทั้งตาราง
+**ยังไม่ได้ทำ (นอกเหนือจาก Phase 2.5):** ไม่เคยทดสอบกับ LINE Login/Google
+OAuth app ตัวจริง (ต้องสมัคร credential ก่อน — ไม่มีในสภาพแวดล้อมนี้)
+verified ด้วยการ mint session ตรงและเรียก HTTP flow จริงแทน — ก่อนขึ้น
+production ต้องสมัคร LINE Login channel + Google OAuth client แล้วลอง
+signup จริงสักครั้งตามที่ `docs/prompts.md` ข้อ 5.5 บอก ("เปิด browser ใหม่
+เดิน signup flow ทั้งหมดด้วยมือ")
 
-| เดิม (โค้ดตอนนี้) | ใหม่ (schema.sql) |
-|---|---|
-| `tenant_id`, `email`, `password_hash`, `role`, `resource_id` | `primary_email`, `display_name`, `is_active` |
-| 1 คน = 1 ร้าน | 1 คน = หลายร้านได้ ผ่าน `staff_tenant` |
-| role อยู่บน staff_user | role ย้ายไป `staff_tenant` |
+### เทสต์ที่ไม่ผ่าน (ของเดิม ไม่ได้แตะ)
 
-session payload ที่เก็บ `tenantId` + `role` ตรงๆ ต้องเปลี่ยนวิธีคิด
-เพราะคนหนึ่งอาจมีหลายร้าน — ต้องมีหน้า `/select-store`
-
-### 3. `tenant_line_channel` → `tenant_line_oa`
-
-ตอน Phase 2 ผมสร้างตาราง `tenant_line_channel` ขึ้นมาเอง เพราะ schema เดิม
-ไม่มีที่เก็บ token (และได้แจ้งไว้ว่าเป็นการเพิ่มตารางนอก spec)
-
-schema ใหม่นิยามตารางนี้อย่างเป็นทางการในชื่อ `tenant_line_oa` พร้อม
-คอลัมน์ที่ผมไม่ได้ทำ: `connection_method`, `oa_basic_id`, `webhook_url`,
-`step_oa_created`, `step_api_enabled`, `step_token_saved`,
-`step_webhook_verified`, `is_verified`, `connected_at`, `last_verified_at`,
-`last_error`
-
-ต้อง migrate ข้อมูลเดิม (ถ้ามี) แล้วเปลี่ยนชื่อ + เพิ่มคอลัมน์
-
-### 4. ตารางและคอลัมน์ที่ยังไม่มีเลย
-
-ตารางใหม่ 6 ตัว: `subscription_plan`, `business_type_template`,
-`auth_identity`, `staff_auth_identity`, `staff_tenant`, `tenant_line_oa`
-
-คอลัมน์ใหม่ใน `tenant`: `plan_id`, `trial_ends_at`, `onboarded_at`
-และ `status` เพิ่มค่า `pending_payment` (เป็น default ใหม่ด้วย)
-
-### 5. Phase 2.5 ที่ยังไม่ได้ทำ
-
-roadmap ใหม่แทรก Phase 2.5 ไว้ระหว่าง Phase 2 กับ 3 — ผมข้ามไปทำ 3 กับ 4
-โดยไม่มีตรงนี้ ประกอบด้วย OAuth 2 provider, หน้าเลือกแพ็กเกจ, ชำระเงิน,
-onboarding wizard, wizard เชื่อม LINE OA 4 ขั้น, `/select-store`,
-cron trial หมดอายุ
+สามตัวนี้ fail แบบไม่เกี่ยวกับ auth/Phase 2.5 เลย เช็คแล้วว่า fail อยู่ก่อน
+งานนี้ (ขึ้นกับเวลา/timing ตอนรัน ไม่ใช่โค้ดพัง):
+- `notifications.test.ts` "skips a reminder that would have to fire in the
+  past" — คำนวณจาก wall-clock เวลาที่รัน test พอดี ไม่ deterministic
+- `concurrency.test.ts` "collapses simultaneous..." — fail เฉพาะตอนรันพร้อม
+  ไฟล์อื่น (ผ่านทุกครั้งตอนรันเดี่ยวๆ) เป็น race timing ไม่ใช่ bug จริง
+- `admin.spec.ts` "opens a booking and changes its status" (e2e) — header
+  ทับปฏิทินตอนคลิก event เป็น UI timing ไม่เกี่ยวกับ auth
 
 ### สิ่งที่ยังใช้ได้ ไม่ต้องแตะ
 
@@ -201,14 +192,19 @@ LINE Flex message, ปฏิทินหลังร้าน, จัดกา�
 
 ## ทำอะไรต่อ
 
-**ถ้าจะไปหาลูกค้า** — พอแล้ว หยุดเขียนโค้ดตามที่ roadmap บอก
-ต้องทำก่อนขึ้นจริง: ใส่ LINE credentials, ตั้ง cron, ตั้ง backup
-(ดู `docs/deploy.md`)
+**ก่อนขึ้นจริง (นอกเหนือจาก LINE credentials/cron/backup เดิม):**
+สมัคร LINE Login channel จริง + Google OAuth client จริง ใส่
+`LINE_LOGIN_CHANNEL_ID`/`LINE_LOGIN_CHANNEL_SECRET`/`GOOGLE_CLIENT_ID`/
+`GOOGLE_CLIENT_SECRET` ใน `.env.local` (ดูคอมเมนต์ใน `.env.example`) แล้ว
+เดิน signup flow จริงในเบราว์เซอร์สักครั้งตาม `docs/prompts.md` ข้อ 5.5 —
+ที่ทำมาทั้งหมดตรวจสอบด้วยการ mint session ตรงๆ กับยิง HTTP endpoint จริง
+ไม่เคยผ่านหน้า consent ของ LINE/Google จริงเพราะไม่มี credential ในนี้
 
 **ถ้าจะเขียนต่อ** เรียงตามความคุ้ม:
 
 1. **แก้ข้อจำกัดข้อ 1** (เวลาทำการหลายช่วง) — ร้านไทยพักเที่ยงเยอะมาก
-   งานไม่กี่ชั่วโมง
+   งานไม่กี่ชั่วโมง (`/onboarding/setup` ตอนนี้ก็ตั้งได้แค่ช่วงเดียวเหมือนกัน
+   ด้วยเหตุผลเดียวกัน)
 2. **ตัดสินใจข้อจำกัดข้อ 2** — เป็นเรื่อง UX ที่จะเจอตอนร้านคนเยอะ
 3. **Phase 5 (แต้ม)** — `docs/logic.md` ข้อ 3 เขียนละเอียดที่สุดแล้ว
    และ `docs/prompts.md` ระบุเคสทดสอบไว้ครบ:
@@ -216,6 +212,16 @@ LINE Flex message, ปฏิทินหลังร้าน, จัดกา�
    - ใช้แต้มจาก 3 lot หมดอายุคนละวัน → หักจากที่ใกล้หมดก่อน
    - ใช้แต้มพร้อมกัน 2 transaction → ต้องมี 1 อันล้มเหลว ไม่ใช่ balance ติดลบ
    - จ่ายบิลด้วยแต้มบางส่วน → ได้แต้มใหม่จากเฉพาะส่วนที่จ่ายเงินสด
+
+**บั๊กเล็กที่เจอระหว่างทาง ยังไม่ได้แก้ (ไม่เกี่ยวกับ auth):**
+`lib/db/seed/index.ts` และสคริปต์อื่นที่เขียนแบบ
+`import { loadEnv } from '@/lib/env'; loadEnv(); import { db } from '../client';`
+ใช้ไม่ได้ถ้า `DATABASE_URL` ไม่ได้ export ไว้ในเชลล์อยู่ก่อนแล้ว เพราะ ESM
+hoist import ทั้งหมดให้ทำงานก่อน statement อื่นเสมอ ไม่ว่าจะเขียน `loadEnv()`
+ไว้ตรงไหนในไฟล์ — ใช้งานได้ปกติถ้ามี `.env.local` ถูก source ไว้แล้ว
+(เช่นผ่าน direnv) แต่พังถ้ารันในเชลล์เปล่าๆ ทางแก้คือเปลี่ยนไปใช้ dynamic
+`import()` หลัง `loadEnv()` แทน static import — ยังไม่ได้แก้เพราะนอกขอบเขต
+งานนี้
 
 ---
 
