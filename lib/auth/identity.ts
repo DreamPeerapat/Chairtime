@@ -12,8 +12,11 @@
 import { and, eq } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { db, schema } from '@/lib/db/client';
+import { findSqlState } from '@/lib/booking/errors';
 import type { OAuthProfile } from './oauth';
 import { createSessionToken, type StaffRole } from './session';
+
+const UNIQUE_VIOLATION = '23505';
 
 export interface StaffTenantRow {
   tenantId: string;
@@ -95,7 +98,7 @@ async function lookupStaffByIdentity(profile: OAuthProfile): Promise<string | nu
 }
 
 function isUniqueViolation(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && (error as { code?: string }).code === '23505';
+  return findSqlState(error) === UNIQUE_VIOLATION;
 }
 
 /** Every shop this person is an active member of. */
@@ -137,6 +140,7 @@ export async function mintSessionToken(staffUserId: string, tenant: StaffTenantR
     displayName: staff?.displayName ?? null,
     role: tenant.role,
     resourceId: tenant.resourceId,
+    onboarded: tenant.tenantOnboardedAt !== null,
   });
 }
 

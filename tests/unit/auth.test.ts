@@ -18,6 +18,7 @@ describe('session tokens', () => {
     displayName: 'เจ้าของร้าน',
     role: 'owner',
     resourceId: null,
+    onboarded: true,
   };
 
   it('round-trips the payload', () => {
@@ -62,6 +63,7 @@ describe('role ranking', () => {
     displayName: null,
     role,
     resourceId: null,
+    onboarded: true,
     expiresAt: 9e9,
   });
 

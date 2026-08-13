@@ -57,12 +57,27 @@ export const subscriptionPlan = pgTable('subscription_plan', {
   isActive: boolean('is_active').notNull().default(true),
 });
 
+export interface BusinessTemplateService {
+  name: string;
+  price: number;
+  duration_min: number;
+}
+
+export interface BusinessTemplateResourceType {
+  code: string;
+  name: string;
+  is_human: boolean;
+}
+
 /** Copied into a new tenant's own rows during onboarding — see lib/onboarding. */
 export const businessTypeTemplate = pgTable('business_type_template', {
   businessType: text('business_type').primaryKey(), // nail | hair | massage | clinic | other
   displayName: text('display_name').notNull(),
-  servicesJson: jsonb('services_json').notNull().default([]),
-  resourceTypesJson: jsonb('resource_types_json').notNull().default([]),
+  servicesJson: jsonb('services_json').$type<BusinessTemplateService[]>().notNull().default([]),
+  resourceTypesJson: jsonb('resource_types_json')
+    .$type<BusinessTemplateResourceType[]>()
+    .notNull()
+    .default([]),
 });
 
 export const tenant = pgTable(

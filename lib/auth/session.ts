@@ -26,6 +26,8 @@ export interface SessionPayload {
   role: StaffRole;
   /** the resource row, when this staff member is also a bookable person */
   resourceId: string | null;
+  /** tenant.onboarded_at IS NOT NULL — iron rule #7: false means the dashboard stays locked. */
+  onboarded: boolean;
   expiresAt: number; // epoch seconds
 }
 
