@@ -376,3 +376,65 @@ describe('findSlots — timezone', () => {
     );
   });
 });
+
+describe('findSlots — staff override', () => {
+  const cut = service({ id: CUT });
+  const base = () => context({ services: [cut], resources: [staff('s1', [CUT]), chair('c1')] });
+
+  /**
+   * Regression: the counter used to waive the lead time by pretending "now" was
+   * a year ago, which silently pushed every day past the advance horizon and
+   * returned no slots at all. The waiver is an explicit flag now.
+   */
+  it('ignores the lead time without also tripping the advance horizon', () => {
+    const ctx = base();
+    ctx.policy.minLeadTimeMin = 120;
+    ctx.policy.maxAdvanceDays = 60;
+
+    const atCounter = { date: DAY, serviceIds: [CUT], now: at(DAY, '10:00') };
+
+    // Online, the next two hours are closed off.
+    expect(labels(findSlots(ctx, atCounter))[0]).toBe('12:00');
+
+    // At the counter, the customer can be seated now.
+    const staffView = findSlots(ctx, { ...atCounter, ignorePolicyWindow: true });
+    expect(labels(staffView)[0]).toBe('10:00');
+  });
+
+  it('lets staff work on a day beyond the public horizon', () => {
+    const ctx = base();
+    ctx.policy.maxAdvanceDays = 3;
+    const query = { date: DAY, serviceIds: [CUT], now: at('2026-03-01', '10:00') };
+
+    expect(findSlots(ctx, query)).toEqual([]);
+    expect(findSlots(ctx, { ...query, ignorePolicyWindow: true }).length).toBeGreaterThan(0);
+  });
+
+  it('lets staff work on a day that has already passed', () => {
+    const ctx = base();
+    const query = { date: DAY, serviceIds: [CUT], now: at('2026-03-20', '10:00') };
+
+    // The public page offers nothing in the past...
+    expect(findSlots(ctx, query)).toEqual([]);
+    // ...but the shop still needs to record what happened.
+    expect(findSlots(ctx, { ...query, ignorePolicyWindow: true }).length).toBeGreaterThan(0);
+  });
+
+  it('still respects opening hours and existing bookings', () => {
+    const ctx = context({
+      services: [cut],
+      resources: [staff('s1', [CUT]), chair('c1')],
+      busy: [busy('s1', DAY, '10:00', '12:00')],
+    });
+    const slots = findSlots(ctx, {
+      date: DAY,
+      serviceIds: [CUT],
+      now: at(DAY, '00:00'),
+      ignorePolicyWindow: true,
+    });
+
+    // The waiver is about policy, not about physics.
+    expect(labels(slots)[0]).toBe('12:00');
+    expect(labels(slots).at(-1)).toBe('19:00');
+  });
+});

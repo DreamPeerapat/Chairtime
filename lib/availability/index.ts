@@ -16,6 +16,8 @@ export interface GetAvailabilityInput {
   serviceIds: string[];
   preferredResourceId?: string | undefined;
   priorityBookingDays?: number;
+  /** staff-facing callers waive the lead-time and horizon rules */
+  ignorePolicyWindow?: boolean;
   now?: import('luxon').DateTime;
 }
 
@@ -32,6 +34,7 @@ export async function getAvailability(input: GetAvailabilityInput): Promise<Avai
       serviceIds: input.serviceIds,
       preferredResourceId: input.preferredResourceId,
       priorityBookingDays: input.priorityBookingDays ?? 0,
+      ignorePolicyWindow: input.ignorePolicyWindow ?? false,
       now: input.now,
     };
     return findSlots(ctx, query);

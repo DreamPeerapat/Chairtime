@@ -152,9 +152,9 @@ export async function createWalkIn(input: unknown): Promise<ActionResult & { cod
         serviceIds: data.serviceIds,
         preferredResourceId: data.resourceId,
         source: 'walk_in',
-        // Staff booking at the counter should not be blocked by the online
-        // lead-time rule; the customer is standing there.
-        now: DateTime.fromISO(data.startsAt, { setZone: true }).minus({ years: 1 }),
+        // The customer is standing at the counter; the online lead time and
+        // advance horizon do not apply.
+        ignorePolicyWindow: true,
       });
     });
 
@@ -250,9 +250,9 @@ export async function rescheduleBooking(input: unknown): Promise<ActionResult> {
         date: toPlainDate(zoned, ctx.timezone),
         serviceIds,
         preferredResourceId: resourceId,
-        // Staff move bookings in the past all the time (a customer arrived
-        // early); the online lead-time rule does not apply at the counter.
-        now: zoned.minus({ years: 1 }),
+        // Staff move bookings within today all the time (a customer arrived
+        // early); the online policy window does not apply at the counter.
+        ignorePolicyWindow: true,
       }).find((s) => s.start.toMillis() === zoned.toMillis());
 
       if (!slot) throw new Error('เวลาใหม่ไม่ว่าง กรุณาเลือกเวลาอื่น');

@@ -28,10 +28,12 @@ export function findSlots(ctx: AvailabilityContext, query: AvailabilityQuery): A
   const services = resolveServices(ctx, query.serviceIds);
   const clock = (query.now ?? DateTime.now()).setZone(zone);
 
-  // Step 5, cheap half: a day entirely beyond the horizon costs nothing to reject.
+  // Step 5, cheap half: a day entirely beyond the horizon costs nothing to
+  // reject. Staff-facing callers opt out of the whole policy window.
+  const enforcePolicy = !query.ignorePolicyWindow;
   const horizonDays = ctx.policy.maxAdvanceDays + (query.priorityBookingDays ?? 0);
   const dayStart = startOfDay(query.date, zone);
-  if (dayStart > clock.startOf('day').plus({ days: horizonDays })) return [];
+  if (enforcePolicy && dayStart > clock.startOf('day').plus({ days: horizonDays })) return [];
 
   const openWindows = shopOpenWindows(ctx, query.date);
   if (openWindows.length === 0) return [];
@@ -60,8 +62,8 @@ export function findSlots(ctx: AvailabilityContext, query: AvailabilityQuery): A
     });
   };
 
-  const earliest = clock.plus({ minutes: ctx.policy.minLeadTimeMin });
-  const latest = clock.startOf('day').plus({ days: horizonDays, hours: 24 });
+  const earliest = enforcePolicy ? clock.plus({ minutes: ctx.policy.minLeadTimeMin }) : null;
+  const latest = enforcePolicy ? clock.startOf('day').plus({ days: horizonDays, hours: 24 }) : null;
 
   // Candidate starts are restricted to the requested day; a visit may still run
   // past midnight, as long as it stays inside the merged open windows.
@@ -71,7 +73,8 @@ export function findSlots(ctx: AvailabilityContext, query: AvailabilityQuery): A
   const attendants: Array<string | null> = humanTypeIds.size > 0 ? staffCandidates.map((s) => s.id) : [null];
 
   for (const start of candidateStarts(searchWindows, ctx.policy.slotGranularityMin, zone)) {
-    if (start < earliest || start > latest) continue;
+    if (earliest && start < earliest) continue;
+    if (latest && start > latest) continue;
 
     let best: AvailableSlot | null = null;
     for (const staffId of attendants) {

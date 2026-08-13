@@ -6,7 +6,6 @@
  * waived: staff book for a customer who is already standing at the counter.
  */
 import { NextResponse } from 'next/server';
-import { DateTime } from 'luxon';
 import { z } from 'zod';
 import { sessionForApi } from '@/lib/auth';
 import { getAvailability } from '@/lib/availability';
@@ -42,8 +41,10 @@ export async function GET(request: Request) {
     date: parsed.data.date,
     serviceIds: parsed.data.serviceIds,
     preferredResourceId: parsed.data.resourceId,
-    // Waives min_lead_time and the advance-booking horizon for counter staff.
-    now: DateTime.fromISO(parsed.data.date).minus({ years: 1 }),
+    // Counter staff are not bound by the online lead time or the advance
+    // horizon — the customer is standing there, or the shop is fixing a
+    // yesterday. The real clock still applies to everything else.
+    ignorePolicyWindow: true,
   });
 
   return NextResponse.json({

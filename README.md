@@ -23,6 +23,47 @@ pnpm db:seed                        # 3 ร้านตัวอย่าง + b
 pnpm dev
 ```
 
+เข้าหลังร้านที่ `/login` — seed สร้าง owner ให้ทั้ง 3 ร้าน
+
+| อีเมล | รหัสผ่าน |
+|---|---|
+| `owner@nailbar-ari.test` | `chairtime123` |
+| `owner@thehair-thonglor.test` | `chairtime123` |
+| `owner@baanmalisa-spa.test` | `chairtime123` |
+
+หน้าจองของลูกค้าอยู่ที่ `/<slug>` เช่น `/thehair-thonglor`
+
+### ตัวแปรที่ต้องตั้ง
+
+```bash
+SECRET_ENCRYPTION_KEY   # 32 bytes base64 — เข้ารหัส LINE channel token
+SESSION_SECRET          # 32 bytes base64 — เซ็น session cookie ของพนักงาน
+CRON_SECRET             # กัน /api/cron/* ถูกเรียกจากภายนอก
+NEXT_PUBLIC_APP_URL     # ใช้สร้างลิงก์ในข้อความ LINE
+
+# สร้างคีย์:
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+### เชื่อม LINE Official Account
+
+channel token เป็นความลับ จึงไม่มีฟอร์มให้กรอกในหน้าเว็บ — ผู้ดูแลระบบรันคำสั่งนี้
+
+```bash
+pnpm tsx lib/line/connect.ts \
+  --slug thehair-thonglor \
+  --channel-id 1234567890 \
+  --token <channel access token> \
+  --secret <channel secret> \
+  --liff 1234567890-abcdefgh
+```
+
+แล้วตั้ง webhook URL ใน LINE Developers Console เป็น
+`https://<domain>/api/webhooks/line/<slug>`
+
+ถ้ายังไม่เชื่อม LINE ระบบยังใช้งานได้ปกติ — ข้อความจะค้างใน `notification_queue`
+แล้วทยอยส่งเองเมื่อเชื่อมต่อแล้ว
+
 ### ทำไมต้องมี 2 connection string
 
 | ตัวแปร | role | ใช้ทำอะไร |
@@ -53,28 +94,47 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
+### cron ที่ต้องตั้ง
+
+```
+* * * * *  curl -H "Authorization: Bearer $CRON_SECRET" https://<domain>/api/cron/notifications
+```
+
+worker ดึงจาก `notification_queue` ด้วย `FOR UPDATE SKIP LOCKED`
+รันซ้อนกันได้ ไม่ส่งซ้ำ
+
 ---
 
 ## โครงสร้าง
 
 ```
 app/
-  (booking)/[tenantSlug]/   หน้าจองสำหรับลูกค้า (LIFF)   ← ยังไม่ได้ทำ (Phase 2)
-  (admin)/dashboard/        หลังบ้านร้าน                 ← ยังไม่ได้ทำ (Phase 3)
+  (booking)/[tenantSlug]/   หน้าจองลูกค้า (LIFF) + หน้าดู/ยกเลิกคิว
+  (admin)/
+    login/                  เข้าสู่ระบบพนักงาน
+    dashboard/              ปฏิทินวันนี้, ลูกค้า, บริการ, ช่าง, ตั้งค่า
   api/
-    availability/           GET  ช่วงเวลาว่าง
+    availability/           GET  ช่วงเวลาว่าง (สาธารณะ)
+    admin/availability/     GET  เหมือนกัน แต่อ่าน tenant จาก session
     bookings/               POST จอง / DELETE ยกเลิก
+    webhooks/line/[slug]/   POST รับ webhook จาก LINE
+    cron/notifications/     GET  worker ส่งข้อความ
 lib/
   availability/   ★ อัลกอริทึมหาช่วงว่าง (docs/logic.md ข้อ 1)
   booking/          สร้าง/ยกเลิกการจอง + จับ error 23P01
+  notifications/    คิวข้อความ + worker
+  line/             client, Flex message, webhook, ต่อ channel
+  admin/            read model + server action ของหลังร้าน
+  auth/             scrypt + session cookie (ไม่มี dependency เพิ่ม)
+  customer/         upsert จากเบอร์/LINE, รวมลูกค้าซ้ำ
+  crypto.ts         AES-256-GCM สำหรับ channel token
   db/               drizzle schema, migration, seed, withTenant
   time/             ★ helper timezone ทั้งหมด — ห้ามใช้ new Date() ที่อื่น
   loyalty/          ระบบแต้ม                              ← ยังไม่ได้ทำ (Phase 5)
-  line/             LINE messaging                        ← ยังไม่ได้ทำ (Phase 2)
 tests/
   unit/             ไม่ต้องมี DB
-  integration/      ต้องมี DB — concurrency, RLS, ledger guard
-  e2e/              Playwright ยิง HTTP จริง
+  integration/      ต้องมี DB — concurrency, RLS, ledger, คิวข้อความ, webhook
+  e2e/              Playwright ยิง HTTP จริง + ขับ UI หลังร้าน
 ```
 
 ---
@@ -100,6 +160,19 @@ job ที่ต้องวนหลายร้าน ใช้ `forEachTenant
 **`point_ledger` แก้ไม่ได้ ลบไม่ได้**
 มี trigger กันไว้ที่ระดับฐานข้อมูล ไม่ใช่แค่ข้อตกลงในทีม
 
+**ห้ามยิง LINE API จาก request handler**
+ทุกข้อความลง `notification_queue` ก่อน แล้ว worker เป็นคนส่ง
+ยกเว้น reply message ใน webhook — reply ฟรีและ token หมดอายุเร็ว จึงตอบทันที
+
+**การล็อกอินใช้ฟังก์ชัน `staff_login_lookup`**
+`staff_user` อยู่ใต้ RLS เหมือนตารางอื่น แต่ตอนล็อกอินยังไม่รู้ว่าเป็นร้านไหน
+จึงต้องผ่าน SECURITY DEFINER function ที่คืนเฉพาะคอลัมน์ที่ใช้ล็อกอิน
+— ห้าม `SELECT` ตาราง `staff_user` ตรงๆ นอก `withTenant`
+
+**FullCalendar ใช้ตัวฟรี (timeGrid)**
+resource timeline เป็น plugin เสียเงิน หน้าปฏิทินจึงใช้ timeGrid + ชิปกรองช่าง
+พร้อมสีประจำตัวแทน — ดูช่างหลายคนพร้อมกันได้จากสี ไม่ใช่จากคอลัมน์
+
 ---
 
 ## สถานะตาม roadmap
@@ -108,10 +181,12 @@ job ที่ต้องวนหลายร้าน ใช้ `forEachTenant
 |---|---|
 | 0 — Setup | ✅ เสร็จ |
 | 1 — Core booking engine | ✅ เสร็จ |
-| 2 — LINE | ⬜ |
-| 3 — หลังบ้านร้าน | ⬜ |
-| 4 — ลูกค้า | ⬜ |
+| 2 — LINE | ✅ เสร็จ (ต้องใส่ credentials ของร้านเอง) |
+| 3 — หลังบ้านร้าน | ✅ เสร็จ |
+| 4 — ลูกค้า | ✅ เสร็จ |
 | 5 — แต้ม | ⬜ (ตารางสร้างครบแล้ว) |
 | 6 — Tier + Reward | ⬜ (ตารางสร้างครบแล้ว) |
 | 7 — Package | ⬜ (ตารางสร้างครบแล้ว) |
 | 8 — ขัดเงา | ⬜ |
+
+**🎯 Phase 1–4 = MVP ที่ขายได้แล้ว** ตาม docs/roadmap.md

@@ -11,6 +11,11 @@ env:
   DATABASE_URL_ADMIN: postgresql://postgres:postgres@localhost:5432/chairtime
   DATABASE_URL_TEST: postgresql://chairtime:chairtime@localhost:5432/chairtime_test
   DATABASE_URL_TEST_ADMIN: postgresql://postgres:postgres@localhost:5432/chairtime_test
+  # Fixed values so a run is reproducible; production sets its own.
+  SECRET_ENCRYPTION_KEY: Y2hhaXJ0aW1lLWNpLW9ubHkta2V5LTMyLWJ5dGVzISE=
+  SESSION_SECRET: Y2hhaXJ0aW1lLWNpLXNlc3Npb24tc2VjcmV0LTMyYnl0ZXM=
+  CRON_SECRET: ci-cron-secret
+  NEXT_PUBLIC_APP_URL: http://127.0.0.1:3210
 
 jobs:
   test:

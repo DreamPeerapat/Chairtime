@@ -7,7 +7,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
 import { db, schema, sqlClient } from '@/lib/db/client';
 import { withTenant } from '@/lib/db/tenant';
+import { authenticate, hashPassword, readSessionToken } from '@/lib/auth';
 import { SQLSTATE, createSimpleShop, resetDatabase, sqlStateOf } from '../support/db';
+
+const LOGIN_PASSWORD = 'correct-horse-staple';
 
 afterAll(async () => {
   await sqlClient.end();
@@ -142,5 +145,49 @@ describe('point_ledger idempotency index', () => {
 
     await insertEarn();
     expect(await sqlStateOf(insertEarn)).toBe(SQLSTATE.uniqueViolation);
+  });
+});
+
+describe('staff login', () => {
+  /**
+   * Regression: `staff_user` is under FORCE RLS, so the login lookup could not
+   * see its own row and login failed for everyone. It now goes through the
+   * `staff_login_lookup` SECURITY DEFINER function.
+   */
+  it('finds the account before any tenant scope exists', async () => {
+    await resetDatabase();
+    const shop = await createSimpleShop({ slug: 'login-shop' });
+
+    const email = 'owner@login-shop.test';
+    await withTenant(shop.tenantId, async (tx) =>
+      tx.insert(schema.staffUser).values({
+        tenantId: shop.tenantId,
+        email,
+        role: 'owner',
+        passwordHash: await hashPassword(LOGIN_PASSWORD),
+      }),
+    );
+
+    const token = await authenticate(email, LOGIN_PASSWORD);
+    const session = readSessionToken(token);
+    expect(session?.tenantId).toBe(shop.tenantId);
+    expect(session?.role).toBe('owner');
+  });
+
+  it('still refuses to read the table outside a tenant scope', async () => {
+    const rows = await db.select({ id: schema.staffUser.id }).from(schema.staffUser);
+    expect(rows).toEqual([]);
+  });
+
+  it('rejects a wrong password', async () => {
+    await expect(authenticate('owner@login-shop.test', 'wrong')).rejects.toThrow(
+      /อีเมลหรือรหัสผ่านไม่ถูกต้อง/,
+    );
+  });
+
+  it('rejects an email that does not exist', async () => {
+    await expect(authenticate('nobody@nowhere.test', 'anything')).rejects.toThrow(
+      /อีเมลหรือรหัสผ่านไม่ถูกต้อง/,
+    );
   });
 });

@@ -1,8 +1,9 @@
 /** Server-side helpers for the admin screens. */
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db, schema } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/tenant';
 import { verifyPassword } from './password';
 import {
   SESSION_COOKIE,
@@ -29,42 +30,39 @@ export class LoginFailedError extends Error {
 /**
  * Check credentials and mint a session token.
  *
- * The staff_user lookup crosses tenants by design — a person logging in has not
- * told us which shop they belong to yet, and the email is unique per tenant.
- * This is the one query that legitimately spans tenants, and it reads nothing
- * but the login row.
+ * `staff_user` is under FORCE row-level security like every other tenant table,
+ * and a person typing their email has not told us which shop they belong to
+ * yet — so a plain SELECT here returns nothing. The lookup goes through
+ * `staff_login_lookup`, a SECURITY DEFINER function that returns exactly the
+ * login columns for one email and nothing else (see drizzle/0003).
  */
 export async function authenticate(email: string, password: string): Promise<string> {
-  const rows = await db
-    .select({
-      id: schema.staffUser.id,
-      tenantId: schema.staffUser.tenantId,
-      email: schema.staffUser.email,
-      passwordHash: schema.staffUser.passwordHash,
-      role: schema.staffUser.role,
-      resourceId: schema.staffUser.resourceId,
-      isActive: schema.staffUser.isActive,
-      tenantSlug: schema.tenant.slug,
-      tenantStatus: schema.tenant.status,
-    })
-    .from(schema.staffUser)
-    .innerJoin(schema.tenant, eq(schema.tenant.id, schema.staffUser.tenantId))
-    .where(eq(schema.staffUser.email, email.trim().toLowerCase()));
+  const rows = await db.execute<{
+    id: string;
+    tenant_id: string;
+    email: string;
+    password_hash: string | null;
+    role: string;
+    resource_id: string | null;
+    is_active: boolean;
+    tenant_slug: string;
+    tenant_status: string;
+  }>(sql`SELECT * FROM staff_login_lookup(${email})`);
 
-  const user = rows.find((r) => r.isActive && r.tenantStatus === 'active');
+  const user = [...rows][0];
 
   // Hash even when there is no user, so a missing account and a wrong password
   // take the same amount of time.
-  const ok = await verifyPassword(password, user?.passwordHash ?? null);
+  const ok = await verifyPassword(password, user?.password_hash ?? null);
   if (!user || !ok) throw new LoginFailedError();
 
   return createSessionToken({
     staffUserId: user.id,
-    tenantId: user.tenantId,
-    tenantSlug: user.tenantSlug,
+    tenantId: user.tenant_id,
+    tenantSlug: user.tenant_slug,
     email: user.email,
     role: normaliseRole(user.role),
-    resourceId: user.resourceId,
+    resourceId: user.resource_id,
   });
 }
 
@@ -96,15 +94,31 @@ export async function sessionForApi(
   return { session };
 }
 
-/** Set an owner's password — used by the seed and the account screen. */
-export async function setStaffPassword(staffUserId: string, hash: string): Promise<void> {
-  await db.update(schema.staffUser).set({ passwordHash: hash }).where(eq(schema.staffUser.id, staffUserId));
+/**
+ * Set a staff member's password. Tenant-scoped, unlike the login lookup: by the
+ * time anyone is changing a password we know which shop they belong to.
+ */
+export async function setStaffPassword(
+  tenantId: string,
+  staffUserId: string,
+  hash: string,
+): Promise<void> {
+  await withTenant(tenantId, (tx) =>
+    tx
+      .update(schema.staffUser)
+      .set({ passwordHash: hash })
+      .where(
+        and(eq(schema.staffUser.tenantId, tenantId), eq(schema.staffUser.id, staffUserId)),
+      ),
+  );
 }
 
 export async function findStaffUser(tenantId: string, email: string) {
-  const [row] = await db
-    .select()
-    .from(schema.staffUser)
-    .where(and(eq(schema.staffUser.tenantId, tenantId), eq(schema.staffUser.email, email)));
-  return row ?? null;
+  return withTenant(tenantId, async (tx) => {
+    const [row] = await tx
+      .select()
+      .from(schema.staffUser)
+      .where(and(eq(schema.staffUser.tenantId, tenantId), eq(schema.staffUser.email, email)));
+    return row ?? null;
+  });
 }

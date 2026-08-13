@@ -32,6 +32,8 @@ export interface CreateBookingInput {
   source?: 'online' | 'walk_in' | 'phone' | 'admin';
   customerNote?: string | null;
   priorityBookingDays?: number;
+  /** staff-facing callers waive the lead-time and horizon rules */
+  ignorePolicyWindow?: boolean;
   now?: DateTime;
 }
 
@@ -71,6 +73,7 @@ export async function createBookingInTx(
     serviceIds: input.serviceIds,
     preferredResourceId: input.preferredResourceId,
     priorityBookingDays: input.priorityBookingDays ?? 0,
+    ignorePolicyWindow: input.ignorePolicyWindow ?? false,
     now: input.now,
   });
 

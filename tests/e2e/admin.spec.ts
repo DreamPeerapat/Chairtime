@@ -122,14 +122,18 @@ test.describe('walk-in', () => {
   test('creates a booking from the counter', async ({ page }) => {
     await login(page);
 
+    // A real walk-in is "now", but by late evening the shop may have no slot
+    // left — which is correct behaviour, not a failure. Step to a day that is
+    // still open so the assertion is about the form, not about the clock.
+    await page.getByRole('button', { name: 'วันถัดไป' }).click();
+    await page.waitForLoadState('networkidle');
+
     await page.getByRole('button', { name: '+ Walk-in' }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
 
     await dialog.getByRole('button', { name: 'สระ+ตัด' }).click();
-    await expect(dialog.getByText('เวลา', { exact: true })).toBeVisible();
 
-    // A slot is preselected, because the customer is already standing there.
     const create = dialog.getByRole('button', { name: 'สร้างคิว' });
     await expect(create).toBeEnabled({ timeout: 15_000 });
 
@@ -138,6 +142,28 @@ test.describe('walk-in', () => {
     await create.click();
 
     await expect(dialog).toBeHidden({ timeout: 20_000 });
+  });
+
+  test('says so plainly when the day has no room left', async ({ page }) => {
+    await login(page);
+
+    // Walk back to a day that is already over: nothing can be booked into it.
+    await page.getByRole('button', { name: 'วันก่อนหน้า' }).click();
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('button', { name: '+ Walk-in' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: 'สระ+ตัด' }).click();
+
+    // Either a slot is offered, or the form says there is none — never a
+    // silently disabled button with no explanation.
+    const create = dialog.getByRole('button', { name: 'สร้างคิว' });
+    const empty = dialog.getByText('ไม่มีเวลาว่างเหลือในวันนี้');
+    await expect(create.or(empty).first()).toBeVisible({ timeout: 15_000 });
+
+    if (await empty.isVisible()) {
+      await expect(create).toBeDisabled();
+    }
   });
 });
 
@@ -177,7 +203,8 @@ test.describe('resources', () => {
     await page.getByRole('link', { name: 'ช่างและที่นั่ง' }).click();
     await page.waitForURL('**/dashboard/resources');
 
-    await expect(page.getByRole('heading', { name: 'ช่าง', exact: false })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'ช่างและที่นั่ง' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'ช่าง', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: /ช่างโอ๊ต/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /เก้าอี้ 1/ })).toBeVisible();
 

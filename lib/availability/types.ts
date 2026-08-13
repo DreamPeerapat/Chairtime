@@ -76,6 +76,14 @@ export interface AvailabilityQuery {
   preferredResourceId?: string | undefined;
   /** extra days of advance booking granted by the customer's membership tier */
   priorityBookingDays?: number;
+  /**
+   * Skip the min-lead-time and advance-horizon filters.
+   *
+   * Set by staff-facing callers only: those rules exist to shape what the
+   * public booking page offers, and they must not stop a receptionist booking
+   * the customer standing in front of them, or moving yesterday's appointment.
+   */
+  ignorePolicyWindow?: boolean;
   /** injected so tests are deterministic; defaults to the real clock */
   now?: import('luxon').DateTime;
 }
