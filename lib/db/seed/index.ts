@@ -19,7 +19,11 @@ import { createBookingInTx } from '@/lib/booking/create';
 import { SlotTakenError, SlotUnavailableError } from '@/lib/booking/errors';
 import { getAvailability } from '@/lib/availability';
 import { toPlainDate } from '@/lib/time';
+import { hashPassword } from '@/lib/auth/password';
 import { seedTenants, type SeedTenant } from './data';
+
+/** Dev-only. Printed at the end of the seed so it is never a secret. */
+const SEED_PASSWORD = 'chairtime123';
 
 /** Deterministic PRNG so two seed runs produce the same shop. */
 function makeRandom(seed: number) {
@@ -233,10 +237,14 @@ async function seedTenant(spec: SeedTenant): Promise<string> {
       })),
     );
 
+    // A known dev password so the dashboard is reachable straight after
+    // seeding. Real shops set their own; this only ever runs against a seeded
+    // database.
     await tx.insert(schema.staffUser).values({
       tenantId,
       email: `owner@${spec.slug}.test`,
       role: 'owner',
+      passwordHash: await hashPassword(SEED_PASSWORD),
     });
 
     // One stylist takes a day off next week, so the calendar is not uniform.
@@ -375,6 +383,11 @@ if (invokedDirectly) {
     .then(async () => {
       await sqlClient.end();
       console.log('seed complete');
+      console.log('');
+      console.log('เข้าหลังร้านได้ที่ /login');
+      for (const spec of seedTenants) {
+        console.log(`  owner@${spec.slug}.test / ${SEED_PASSWORD}`);
+      }
     })
     .catch(async (err) => {
       console.error(err);

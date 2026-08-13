@@ -13,7 +13,17 @@ export default defineConfig({
   retries: 0,
   workers: 1,
   reporter: process.env.CI ? 'list' : [['html', { open: 'never' }]],
-  use: { baseURL, trace: 'on-first-retry' },
+  use: {
+    baseURL,
+    trace: 'on-first-retry',
+    // Some environments ship a Chromium build that does not match this
+    // Playwright version's expected revision. PLAYWRIGHT_CHROMIUM_PATH points
+    // at the one that is actually installed; CI runs `playwright install` and
+    // leaves it unset.
+    ...(process.env.PLAYWRIGHT_CHROMIUM_PATH
+      ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } }
+      : {}),
+  },
   webServer: {
     // The e2e run books against the seeded development database.
     command: `pnpm build && pnpm start --port ${PORT}`,

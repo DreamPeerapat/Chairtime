@@ -8,7 +8,7 @@
  * itself from POST /api/bookings, so the rules live on the server where the
  * database can enforce them.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { DateTime } from 'luxon';
 import { cn } from '@/lib/utils';
 import type { ServiceListItem, StaffListItem } from '@/lib/booking/queries';
@@ -80,17 +80,21 @@ export function BookingFlow(props: BookingFlowProps) {
     [props.tenantId, selectedServiceIds, staffId],
   );
 
-  useEffect(() => {
-    if (step === 2) void loadSlots(date);
-  }, [step, date, loadSlots]);
+  // Slots are fetched from the interaction that needs them, not from an effect:
+  // the trigger is always a user action (entering the step, or changing the
+  // day), so there is nothing to synchronise after the fact.
+  const goToTimeStep = (forDate = date) => {
+    setStep(2);
+    void loadSlots(forDate);
+  };
+
+  const changeDate = (next: string) => {
+    setDate(next);
+    void loadSlots(next);
+  };
 
   const goNext = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
-
-  const skipStaffStep = () => {
-    setStaffId(null);
-    setStep(2);
-  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -107,7 +111,13 @@ export function BookingFlow(props: BookingFlowProps) {
           services={props.services}
           selected={selectedServiceIds}
           onChange={setSelectedServiceIds}
-          onNext={() => (staffStepEnabled ? goNext() : skipStaffStep())}
+          onNext={() => {
+            if (staffStepEnabled) goNext();
+            else {
+              setStaffId(null);
+              goToTimeStep();
+            }
+          }}
         />
       ) : null}
 
@@ -117,7 +127,7 @@ export function BookingFlow(props: BookingFlowProps) {
           selected={staffId}
           onChange={setStaffId}
           onBack={goBack}
-          onNext={goNext}
+          onNext={() => goToTimeStep()}
         />
       ) : null}
 
@@ -126,7 +136,7 @@ export function BookingFlow(props: BookingFlowProps) {
           timezone={props.timezone}
           maxAdvanceDays={props.maxAdvanceDays}
           date={date}
-          onDateChange={setDate}
+          onDateChange={changeDate}
           slots={slots}
           loading={loadingSlots}
           selected={slot}
@@ -147,8 +157,7 @@ export function BookingFlow(props: BookingFlowProps) {
           onBack={goBack}
           onSlotTaken={() => {
             setError('ช่วงเวลานี้เพิ่งถูกจองไป กรุณาเลือกเวลาใหม่');
-            setStep(2);
-            void loadSlots(date);
+            goToTimeStep();
           }}
         />
       ) : null}
