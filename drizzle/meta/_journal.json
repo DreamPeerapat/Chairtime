@@ -29,6 +29,13 @@
       "when": 1786622937216,
       "tag": "0003_staff_login_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786622938216,
+      "tag": "0004_oauth_self_serve",
+      "breakpoints": true
     }
   ]
 }

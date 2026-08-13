@@ -1,9 +1,12 @@
 /** Shared helpers for the integration tests. */
+import { randomUUID } from 'node:crypto';
 import postgres from 'postgres';
 import { eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db/client';
 import { findSqlState } from '@/lib/booking/errors';
 import { withTenant } from '@/lib/db/tenant';
+import { mintSessionToken } from '@/lib/auth/identity';
+import type { StaffRole } from '@/lib/auth/session';
 
 export async function resetDatabase() {
   const url = process.env.DATABASE_URL_ADMIN;
@@ -16,7 +19,8 @@ export async function resetDatabase() {
         service_segment, service_resource_requirement, resource_service_skill, business_hour,
         time_off, customer, booking, booking_item, resource_allocation, membership_tier,
         customer_tier, point_rule, point_lot, point_ledger, reward, reward_redemption,
-        package, package_service, customer_package, notification_queue, staff_user, audit_log
+        package, package_service, customer_package, notification_queue, audit_log,
+        tenant_line_oa, staff_tenant, staff_auth_identity, staff_user, auth_identity
       RESTART IDENTITY CASCADE
     `);
   } finally {
@@ -122,6 +126,52 @@ export async function createSimpleShop(options: {
 
     return { tenantId, serviceId, staffIds, chairIds, customerId: customerRow!.id };
   });
+}
+
+/**
+ * A staff member fully wired up the way `/auth/callback` would leave one:
+ * auth_identity + staff_user + staff_auth_identity + staff_tenant, plus a
+ * session token minted the same way `lib/auth/identity.ts` mints one. Tests
+ * (and Playwright) use this to start already logged in without going through
+ * a real LINE/Google consent screen.
+ */
+export async function createStaffSession(
+  tenantId: string,
+  tenantSlug: string,
+  options: { role?: StaffRole; displayName?: string } = {},
+): Promise<{ staffUserId: string; token: string }> {
+  const providerUid = `test-${randomUUID()}`;
+
+  const [identity] = await db
+    .insert(schema.authIdentity)
+    .values({ provider: 'line', providerUid, displayName: options.displayName ?? 'พนักงานทดสอบ' })
+    .returning({ id: schema.authIdentity.id });
+
+  const [staff] = await db
+    .insert(schema.staffUser)
+    .values({ displayName: options.displayName ?? 'พนักงานทดสอบ' })
+    .returning({ id: schema.staffUser.id });
+
+  await db
+    .insert(schema.staffAuthIdentity)
+    .values({ staffId: staff!.id, authIdentityId: identity!.id });
+
+  await withTenant(tenantId, (tx) =>
+    tx.insert(schema.staffTenant).values({ staffId: staff!.id, tenantId, role: options.role ?? 'owner' }),
+  );
+
+  const token = await mintSessionToken(staff!.id, {
+    tenantId,
+    tenantSlug,
+    tenantName: tenantSlug,
+    tenantStatus: 'active',
+    tenantOnboardedAt: new Date(),
+    role: options.role ?? 'owner',
+    resourceId: null,
+    isActive: true,
+  });
+
+  return { staffUserId: staff!.id, token };
 }
 
 export async function countBookings(tenantId: string): Promise<number> {

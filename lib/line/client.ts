@@ -54,32 +54,29 @@ export function createLineClient(channelAccessToken: string): LineClient {
 }
 
 export interface TenantLineCredentials {
-  channelId: string;
   channelAccessToken: string;
   channelSecret: string;
   liffId: string | null;
 }
 
-/** Reads and decrypts a tenant's channel credentials. Null when not set up yet. */
+/**
+ * Reads and decrypts a tenant's LINE OA credentials. Null when the shop
+ * hasn't connected one yet, or connected one that never passed the wizard's
+ * "ทดสอบเชื่อมต่อ" step — an unverified token is not safe to send with.
+ */
 export async function loadLineCredentials(
   tx: TenantTx,
   tenantId: string,
 ): Promise<TenantLineCredentials | null> {
   const [row] = await tx
     .select()
-    .from(schema.tenantLineChannel)
-    .where(
-      and(
-        eq(schema.tenantLineChannel.tenantId, tenantId),
-        eq(schema.tenantLineChannel.isActive, true),
-      ),
-    );
-  if (!row) return null;
+    .from(schema.tenantLineOa)
+    .where(and(eq(schema.tenantLineOa.tenantId, tenantId), eq(schema.tenantLineOa.isVerified, true)));
+  if (!row || !row.channelAccessToken || !row.channelSecret) return null;
 
   return {
-    channelId: row.channelId,
-    channelAccessToken: decryptSecret(row.channelAccessTokenEnc),
-    channelSecret: decryptSecret(row.channelSecretEnc),
+    channelAccessToken: decryptSecret(row.channelAccessToken),
+    channelSecret: decryptSecret(row.channelSecret),
     liffId: row.liffId,
   };
 }

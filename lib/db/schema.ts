@@ -44,19 +44,56 @@ const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull(
 //  1. TENANT
 // =====================================================================
 
-export const tenant = pgTable('tenant', {
+/** Kept out of `tenant` so prices/limits change without an ALTER TABLE tenant. */
+export const subscriptionPlan = pgTable('subscription_plan', {
   id: id(),
-  slug: text('slug').notNull().unique(),
+  code: text('code').notNull().unique(), // trial | basic | pro
   name: text('name').notNull(),
-  businessType: text('business_type').notNull(), // nail | hair | massage | clinic | other
-  timezone: text('timezone').notNull().default('Asia/Bangkok'),
-  currency: char('currency', { length: 3 }).notNull().default('THB'),
-  phone: text('phone'),
-  address: text('address'),
-  plan: text('plan').notNull().default('trial'), // trial | basic | pro
-  status: text('status').notNull().default('active'), // active | suspended | cancelled
-  createdAt: createdAt(),
+  priceMonthly: numeric('price_monthly', { precision: 10, scale: 2 }),
+  priceYearly: numeric('price_yearly', { precision: 10, scale: 2 }),
+  maxResources: integer('max_resources'), // NULL = unlimited
+  maxBookingsPerMonth: integer('max_bookings_per_month'),
+  trialDays: integer('trial_days').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
 });
+
+/** Copied into a new tenant's own rows during onboarding — see lib/onboarding. */
+export const businessTypeTemplate = pgTable('business_type_template', {
+  businessType: text('business_type').primaryKey(), // nail | hair | massage | clinic | other
+  displayName: text('display_name').notNull(),
+  servicesJson: jsonb('services_json').notNull().default([]),
+  resourceTypesJson: jsonb('resource_types_json').notNull().default([]),
+});
+
+export const tenant = pgTable(
+  'tenant',
+  {
+    id: id(),
+    slug: text('slug').notNull().unique(),
+    name: text('name').notNull(),
+    businessType: text('business_type').notNull(), // nail | hair | massage | clinic | other
+    timezone: text('timezone').notNull().default('Asia/Bangkok'),
+    currency: char('currency', { length: 3 }).notNull().default('THB'),
+    phone: text('phone'),
+    address: text('address'),
+    planId: uuid('plan_id').references(() => subscriptionPlan.id),
+    // pending_payment = chose a paid plan but has not paid yet (not usable)
+    // active          = usable (trial, or paid)
+    // suspended       = trial/billing lapsed
+    // cancelled       = closed by the owner
+    status: text('status').notNull().default('pending_payment'),
+    trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
+    onboardedAt: timestamp('onboarded_at', { withTimezone: true }), // NULL = onboarding wizard not done
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check(
+      'tenant_status_check',
+      sql`${t.status} in ('pending_payment','active','suspended','cancelled')`,
+    ),
+    index('tenant_status_index').on(t.status),
+  ],
+);
 
 export const tenantBookingPolicy = pgTable('tenant_booking_policy', {
   tenantId: uuid('tenant_id')
@@ -639,51 +676,125 @@ export const notificationQueue = pgTable(
 );
 
 // =====================================================================
-//  12b. LINE CHANNEL  (not in docs/schema.sql — see the note below)
+//  12.5 LINE OA CONNECTION  (ร้านเชื่อม LINE OA ของตัวเองเข้าระบบ)
 //
-//  CLAUDE.md iron rule #6 requires every tenant to use its own LINE OA with
-//  the channel token stored encrypted, but docs/schema.sql has nowhere to put
-//  it. Rather than bolt the columns onto `tenant`, they live here: secrets are
-//  read on a different path from shop settings, and keeping them in their own
-//  table means an admin screen that selects * from tenant never touches them.
+//  Manual wizard for now (docs/logic.md ข้อ 1.6): the shop pastes its own
+//  channel token/secret. `connection_method` leaves room for a one-click
+//  `partner_oauth` flow later without another schema change.
 //
-//  Values are AES-256-GCM ciphertext produced by lib/crypto — never plaintext.
+//  `channelAccessToken`/`channelSecret` hold AES-256-GCM ciphertext from
+//  lib/crypto — despite the column names, plaintext must never land here.
 // =====================================================================
 
-export const tenantLineChannel = pgTable('tenant_line_channel', {
-  tenantId: uuid('tenant_id')
-    .primaryKey()
-    .references(() => tenant.id, { onDelete: 'cascade' }),
-  channelId: text('channel_id').notNull(),
-  /** encrypted: LINE Messaging API channel access token */
-  channelAccessTokenEnc: text('channel_access_token_enc').notNull(),
-  /** encrypted: channel secret, used to verify webhook signatures */
-  channelSecretEnc: text('channel_secret_enc').notNull(),
-  liffId: text('liff_id'),
-  basicId: text('basic_id'),
-  isActive: boolean('is_active').notNull().default(true),
-  createdAt: createdAt(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const tenantLineOa = pgTable(
+  'tenant_line_oa',
+  {
+    tenantId: uuid('tenant_id')
+      .primaryKey()
+      .references(() => tenant.id, { onDelete: 'cascade' }),
+    connectionMethod: text('connection_method').notNull().default('manual'), // manual | partner_oauth
+    /** encrypted */
+    channelAccessToken: text('channel_access_token'),
+    /** encrypted */
+    channelSecret: text('channel_secret'),
+    oaBasicId: text('oa_basic_id'),
+    webhookUrl: text('webhook_url'),
+    // Not in docs/schema.sql — the LIFF app id customer booking pages need to
+    // deep-link into LINE is a different concern from the OA credentials the
+    // spec covers, and dropping it would break the Phase 2 booking flow that
+    // already ships. Kept here rather than back on `tenant` for the same
+    // reason the old tenant_line_channel table existed: LINE config lives in
+    // one place.
+    liffId: text('liff_id'),
+    // wizard progress, tracked independently so a shop can resume mid-step
+    stepOaCreated: boolean('step_oa_created').notNull().default(false),
+    stepApiEnabled: boolean('step_api_enabled').notNull().default(false),
+    stepTokenSaved: boolean('step_token_saved').notNull().default(false),
+    stepWebhookVerified: boolean('step_webhook_verified').notNull().default(false),
+    isVerified: boolean('is_verified').notNull().default(false),
+    connectedAt: timestamp('connected_at', { withTimezone: true }),
+    lastVerifiedAt: timestamp('last_verified_at', { withTimezone: true }),
+    lastError: text('last_error'),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'tenant_line_oa_connection_method_check',
+      sql`${t.connectionMethod} in ('manual','partner_oauth')`,
+    ),
+  ],
+);
 
 // =====================================================================
-//  12. AUDIT + STAFF USER
+//  12. AUTH + STAFF USER  (OAuth only — no passwords, iron rule #7)
+//      `auth_identity` (the OAuth provider's identity) is kept separate
+//      from `staff_user` (the app user) so one person can hold several
+//      identities (LINE + Google) and belong to several shops.
 // =====================================================================
 
-export const staffUser = pgTable(
-  'staff_user',
+/** One row per OAuth identity. Not tied to any one shop. */
+export const authIdentity = pgTable(
+  'auth_identity',
   {
     id: id(),
+    provider: text('provider').notNull(), // line | google
+    providerUid: text('provider_uid').notNull(),
+    email: text('email'),
+    displayName: text('display_name'),
+    avatarUrl: text('avatar_url'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    unique().on(t.provider, t.providerUid),
+    check('auth_identity_provider_check', sql`${t.provider} in ('line','google')`),
+  ],
+);
+
+/** An app user. May hold more than one auth_identity if accounts are linked. */
+export const staffUser = pgTable('staff_user', {
+  id: id(),
+  primaryEmail: text('primary_email'),
+  displayName: text('display_name'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: createdAt(),
+});
+
+export const staffAuthIdentity = pgTable(
+  'staff_auth_identity',
+  {
+    staffId: uuid('staff_id')
+      .notNull()
+      .references(() => staffUser.id, { onDelete: 'cascade' }),
+    authIdentityId: uuid('auth_identity_id')
+      .notNull()
+      .references(() => authIdentity.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.staffId, t.authIdentityId] }),
+    unique().on(t.authIdentityId), // one identity belongs to exactly one staff_user
+  ],
+);
+
+/** Many-to-many: one person can own/work at several shops. */
+export const staffTenant = pgTable(
+  'staff_tenant',
+  {
+    staffId: uuid('staff_id')
+      .notNull()
+      .references(() => staffUser.id, { onDelete: 'cascade' }),
     tenantId: uuid('tenant_id')
       .notNull()
       .references(() => tenant.id, { onDelete: 'cascade' }),
-    resourceId: uuid('resource_id').references(() => resource.id),
-    email: text('email').notNull(),
-    passwordHash: text('password_hash'),
+    resourceId: uuid('resource_id').references(() => resource.id), // set when this person is also bookable
     role: text('role').notNull().default('staff'), // owner | manager | staff
     isActive: boolean('is_active').notNull().default(true),
+    joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [unique().on(t.tenantId, t.email)],
+  (t) => [
+    primaryKey({ columns: [t.staffId, t.tenantId] }),
+    index('staff_tenant_tenant_id_index').on(t.tenantId),
+  ],
 );
 
 export const auditLog = pgTable(

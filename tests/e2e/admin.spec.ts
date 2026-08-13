@@ -6,17 +6,63 @@
  * today, changing a status and creating a walk-in all hold together.
  */
 import { expect, test, type Page } from '@playwright/test';
+import { eq } from 'drizzle-orm';
 import { loadEnv } from '../../lib/env.ts';
 
 loadEnv();
 
-const OWNER = { email: 'owner@thehair-thonglor.test', password: 'chairtime123' };
+import { db, schema } from '../../lib/db/client.ts';
+import { withTenant } from '../../lib/db/tenant.ts';
+import { mintSessionToken } from '../../lib/auth/identity.ts';
+import { SESSION_COOKIE } from '../../lib/auth/session.ts';
 
-async function login(page: Page, credentials = OWNER) {
+const OWNER_TENANT_SLUG = 'thehair-thonglor';
+
+/**
+ * Auth is OAuth-only (iron rule #7), so there is no form to fill in for a
+ * real login here — Playwright mints the same session token
+ * `/auth/callback` would and drops it in as a cookie, using the owner
+ * `pnpm db:seed` already created for this shop.
+ */
+async function login(page: Page, tenantSlug = OWNER_TENANT_SLUG) {
+  const [tenant] = await db
+    .select({
+      id: schema.tenant.id,
+      slug: schema.tenant.slug,
+      name: schema.tenant.name,
+      status: schema.tenant.status,
+      onboardedAt: schema.tenant.onboardedAt,
+    })
+    .from(schema.tenant)
+    .where(eq(schema.tenant.slug, tenantSlug));
+  if (!tenant) throw new Error(`no seeded shop with slug ${tenantSlug}`);
+
+  const [membership] = await withTenant(tenant.id, (tx) =>
+    tx
+      .select({
+        staffId: schema.staffTenant.staffId,
+        role: schema.staffTenant.role,
+        resourceId: schema.staffTenant.resourceId,
+      })
+      .from(schema.staffTenant)
+      .where(eq(schema.staffTenant.tenantId, tenant.id)),
+  );
+  if (!membership) throw new Error(`no seeded staff for ${tenantSlug}`);
+
+  const token = await mintSessionToken(membership.staffId, {
+    tenantId: tenant.id,
+    tenantSlug: tenant.slug,
+    tenantName: tenant.name,
+    tenantStatus: tenant.status,
+    tenantOnboardedAt: tenant.onboardedAt,
+    role: membership.role === 'owner' || membership.role === 'manager' ? membership.role : 'staff',
+    resourceId: membership.resourceId,
+    isActive: true,
+  });
+
   await page.goto('/login');
-  await page.getByLabel('อีเมล').fill(credentials.email);
-  await page.getByLabel('รหัสผ่าน').fill(credentials.password);
-  await page.getByRole('button', { name: 'เข้าสู่ระบบ' }).click();
+  await page.context().addCookies([{ name: SESSION_COOKIE, value: token, url: page.url() }]);
+  await page.goto('/dashboard');
   await page.waitForURL('**/dashboard');
 }
 
@@ -26,14 +72,11 @@ test.describe('staff authentication', () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test('rejects a wrong password without saying which field was wrong', async ({ page }) => {
+  test('offers LINE and Google, and nothing that looks like a password field', async ({ page }) => {
     await page.goto('/login');
-    await page.getByLabel('อีเมล').fill(OWNER.email);
-    await page.getByLabel('รหัสผ่าน').fill('definitely-not-the-password');
-    await page.getByRole('button', { name: 'เข้าสู่ระบบ' }).click();
-
-    await expect(page.getByText('อีเมลหรือรหัสผ่านไม่ถูกต้อง')).toBeVisible();
-    await expect(page).toHaveURL(/\/login/);
+    await expect(page.getByRole('link', { name: /LINE/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Google/ })).toBeVisible();
+    await expect(page.locator('input[type="password"]')).toHaveCount(0);
   });
 
   test('logs in and lands on today', async ({ page }) => {

@@ -37,7 +37,7 @@ beforeEach(async () => {
 
   await connectLineChannel({
     tenantId: shop.tenantId,
-    channelId: '1234567890',
+    tenantSlug: 'line-shop',
     channelAccessToken: TOKEN,
     channelSecret: SECRET,
     liffId: '1234567890-abcdefgh',
@@ -78,12 +78,12 @@ describe('stored credentials', () => {
     const [row] = await withTenant(shop.tenantId, (tx) =>
       tx
         .select()
-        .from(schema.tenantLineChannel)
-        .where(eq(schema.tenantLineChannel.tenantId, shop.tenantId)),
+        .from(schema.tenantLineOa)
+        .where(eq(schema.tenantLineOa.tenantId, shop.tenantId)),
     );
-    expect(row!.channelAccessTokenEnc).not.toContain(TOKEN);
-    expect(row!.channelSecretEnc).not.toContain(SECRET);
-    expect(row!.channelAccessTokenEnc.startsWith('v1.')).toBe(true);
+    expect(row!.channelAccessToken).not.toContain(TOKEN);
+    expect(row!.channelSecret).not.toContain(SECRET);
+    expect(row!.channelAccessToken!.startsWith('v1.')).toBe(true);
   });
 
   it('verifies a webhook signature against the stored secret', async () => {

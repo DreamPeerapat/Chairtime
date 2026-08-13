@@ -19,11 +19,7 @@ import { createBookingInTx } from '@/lib/booking/create';
 import { SlotTakenError, SlotUnavailableError } from '@/lib/booking/errors';
 import { getAvailability } from '@/lib/availability';
 import { toPlainDate } from '@/lib/time';
-import { hashPassword } from '@/lib/auth/password';
 import { seedTenants, type SeedTenant } from './data';
-
-/** Dev-only. Printed at the end of the seed so it is never a secret. */
-const SEED_PASSWORD = 'chairtime123';
 
 /** Deterministic PRNG so two seed runs produce the same shop. */
 function makeRandom(seed: number) {
@@ -65,7 +61,8 @@ async function truncateAll() {
         service_segment, service_resource_requirement, resource_service_skill, business_hour,
         time_off, customer, booking, booking_item, resource_allocation, membership_tier,
         customer_tier, point_rule, point_lot, point_ledger, reward, reward_redemption,
-        package, package_service, customer_package, notification_queue, staff_user, audit_log
+        package, package_service, customer_package, notification_queue, audit_log,
+        tenant_line_oa, staff_tenant, staff_auth_identity, staff_user, auth_identity
       RESTART IDENTITY CASCADE
     `);
   } finally {
@@ -74,6 +71,14 @@ async function truncateAll() {
 }
 
 async function seedTenant(spec: SeedTenant): Promise<string> {
+  const [proPlan] = await db
+    .select({ id: schema.subscriptionPlan.id })
+    .from(schema.subscriptionPlan)
+    .where(eq(schema.subscriptionPlan.code, 'pro'));
+  if (!proPlan) {
+    throw new Error("subscription_plan 'pro' not found — run `pnpm db:migrate` first");
+  }
+
   // `tenant` sits outside RLS — it is the row you look up before you know which
   // tenant you are.
   const [tenantRow] = await db
@@ -84,7 +89,9 @@ async function seedTenant(spec: SeedTenant): Promise<string> {
       businessType: spec.businessType,
       phone: spec.phone,
       address: spec.address,
-      plan: 'pro',
+      planId: proPlan.id,
+      status: 'active',
+      onboardedAt: new Date(),
     })
     .returning({ id: schema.tenant.id });
   if (!tenantRow) throw new Error('tenant insert returned no row');
@@ -237,15 +244,23 @@ async function seedTenant(spec: SeedTenant): Promise<string> {
       })),
     );
 
-    // A known dev password so the dashboard is reachable straight after
-    // seeding. Real shops set their own; this only ever runs against a seeded
-    // database.
-    await tx.insert(schema.staffUser).values({
-      tenantId,
-      email: `owner@${spec.slug}.test`,
-      role: 'owner',
-      passwordHash: await hashPassword(SEED_PASSWORD),
-    });
+    // Auth is OAuth-only (iron rule #7), so there is no password to seed. A
+    // fake `auth_identity` stands in for "this person signed in with LINE" —
+    // real shops get a real one the first time an owner actually logs in.
+    // `/dev-login` mints a session for this staff_user without needing a real
+    // LINE/Google OAuth app configured locally.
+    const [identity] = await tx
+      .insert(schema.authIdentity)
+      .values({ provider: 'line', providerUid: `seed-owner-${spec.slug}`, displayName: `เจ้าของร้าน ${spec.name}` })
+      .returning({ id: schema.authIdentity.id });
+
+    const [staff] = await tx
+      .insert(schema.staffUser)
+      .values({ primaryEmail: `owner@${spec.slug}.test`, displayName: `เจ้าของร้าน ${spec.name}` })
+      .returning({ id: schema.staffUser.id });
+
+    await tx.insert(schema.staffAuthIdentity).values({ staffId: staff!.id, authIdentityId: identity!.id });
+    await tx.insert(schema.staffTenant).values({ staffId: staff!.id, tenantId, role: 'owner' });
 
     // One stylist takes a day off next week, so the calendar is not uniform.
     const humanKeys = spec.resources.filter((r) => r.type === 'staff').map((r) => r.key);
@@ -384,9 +399,9 @@ if (invokedDirectly) {
       await sqlClient.end();
       console.log('seed complete');
       console.log('');
-      console.log('เข้าหลังร้านได้ที่ /login');
+      console.log('Auth is OAuth-only — use /dev-login to get into a seeded shop without a real LINE/Google app:');
       for (const spec of seedTenants) {
-        console.log(`  owner@${spec.slug}.test / ${SEED_PASSWORD}`);
+        console.log(`  ${spec.name} (/${spec.slug})`);
       }
     })
     .catch(async (err) => {

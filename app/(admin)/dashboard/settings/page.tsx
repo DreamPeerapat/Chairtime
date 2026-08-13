@@ -38,12 +38,12 @@ export default async function SettingsPage() {
     withTenant(session.tenantId, (tx) =>
       tx
         .select({
-          channelId: schema.tenantLineChannel.channelId,
-          liffId: schema.tenantLineChannel.liffId,
-          isActive: schema.tenantLineChannel.isActive,
+          oaBasicId: schema.tenantLineOa.oaBasicId,
+          liffId: schema.tenantLineOa.liffId,
+          isVerified: schema.tenantLineOa.isVerified,
         })
-        .from(schema.tenantLineChannel)
-        .where(eq(schema.tenantLineChannel.tenantId, session.tenantId)),
+        .from(schema.tenantLineOa)
+        .where(eq(schema.tenantLineOa.tenantId, session.tenantId)),
     ),
   ]);
 
@@ -77,7 +77,7 @@ export default async function SettingsPage() {
         defaultSpaces: t.defaultSpaces,
         spaceLabel: t.spaceLabel,
       }))}
-      lineConnected={lineChannel.length > 0 && (lineChannel[0]?.isActive ?? false)}
+      lineConnected={lineChannel.length > 0 && (lineChannel[0]?.isVerified ?? false)}
       liffId={lineChannel[0]?.liffId ?? null}
     />
   );

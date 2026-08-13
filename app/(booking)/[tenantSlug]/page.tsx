@@ -49,9 +49,9 @@ export default async function BookingPage({
 async function loadLiffId(tenantId: string): Promise<string | null> {
   const rows = await withTenant(tenantId, (tx) =>
     tx
-      .select({ liffId: schema.tenantLineChannel.liffId })
-      .from(schema.tenantLineChannel)
-      .where(eq(schema.tenantLineChannel.tenantId, tenantId)),
+      .select({ liffId: schema.tenantLineOa.liffId })
+      .from(schema.tenantLineOa)
+      .where(eq(schema.tenantLineOa.tenantId, tenantId)),
   );
   return rows[0]?.liffId ?? null;
 }

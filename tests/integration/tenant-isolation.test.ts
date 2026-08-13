@@ -7,10 +7,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
 import { db, schema, sqlClient } from '@/lib/db/client';
 import { withTenant } from '@/lib/db/tenant';
-import { authenticate, hashPassword, readSessionToken } from '@/lib/auth';
+import { findOrCreateStaffUser, listStaffTenants, readSessionToken, routeAfterLogin } from '@/lib/auth';
+import type { OAuthProfile } from '@/lib/auth/oauth';
 import { SQLSTATE, createSimpleShop, resetDatabase, sqlStateOf } from '../support/db';
-
-const LOGIN_PASSWORD = 'correct-horse-staple';
 
 afterAll(async () => {
   await sqlClient.end();
@@ -148,46 +147,88 @@ describe('point_ledger idempotency index', () => {
   });
 });
 
-describe('staff login', () => {
-  /**
-   * Regression: `staff_user` is under FORCE RLS, so the login lookup could not
-   * see its own row and login failed for everyone. It now goes through the
-   * `staff_login_lookup` SECURITY DEFINER function.
-   */
-  it('finds the account before any tenant scope exists', async () => {
-    await resetDatabase();
-    const shop = await createSimpleShop({ slug: 'login-shop' });
+describe('self-serve signup (OAuth identity)', () => {
+  const lineProfile = (uid: string): OAuthProfile => ({
+    provider: 'line',
+    providerUid: uid,
+    email: 'owner@example.test',
+    displayName: 'เจ้าของร้าน',
+    avatarUrl: null,
+  });
 
-    const email = 'owner@login-shop.test';
-    await withTenant(shop.tenantId, async (tx) =>
-      tx.insert(schema.staffUser).values({
-        tenantId: shop.tenantId,
-        email,
-        role: 'owner',
-        passwordHash: await hashPassword(LOGIN_PASSWORD),
-      }),
+  it('provisions a brand-new staff_user for a first-time LINE login', async () => {
+    await resetDatabase();
+    const { staffUserId, isNew } = await findOrCreateStaffUser(lineProfile('U_new_owner'));
+    expect(isNew).toBe(true);
+    expect(staffUserId).toBeTruthy();
+  });
+
+  it('routes a person with no shop yet to onboarding', async () => {
+    const { staffUserId } = await findOrCreateStaffUser(lineProfile('U_no_shop'));
+    const route = await routeAfterLogin(staffUserId);
+    expect(route.kind).toBe('onboarding');
+  });
+
+  /**
+   * Regression: `staff_tenant` is under FORCE RLS, so listing "which shops is
+   * this person in" could not see its own rows before a tenant is chosen. It
+   * goes through the `staff_tenant_lookup` SECURITY DEFINER function.
+   */
+  it('logging in a second time with the same identity reaches the same tenant', async () => {
+    const shop = await createSimpleShop({ slug: 'oauth-repeat' });
+    const first = await findOrCreateStaffUser(lineProfile('U_repeat_login'));
+    await withTenant(shop.tenantId, (tx) =>
+      tx.insert(schema.staffTenant).values({ staffId: first.staffUserId, tenantId: shop.tenantId, role: 'owner' }),
     );
 
-    const token = await authenticate(email, LOGIN_PASSWORD);
-    const session = readSessionToken(token);
+    const second = await findOrCreateStaffUser(lineProfile('U_repeat_login'));
+    expect(second.staffUserId).toBe(first.staffUserId);
+    expect(second.isNew).toBe(false);
+
+    const route = await routeAfterLogin(second.staffUserId);
+    expect(route).toMatchObject({ kind: 'dashboard', tenantSlug: 'oauth-repeat' });
+
+    const session = readSessionToken(route.kind === 'dashboard' ? route.token : undefined);
     expect(session?.tenantId).toBe(shop.tenantId);
     expect(session?.role).toBe('owner');
   });
 
-  it('still refuses to read the table outside a tenant scope', async () => {
-    const rows = await db.select({ id: schema.staffUser.id }).from(schema.staffUser);
+  it('sends someone who owns two shops to /select-store instead of guessing', async () => {
+    const shopA = await createSimpleShop({ slug: 'multi-a' });
+    const shopB = await createSimpleShop({ slug: 'multi-b' });
+    const { staffUserId } = await findOrCreateStaffUser(lineProfile('U_multi_shop'));
+
+    await withTenant(shopA.tenantId, (tx) =>
+      tx.insert(schema.staffTenant).values({ staffId: staffUserId, tenantId: shopA.tenantId, role: 'owner' }),
+    );
+    await withTenant(shopB.tenantId, (tx) =>
+      tx.insert(schema.staffTenant).values({ staffId: staffUserId, tenantId: shopB.tenantId, role: 'staff' }),
+    );
+
+    const route = await routeAfterLogin(staffUserId);
+    expect(route.kind).toBe('select-store');
+
+    const tenants = await listStaffTenants(staffUserId);
+    expect(tenants.map((t) => t.tenantSlug).sort()).toEqual(['multi-a', 'multi-b']);
+  });
+
+  it('never auto-merges a second provider onto an existing account, even with the same email', async () => {
+    const line = await findOrCreateStaffUser(lineProfile('U_same_person_line'));
+    const google = await findOrCreateStaffUser({
+      provider: 'google',
+      providerUid: 'G_same_person',
+      // same email as the LINE profile above — must NOT be treated as the same person
+      email: 'owner@example.test',
+      displayName: 'เจ้าของร้าน',
+      avatarUrl: null,
+    });
+
+    expect(google.isNew).toBe(true);
+    expect(google.staffUserId).not.toBe(line.staffUserId);
+  });
+
+  it('still refuses to read staff_tenant outside a tenant scope', async () => {
+    const rows = await db.select({ staffId: schema.staffTenant.staffId }).from(schema.staffTenant);
     expect(rows).toEqual([]);
-  });
-
-  it('rejects a wrong password', async () => {
-    await expect(authenticate('owner@login-shop.test', 'wrong')).rejects.toThrow(
-      /อีเมลหรือรหัสผ่านไม่ถูกต้อง/,
-    );
-  });
-
-  it('rejects an email that does not exist', async () => {
-    await expect(authenticate('nobody@nowhere.test', 'anything')).rejects.toThrow(
-      /อีเมลหรือรหัสผ่านไม่ถูกต้อง/,
-    );
   });
 });

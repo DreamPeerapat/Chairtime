@@ -6,9 +6,10 @@
  * and the trade-off (a session cannot be revoked before it expires) is bounded
  * by a short lifetime.
  *
- * The payload carries the tenant, which every admin query then scopes to. It is
- * signed, not encrypted: it holds no secret, and tampering is what the HMAC
- * catches.
+ * The payload carries the tenant a staff member picked (a person can belong to
+ * several shops via `staff_tenant`), and every admin query then scopes to it.
+ * It is signed, not encrypted: it holds no secret, and tampering is what the
+ * HMAC catches.
  */
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
@@ -21,7 +22,7 @@ export interface SessionPayload {
   staffUserId: string;
   tenantId: string;
   tenantSlug: string;
-  email: string;
+  displayName: string | null;
   role: StaffRole;
   /** the resource row, when this staff member is also a bookable person */
   resourceId: string | null;
@@ -88,6 +89,59 @@ export const SESSION_COOKIE_OPTIONS = {
   secure: process.env.NODE_ENV === 'production',
   path: '/',
   maxAge: MAX_AGE_SECONDS,
+};
+
+/**
+ * Between "we know which auth_identity this is" and "a tenant has been
+ * chosen" there is no tenant to put in a real session yet — a brand-new
+ * signup has none, someone with several shops hasn't picked one. This is a
+ * second, much shorter-lived signed cookie that carries only the staff_user
+ * id, so /onboarding/plan and /select-store know who is asking without
+ * granting dashboard access to anything.
+ */
+export const PENDING_IDENTITY_COOKIE = 'chairtime_pending_identity';
+const PENDING_MAX_AGE_SECONDS = 10 * 60;
+
+interface PendingIdentityPayload {
+  staffUserId: string;
+  expiresAt: number;
+}
+
+export function createPendingIdentityToken(
+  staffUserId: string,
+  nowSeconds = Math.floor(Date.now() / 1000),
+): string {
+  const payload: PendingIdentityPayload = { staffUserId, expiresAt: nowSeconds + PENDING_MAX_AGE_SECONDS };
+  const body = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+  return `${body}.${sign(body)}`;
+}
+
+export function readPendingIdentityToken(
+  token: string | undefined | null,
+  nowSeconds = Math.floor(Date.now() / 1000),
+): string | null {
+  if (!token) return null;
+  const dot = token.lastIndexOf('.');
+  if (dot <= 0) return null;
+
+  const body = token.slice(0, dot);
+  if (!verify(body, token.slice(dot + 1))) return null;
+
+  try {
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')) as PendingIdentityPayload;
+    if (typeof payload.expiresAt !== 'number' || payload.expiresAt <= nowSeconds) return null;
+    return payload.staffUserId || null;
+  } catch {
+    return null;
+  }
+}
+
+export const PENDING_IDENTITY_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  secure: process.env.NODE_ENV === 'production',
+  path: '/',
+  maxAge: PENDING_MAX_AGE_SECONDS,
 };
 
 /** Role ranking, so a check reads as "at least a manager". */

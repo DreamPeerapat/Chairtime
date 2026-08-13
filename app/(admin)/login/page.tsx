@@ -1,8 +1,12 @@
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { LoginFailedError, SESSION_COOKIE, SESSION_COOKIE_OPTIONS, authenticate, currentSession } from '@/lib/auth';
+import { currentSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
+
+const ERROR_MESSAGES: Record<string, string> = {
+  oauth: 'เข้าสู่ระบบไม่สำเร็จ ลองใหม่อีกครั้ง',
+  oauth_config: 'ระบบล็อกอินยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแล',
+};
 
 export default async function LoginPage({
   searchParams,
@@ -13,68 +17,43 @@ export default async function LoginPage({
   if (session) redirect('/dashboard');
 
   const { error } = await searchParams;
-
-  async function login(formData: FormData) {
-    'use server';
-    const email = String(formData.get('email') ?? '');
-    const password = String(formData.get('password') ?? '');
-
-    let token: string;
-    try {
-      token = await authenticate(email, password);
-    } catch (err) {
-      if (err instanceof LoginFailedError) redirect('/login?error=invalid');
-      throw err;
-    }
-
-    const store = await cookies();
-    store.set(SESSION_COOKIE, token, SESSION_COOKIE_OPTIONS);
-    redirect('/dashboard');
-  }
+  const message = error ? (ERROR_MESSAGES[error] ?? ERROR_MESSAGES.oauth) : null;
 
   return (
     <main className="flex min-h-screen items-center justify-center px-5">
-      <form action={login} className="flex w-full max-w-sm flex-col gap-4">
+      <div className="flex w-full max-w-sm flex-col gap-4">
         <div>
           <h1 className="text-xl font-semibold">Chairtime</h1>
           <p className="mt-1 text-sm text-slate-500">เข้าสู่ระบบหลังร้าน</p>
         </div>
 
-        {error ? (
+        {message ? (
           <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
-            อีเมลหรือรหัสผ่านไม่ถูกต้อง
+            {message}
           </p>
         ) : null}
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">อีเมล</span>
-          <input
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900"
-          />
-        </label>
-
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">รหัสผ่าน</span>
-          <input
-            name="password"
-            type="password"
-            required
-            autoComplete="current-password"
-            className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900"
-          />
-        </label>
-
-        <button
-          type="submit"
-          className="rounded-xl bg-teal-700 py-3 text-sm font-medium text-white"
+        <a
+          href="/auth/start?provider=line"
+          className="flex items-center justify-center gap-2 rounded-xl bg-[#06C755] py-3 text-sm font-medium text-white"
         >
-          เข้าสู่ระบบ
-        </button>
-      </form>
+          เข้าสู่ระบบด้วย LINE
+        </a>
+
+        <a
+          href="/auth/start?provider=google"
+          className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-medium text-slate-800 dark:border-slate-700 dark:text-slate-100"
+        >
+          เข้าสู่ระบบด้วย Google
+        </a>
+
+        <p className="text-center text-xs text-slate-400">
+          ยังไม่มีร้าน?{' '}
+          <a href="/auth/start?provider=line" className="underline">
+            สมัครใช้งานฟรี
+          </a>
+        </p>
+      </div>
     </main>
   );
 }
