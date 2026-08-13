@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+env:
+  DATABASE_SUPERUSER_URL: postgresql://postgres:postgres@localhost:5432/postgres
+  DATABASE_URL: postgresql://chairtime:chairtime@localhost:5432/chairtime
+  DATABASE_URL_ADMIN: postgresql://postgres:postgres@localhost:5432/chairtime
+  DATABASE_URL_TEST: postgresql://chairtime:chairtime@localhost:5432/chairtime_test
+  DATABASE_URL_TEST_ADMIN: postgresql://postgres:postgres@localhost:5432/chairtime_test
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # btree_gist and pgcrypto ship with the standard image; the EXCLUDE
+        # constraint will not build without btree_gist.
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create the application role and databases
+        run: pnpm tsx lib/db/bootstrap.ts
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      - run: pnpm lint
+
+      - run: pnpm typecheck
+
+      - run: pnpm test:unit
+
+      - run: pnpm test:integration
+
+      - name: Seed the development database
+        run: pnpm db:seed
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - run: pnpm test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

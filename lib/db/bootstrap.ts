@@ -7,6 +7,9 @@
  *   pnpm tsx lib/db/bootstrap.ts
  */
 import postgres from 'postgres';
+import { loadEnv } from '@/lib/env';
+
+loadEnv();
 
 const superUrl = process.env.DATABASE_SUPERUSER_URL ?? 'postgresql://postgres:postgres@localhost:5432/postgres';
 const appRole = process.env.APP_DB_ROLE ?? 'chairtime';
