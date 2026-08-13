@@ -15,6 +15,11 @@ export type AvailabilityQueryInput = z.infer<typeof availabilityQuerySchema>;
 export const createBookingSchema = z.object({
   tenantId: uuid,
   customerId: uuid.nullish(),
+  // Supplied by the public booking form instead of a customerId; the server
+  // finds or creates the customer record from these.
+  customerName: z.string().trim().min(1).max(120).nullish(),
+  customerPhone: z.string().trim().min(8).max(20).nullish(),
+  lineUserId: z.string().trim().max(64).nullish(),
   startsAt: z.iso.datetime({ offset: true }),
   serviceIds: z.array(uuid).min(1, 'ต้องเลือกบริการอย่างน้อย 1 อย่าง'),
   resourceId: uuid.optional(),

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { DateTime } from 'luxon';
-import { createBooking } from '@/lib/booking';
+import { createBookingInTx } from '@/lib/booking';
+import { withTenant } from '@/lib/db/tenant';
+import { resolveCustomer } from '@/lib/customer/upsert';
 import { BookingPolicyError, SlotTakenError, SlotUnavailableError } from '@/lib/booking/errors';
 import { createBookingSchema } from '@/lib/booking/schemas';
 
@@ -31,14 +33,27 @@ export async function POST(request: Request) {
   const input = parsed.data;
 
   try {
-    const booking = await createBooking({
-      tenantId: input.tenantId,
-      customerId: input.customerId ?? null,
-      startsAt: DateTime.fromISO(input.startsAt, { setZone: true }),
-      serviceIds: input.serviceIds,
-      preferredResourceId: input.resourceId,
-      source: input.source,
-      customerNote: input.customerNote ?? null,
+    // Customer lookup and booking share one transaction: a booking that fails
+    // the exclusion constraint must not leave a half-created customer behind.
+    const booking = await withTenant(input.tenantId, async (tx) => {
+      const customerId =
+        input.customerId ??
+        (await resolveCustomer(tx, {
+          tenantId: input.tenantId,
+          name: input.customerName,
+          phone: input.customerPhone,
+          lineUserId: input.lineUserId,
+        }));
+
+      return createBookingInTx(tx, {
+        tenantId: input.tenantId,
+        customerId,
+        startsAt: DateTime.fromISO(input.startsAt, { setZone: true }),
+        serviceIds: input.serviceIds,
+        preferredResourceId: input.resourceId,
+        source: input.source,
+        customerNote: input.customerNote ?? null,
+      });
     });
 
     return NextResponse.json(
