@@ -79,6 +79,16 @@ describe('earning points', () => {
     expect(lot!.pointsTotal).toBe(5);
     expect(lot!.pointsRemaining).toBe(5);
     expect(lot!.sourceId).toBe(booking.id);
+
+    const [queued] = await withTenant(shop.tenantId, (tx) =>
+      tx
+        .select()
+        .from(schema.notificationQueue)
+        .where(eq(schema.notificationQueue.template, 'points_earned')),
+    );
+    expect(queued).toBeDefined();
+    expect(queued!.customerId).toBe(shop.customerId);
+    expect(queued!.payload).toMatchObject({ points: 5, balance: 5 });
   });
 
   it('presses "เสร็จงาน" twice — points appear once', async () => {

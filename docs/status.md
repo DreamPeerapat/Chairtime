@@ -1,29 +1,29 @@
-# บันทึกสถานะ — Phase 2.5 เสร็จแล้ว
+# บันทึกสถานะ — Phase 5 เสร็จแล้ว
 
-อัปเดต: 13 สิงหาคม 2026
+อัปเดต: 14 สิงหาคม 2026
 branch: `claude/project-plan-wl774s`
 
 ## สรุปสั้น
 
-Phase 0–2.5 เสร็จแล้ว รวม self-serve signup แบบ OAuth เต็มรูปแบบ
-Phase 5–8 ยังไม่ได้ทำ แต่ **ตารางในฐานข้อมูลสร้างครบแล้วตั้งแต่ Phase 0**
+Phase 0–5 เสร็จแล้ว รวม self-serve signup แบบ OAuth เต็มรูปแบบ และระบบแต้มสะสม
+Phase 6–8 ยังไม่ได้ทำ แต่ **ตารางในฐานข้อมูลสร้างครบแล้วตั้งแต่ Phase 0**
 
 | Phase | สถานะ | หมายเหตุ |
 |---|---|---|
 | 0 — Setup | ✅ | ครบตาม schema ปัจจุบัน (6 ตารางใหม่ของ Phase 2.5 รวมแล้ว) |
 | 1 — Core booking | ✅ | ผ่านเกณฑ์ 50 request → สำเร็จ 1 |
 | 2 — LINE | ✅ | pipeline ครบ, ตารางคือ `tenant_line_oa` |
-| 2.5 — Self-serve signup | ✅ | OAuth (LINE+Google), onboarding, LINE OA wizard 4 ขั้น — ดูด้านล่าง |
+| 2.5 — Self-serve signup | ✅ | OAuth (LINE+Google), onboarding, LINE OA wizard 4 ขั้น |
 | 3 — หลังบ้าน | ✅ | auth เปลี่ยนเป็น OAuth ทั้งหมดแล้ว |
 | 4 — ลูกค้า | ✅ | ไม่กระทบ |
-| 5 — แต้ม | ⬜ | `lib/loyalty/` ยังว่าง |
-| 6 — Tier + Reward | ⬜ | |
+| 5 — แต้ม | ✅ | earn/redeem/expire/reconcile + notification + LINE command — ดูด้านล่าง |
+| 6 — Tier + Reward | ⬜ | tier คำนวณอัตโนมัติยังไม่มี (มีแค่ point_multiplier ที่ earn.ts อ่านถ้าตั้งเอง) |
 | 7 — Package | ⬜ | |
 | 8 — ขัดเงา | ⬜ | |
 
-**ผลทดสอบล่าสุด:** 95 unit + 58/59 integration + 19/20 e2e ผ่าน
-typecheck / lint / build ผ่านทั้งหมด — 3 เทสต์ที่ไม่ผ่านเป็นของเดิม
-ไม่เกี่ยวกับงาน Phase 2.5 (ดู "เทสต์ที่ไม่ผ่าน (ของเดิม ไม่ได้แตะ)" ด้านล่าง)
+**ผลทดสอบล่าสุด:** 95 unit + 80 integration + 19/20 e2e ผ่าน
+typecheck / lint / build ผ่านทั้งหมด — เทสต์เดียวที่ไม่ผ่านเป็นของเดิม
+ไม่เกี่ยวกับงานที่ทำ (ดู "เทสต์ที่ไม่ผ่าน (ของเดิม ไม่ได้แตะ)" ด้านล่าง)
 
 ---
 
@@ -173,20 +173,77 @@ signup จริงสักครั้งตามที่ `docs/prompts.md` 
 
 ### เทสต์ที่ไม่ผ่าน (ของเดิม ไม่ได้แตะ)
 
-สามตัวนี้ fail แบบไม่เกี่ยวกับ auth/Phase 2.5 เลย เช็คแล้วว่า fail อยู่ก่อน
-งานนี้ (ขึ้นกับเวลา/timing ตอนรัน ไม่ใช่โค้ดพัง):
-- `notifications.test.ts` "skips a reminder that would have to fire in the
-  past" — คำนวณจาก wall-clock เวลาที่รัน test พอดี ไม่ deterministic
-- `concurrency.test.ts` "collapses simultaneous..." — fail เฉพาะตอนรันพร้อม
-  ไฟล์อื่น (ผ่านทุกครั้งตอนรันเดี่ยวๆ) เป็น race timing ไม่ใช่ bug จริง
 - `admin.spec.ts` "opens a booking and changes its status" (e2e) — header
-  ทับปฏิทินตอนคลิก event เป็น UI timing ไม่เกี่ยวกับ auth
+  ทับปฏิทินตอนคลิก event เป็น UI timing ไม่เกี่ยวกับ auth หรือแต้ม
+  เจอทุกรอบที่รัน แต่ reproducible เฉพาะใน headless/CI viewport ไม่ใช่โค้ดพัง
+
+`notifications.test.ts` "skips a reminder..." และ `concurrency.test.ts`
+"collapses simultaneous..." ที่เคย flaky ตอน Phase 2.5 ผ่านหมดในรอบล่าสุด
+(ขึ้นกับเวลา/load ตอนรัน จริง ไม่ใช่ bug คงที่)
 
 ### สิ่งที่ยังใช้ได้ ไม่ต้องแตะ
 
 availability engine, booking + EXCLUDE constraint, notification queue + worker,
 LINE Flex message, ปฏิทินหลังร้าน, จัดการบริการ/ช่าง/เวลา, ลูกค้า + merge,
 `withTenant` + RLS, `lib/time/` — ทั้งหมดนี้ไม่ขึ้นกับ auth
+
+---
+
+## ✅ Phase 5 — แต้มสะสม (เสร็จแล้ว)
+
+`lib/loyalty/` ตาม `docs/logic.md` ข้อ 3 ทุกข้อ — เขียน test ก่อน implement
+ตามที่ CLAUDE.md บังคับสำหรับโฟลเดอร์นี้
+
+**earn.ts** — ให้แต้มเมื่อ `booking.status = 'completed'` เท่านั้น หัก
+`point_discount` และบริการที่ `point_earn_mode = 'none'` ออกจากฐานคำนวณก่อน
+คูณด้วย tier multiplier แล้วปัดเศษตาม `point_rule.rounding` กันซ้ำสองชั้น:
+เช็ค `point_ledger` ก่อนทำงาน (เร็ว) และพึ่ง unique index `point_ledger_idem`
+เป็นตัวค้ำจริง (ผ่าน nested transaction/SAVEPOINT กันไม่ให้แพ้ race แล้วทำ
+transaction ที่เรียกมาทั้งก้อนพัง) — `point_earn_mode` มีแค่ `none` ที่มีผลจริง
+ตามอัลกอริทึมที่ logic.md เขียนไว้ ส่วน `fixed`/`multiplier` ประกาศไว้ใน schema
+แต่ยังไม่มี logic เฉพาะ (ของเดิมไม่ได้กำหนดไว้ชัด รอตัดสินใจถ้าจะใช้จริง)
+
+**redeem.ts** — FIFO ตาม `expires_at NULLS LAST, earned_at` ล็อกด้วย
+`SELECT ... FOR UPDATE` ยืนยันแล้วด้วยเทสต์จริง (ไม่ใช่แค่ใช้เหตุผล) ว่า 2
+transaction แย่งใช้แต้มพร้อมกันเหลือผู้ชนะ 1 ไม่มีทาง balance ติดลบ เงินทุก
+จุด (มูลค่าแต้มที่แลก, ยอดที่เหลือจ่าย) คำนวณผ่าน `toSatang`/`fromSatang`
+เดิมตามกฎเหล็กข้อ 5 — มีแค่ `baht_per_point` (เป็นตัวหาร ไม่ใช่ยอดเงินที่เก็บ)
+ที่ยังเป็น float ธรรมดา
+
+**expire.ts + reconcile.ts** — cron รายวันที่ `/api/cron/loyalty`: หมดอายุ
+lot แล้วต้องตรงกันทั้ง 3 ที่ (`customer.point_balance`, `SUM(point_lot)`,
+`SUM(point_ledger)`) ตามข้อ 4 เป๊ะ ถ้าไม่ตรง — log แล้วรายงานผ่าน JSON
+response ของ cron (ยังไม่มี Sentry/alert ช่องทางอื่น เป็น solo-dev ต้องเช็ค
+log เอง)
+
+**ผูกกับปุ่ม "เสร็จแล้ว"** — เจอบั๊กเดิมตอนแก้ `setBookingStatus`:
+กดปุ่ม "เสร็จแล้ว" ซ้ำ (ไม่ใช่แค่เรื่องแต้ม) จะบวก `visitCount`/
+`lifetimeSpend` ซ้ำทุกครั้งเพราะไม่เคยเช็คสถานะเดิมก่อนหน้า แก้ให้ทำ
+side-effect พวกนี้ (รวมถึง earn) เฉพาะตอนเปลี่ยนเข้า `completed` ครั้งแรก
+เท่านั้น เพิ่มช่องใส่ "ใช้แต้มลูกค้า" ใน booking drawer ที่ redeem ก่อนคำนวณ
+แต้มที่จะได้ (ตามลำดับที่ logic.md ข้อ 3.1 กำหนด)
+
+**Notification** — `points_earned` ส่งอัตโนมัติหลัง earn (บอกแต้มคงเหลือด้วย
+ตามที่ logic.md ขอ) `points_expiring` เข้าคิวทุกวันสำหรับ lot ที่จะหมดอายุ
+ใน 30 วัน กันส่งซ้ำด้วย dedupe key ผูกกับ lot id
+
+**"หน้าดูแต้มใน LIFF"** — แทนที่จะทำเป็นหน้าเว็บ ผมทำเป็นคำสั่งแชท
+"แต้มของฉัน" ใน LINE bot (เหมือน "คิวของฉัน" ที่มีอยู่แล้ว) เพราะหน้า LIFF
+จริงต้องรู้ตัวตนลูกค้าผ่าน `@line/liff` SDK ฝั่ง client ซึ่ง**ยังไม่มีอยู่ใน
+โปรเจกต์และเป็น dependency ใหม่ที่ CLAUDE.md สั่งให้ถามก่อนเพิ่ม** ทางแชท
+ใช้ `userId` ที่ LINE ยืนยันมาให้ในทุก webhook event อยู่แล้ว ปลอดภัยกว่า
+และไม่ต้องเพิ่ม dependency — **ถ้าต้องการหน้าเว็บจริงในตัว LIFF ต้องตัดสินใจ
+เรื่องเพิ่ม `@line/liff` ก่อน**
+
+**ตั้งค่ากติกาแต้ม** — `/dashboard/settings/loyalty` แก้ `baht_per_point`,
+การปัดเศษ, มูลค่าแต้ม, ขั้นต่ำ/สูงสุดการใช้, อายุแต้ม, โบนัสต่างๆ ได้
+จำกัดไว้ที่ owner เท่านั้น (สูงกว่าหน้าตั้งค่าอื่นที่ manager แก้ได้) เพราะ
+กระทบส่วนต่างกำไรโดยตรง
+
+**ยังไม่ได้ทำ (นอกเหนือจาก Phase 5):** cron `/api/cron/loyalty` ยังไม่ได้
+ตั้ง schedule จริงบน platform (เหมือน cron อื่นๆ ที่มีอยู่ก่อน ต้องตั้งเองตอน
+deploy — ดู `docs/deploy.md`), หน้า LIFF จริงตามที่อธิบายไว้ข้างบน, และ
+`fixed`/`multiplier` point_earn_mode ยังไม่มี logic เฉพาะ
 
 ---
 
@@ -200,18 +257,20 @@ LINE Flex message, ปฏิทินหลังร้าน, จัดกา�
 ที่ทำมาทั้งหมดตรวจสอบด้วยการ mint session ตรงๆ กับยิง HTTP endpoint จริง
 ไม่เคยผ่านหน้า consent ของ LINE/Google จริงเพราะไม่มี credential ในนี้
 
+**ตัดสินใจก่อนไปต่อ:** อยากได้หน้า "แต้มของฉัน" เป็นหน้าเว็บจริงใน LIFF
+ไหม ถ้าใช่ต้องเพิ่ม `@line/liff` (npm package ทางการของ LINE, เล็ก) —
+ตอนนี้ทำเป็นคำสั่งแชท "แต้มของฉัน" แทนไปก่อนเพราะไม่ต้องเพิ่ม dependency
+(ดูรายละเอียดในหัวข้อ Phase 5 ด้านบน)
+
 **ถ้าจะเขียนต่อ** เรียงตามความคุ้ม:
 
 1. **แก้ข้อจำกัดข้อ 1** (เวลาทำการหลายช่วง) — ร้านไทยพักเที่ยงเยอะมาก
    งานไม่กี่ชั่วโมง (`/onboarding/setup` ตอนนี้ก็ตั้งได้แค่ช่วงเดียวเหมือนกัน
    ด้วยเหตุผลเดียวกัน)
 2. **ตัดสินใจข้อจำกัดข้อ 2** — เป็นเรื่อง UX ที่จะเจอตอนร้านคนเยอะ
-3. **Phase 5 (แต้ม)** — `docs/logic.md` ข้อ 3 เขียนละเอียดที่สุดแล้ว
-   และ `docs/prompts.md` ระบุเคสทดสอบไว้ครบ:
-   - กด "เสร็จงาน" 2 ครั้ง → แต้มขึ้นครั้งเดียว
-   - ใช้แต้มจาก 3 lot หมดอายุคนละวัน → หักจากที่ใกล้หมดก่อน
-   - ใช้แต้มพร้อมกัน 2 transaction → ต้องมี 1 อันล้มเหลว ไม่ใช่ balance ติดลบ
-   - จ่ายบิลด้วยแต้มบางส่วน → ได้แต้มใหม่จากเฉพาะส่วนที่จ่ายเงินสด
+3. **Phase 6 (Tier + Reward)** — `point_multiplier` ต่อ tier earn.ts อ่านอยู่
+   แล้ว แต่ยังไม่มี cron เลื่อนขั้นอัตโนมัติ (`docs/logic.md` ข้อ 3.5) และ
+   ยังไม่มีแคตตาล็อกของรางวัลให้แลก
 
 **บั๊กเล็กที่เจอระหว่างทาง ยังไม่ได้แก้ (ไม่เกี่ยวกับ auth):**
 `lib/db/seed/index.ts` และสคริปต์อื่นที่เขียนแบบ

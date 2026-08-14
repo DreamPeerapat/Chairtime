@@ -28,7 +28,7 @@ export const REMINDER_OFFSETS: Partial<Record<NotificationTemplate, { minutesBef
  */
 export function dedupeKey(
   template: NotificationTemplate,
-  entity: 'booking' | 'customer',
+  entity: 'booking' | 'customer' | 'lot',
   entityId: string,
   discriminator?: string,
 ): string {

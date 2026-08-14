@@ -33,6 +33,7 @@ interface Props {
   }>;
   lineConnected: boolean;
   liffId: string | null;
+  children?: React.ReactNode;
 }
 
 export function SettingsView(props: Props) {
@@ -172,6 +173,8 @@ export function SettingsView(props: Props) {
           </ul>
         </section>
       ) : null}
+
+      {props.children}
     </div>
   );
 }

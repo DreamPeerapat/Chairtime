@@ -14,6 +14,8 @@ import { sql } from 'drizzle-orm';
 import { schema } from '@/lib/db/client';
 import type { TenantTx } from '@/lib/db/tenant';
 import { findSqlState } from '@/lib/booking/errors';
+import { enqueue } from '@/lib/notifications/queue';
+import { dedupeKey } from '@/lib/notifications/templates';
 import { applyRounding, getPointRule, getTierMultiplier } from './rules';
 
 const UNIQUE_VIOLATION = '23505';
@@ -123,6 +125,17 @@ export async function earnPointsForBooking(
         lotId: lot!.id,
         sourceType: 'booking',
         sourceId: bookingId,
+      });
+
+      // docs/logic.md §5 "points_earned" — sent after the job is done, with
+      // the resulting balance so the message is useful on its own.
+      await enqueue(tx2, {
+        tenantId,
+        customerId: bookingRow.customerId!,
+        template: 'points_earned',
+        scheduledAt: DateTime.now(),
+        payload: { bookingId, points, balance: updatedCustomer!.pointBalance },
+        dedupeKey: dedupeKey('points_earned', 'booking', bookingId),
       });
 
       return { pointsEarned: points };

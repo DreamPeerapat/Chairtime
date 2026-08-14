@@ -24,6 +24,7 @@ import { findTemplate } from './templates';
 import { isExclusionViolation } from '@/lib/booking/errors';
 import { earnPointsForBooking } from '@/lib/loyalty/earn';
 import { redeemPoints } from '@/lib/loyalty/redeem';
+import { pointRuleFormSchema } from '@/lib/loyalty/validation';
 
 export interface ActionResult {
   ok: boolean;
@@ -832,4 +833,55 @@ export async function applyShopTemplate(input: unknown): Promise<ActionResult & 
   } catch (error) {
     return fail(error instanceof Error ? error.message : 'ใช้เทมเพลตไม่สำเร็จ');
   }
+}
+
+// ---------------------------------------------------------------------
+// Loyalty rule — docs/logic.md ข้อ 3
+// ---------------------------------------------------------------------
+
+export async function savePointRule(input: unknown): Promise<ActionResult> {
+  const session = await requireSession('owner'); // touches how much every future booking earns/costs
+  const parsed = pointRuleFormSchema.safeParse(input);
+  if (!parsed.success) return fail('ข้อมูลไม่ถูกต้อง');
+  const data = parsed.data;
+
+  if (data.maxRedeemPercent > 0 && data.minRedeemPoints * data.pointValueBaht === 0) {
+    return fail('ตั้งค่ามูลค่าแต้มก่อนเปิดให้ใช้แต้ม');
+  }
+
+  await withTenant(session.tenantId, (tx) =>
+    tx
+      .insert(schema.pointRule)
+      .values({
+        tenantId: session.tenantId,
+        bahtPerPoint: String(data.bahtPerPoint),
+        rounding: data.rounding,
+        pointValueBaht: String(data.pointValueBaht),
+        minRedeemPoints: data.minRedeemPoints,
+        maxRedeemPercent: String(data.maxRedeemPercent),
+        expiryMonths: data.expiryMonths,
+        signupBonus: data.signupBonus,
+        birthdayBonus: data.birthdayBonus,
+        referralBonus: data.referralBonus,
+        isActive: data.isActive,
+      })
+      .onConflictDoUpdate({
+        target: schema.pointRule.tenantId,
+        set: {
+          bahtPerPoint: String(data.bahtPerPoint),
+          rounding: data.rounding,
+          pointValueBaht: String(data.pointValueBaht),
+          minRedeemPoints: data.minRedeemPoints,
+          maxRedeemPercent: String(data.maxRedeemPercent),
+          expiryMonths: data.expiryMonths,
+          signupBonus: data.signupBonus,
+          birthdayBonus: data.birthdayBonus,
+          referralBonus: data.referralBonus,
+          isActive: data.isActive,
+        },
+      }),
+  );
+
+  revalidatePath('/dashboard/settings/loyalty');
+  return ok;
 }

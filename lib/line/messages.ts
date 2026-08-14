@@ -175,6 +175,7 @@ export function helpMessage(shopName: string, bookingUrl?: string | null): LineT
       'พิมพ์ข้อความเหล่านี้ได้เลยค่ะ',
       '• "คิวของฉัน" — ดูคิวที่จองไว้',
       '• "จองคิว" — เปิดหน้าจอง',
+      '• "แต้มของฉัน" — ดูแต้มสะสม',
       '• "ติดต่อ" — ข้อมูลติดต่อร้าน',
     ].join('\n'),
     ...(bookingUrl
@@ -195,4 +196,40 @@ export function contactMessage(shopName: string, phone: string | null, address: 
   if (phone) lines.push(`โทร ${phone}`);
   if (address) lines.push(address);
   return { type: 'text', text: lines.join('\n') };
+}
+
+/** docs/logic.md §5 "points_earned" — "หลังจบงาน บอกแต้มคงเหลือด้วย". */
+export function pointsEarnedMessage(data: { shopName: string; points: number; balance: number }): LineTextMessage {
+  return {
+    type: 'text',
+    text: [
+      `ได้รับ ${data.points} แต้มจาก ${data.shopName} ค่ะ`,
+      `แต้มคงเหลือ ${data.balance} แต้ม`,
+    ].join('\n'),
+  };
+}
+
+/** Reply to "แต้มของฉัน" — docs/roadmap.md Phase 5 "หน้าดูแต้มใน LIFF" without a page. */
+export function myPointsMessage(data: {
+  shopName: string;
+  balance: number;
+  nextExpiry: { points: number; expiresAt: DateTime } | null;
+}): LineTextMessage {
+  const lines = [`แต้มของคุณที่ ${data.shopName}`, `คงเหลือ ${data.balance} แต้ม`];
+  if (data.nextExpiry) {
+    lines.push(`${data.nextExpiry.points} แต้มจะหมดอายุ ${formatThaiDate(data.nextExpiry.expiresAt)}`);
+  }
+  return { type: 'text', text: lines.join('\n') };
+}
+
+/** docs/logic.md §5 "points_expiring" — sent once, 30 days before a lot expires. */
+export function pointsExpiringMessage(data: { shopName: string; points: number; expiresAt: DateTime }): LineTextMessage {
+  return {
+    type: 'text',
+    text: [
+      `แต้ม ${data.points} แต้มจาก ${data.shopName} กำลังจะหมดอายุ`,
+      `วันที่ ${formatThaiDate(data.expiresAt)}`,
+      'ใช้ก่อนหมดอายุนะคะ',
+    ].join('\n'),
+  };
 }

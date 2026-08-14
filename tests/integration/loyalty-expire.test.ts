@@ -3,11 +3,13 @@
  * ข้อ 6: "แต้มหมดอายุแล้วยอดต้องตรงกันทั้ง balance, lot, ledger".
  */
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { DateTime } from 'luxon';
 import { eq, sql } from 'drizzle-orm';
 import { schema, sqlClient } from '@/lib/db/client';
 import { withTenant } from '@/lib/db/tenant';
 import { expirePointsForTenant } from '@/lib/loyalty/expire';
 import { reconcileTenant } from '@/lib/loyalty/reconcile';
+import { enqueuePointsExpiringForTenant } from '@/lib/loyalty/notifications';
 import { createSimpleShop, resetDatabase } from '../support/db';
 
 afterAll(async () => {
@@ -108,5 +110,24 @@ describe('reconciliation', () => {
     const mismatches = await withTenant(shop.tenantId, (tx) => reconcileTenant(tx, shop.tenantId));
     expect(mismatches).toHaveLength(1);
     expect(mismatches[0]).toMatchObject({ customerId: shop.customerId, balance: 999, lotSum: 30, ledgerSum: 30 });
+  });
+});
+
+describe('points_expiring notification', () => {
+  it('queues one notice for a lot expiring within 30 days, and only once', async () => {
+    await grantLot(20, DateTime.now().plus({ days: 10 }).toJSDate());
+    await grantLot(20, DateTime.now().plus({ days: 90 }).toJSDate()); // outside the window
+    await grantLot(20, null); // never expires
+
+    const first = await withTenant(shop.tenantId, (tx) => enqueuePointsExpiringForTenant(tx, shop.tenantId));
+    expect(first).toBe(1);
+
+    const second = await withTenant(shop.tenantId, (tx) => enqueuePointsExpiringForTenant(tx, shop.tenantId));
+    expect(second).toBe(1); // still "queues" a row, but the dedupe key stops a duplicate
+
+    const rows = await withTenant(shop.tenantId, (tx) =>
+      tx.select().from(schema.notificationQueue).where(eq(schema.notificationQueue.template, 'points_expiring')),
+    );
+    expect(rows).toHaveLength(1);
   });
 });

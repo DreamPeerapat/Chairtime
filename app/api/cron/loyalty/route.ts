@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server';
 import { forEachTenant } from '@/lib/db/tenant';
 import { expirePointsForTenant } from '@/lib/loyalty/expire';
 import { reconcileTenant } from '@/lib/loyalty/reconcile';
+import { enqueuePointsExpiringForTenant } from '@/lib/loyalty/notifications';
 import { safeEqual } from '@/lib/crypto';
 
 export const dynamic = 'force-dynamic';
@@ -32,20 +33,22 @@ export async function GET(request: Request) {
 
   const results = await forEachTenant(async (tenantId, tx) => {
     const expired = await expirePointsForTenant(tx, tenantId);
+    const expiringNotified = await enqueuePointsExpiringForTenant(tx, tenantId);
     const mismatches = await reconcileTenant(tx, tenantId);
     for (const mismatch of mismatches) {
       console.error('loyalty reconcile mismatch', { tenantId, ...mismatch });
     }
-    return { ...expired, mismatchCount: mismatches.length };
+    return { ...expired, expiringNotified, mismatchCount: mismatches.length };
   });
 
   const totals = results.reduce(
     (acc, { result }) => ({
       lotsExpired: acc.lotsExpired + result.lotsExpired,
       pointsLost: acc.pointsLost + result.pointsLost,
+      expiringNotified: acc.expiringNotified + result.expiringNotified,
       mismatchCount: acc.mismatchCount + result.mismatchCount,
     }),
-    { lotsExpired: 0, pointsLost: 0, mismatchCount: 0 },
+    { lotsExpired: 0, pointsLost: 0, expiringNotified: 0, mismatchCount: 0 },
   );
 
   return NextResponse.json({ tenantsProcessed: results.length, ...totals });

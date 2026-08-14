@@ -16,6 +16,7 @@ import {
   contactMessage,
   helpMessage,
   myBookingsMessage,
+  myPointsMessage,
   type BookingMessageData,
 } from './messages';
 import type { LineMessage, LineWebhookEvent } from './types';
@@ -73,6 +74,20 @@ export async function handleEvent(
     return {
       replyToken: event.replyToken,
       messages: [myBookingsMessage(ctx.shopName, bookings, bookingUrl(ctx))],
+    };
+  }
+
+  if (matches(text, ['แต้มของฉัน', 'แต้มฉัน', 'ดูแต้ม', 'my points', 'mypoints'])) {
+    if (!lineUserId) {
+      return {
+        replyToken: event.replyToken,
+        messages: [{ type: 'text', text: 'ขออภัยค่ะ ระบบไม่สามารถระบุตัวตนของคุณได้' }],
+      };
+    }
+    const summary = await loadPointsSummary(tx, ctx.tenantId, lineUserId);
+    return {
+      replyToken: event.replyToken,
+      messages: [myPointsMessage({ shopName: ctx.shopName, ...summary })],
     };
   }
 
@@ -196,4 +211,41 @@ async function loadUpcomingBookings(
     total: b.total,
     manageUrl: bookingUrl(ctx),
   }));
+}
+
+interface PointsSummary {
+  balance: number;
+  nextExpiry: { points: number; expiresAt: DateTime } | null;
+}
+
+async function loadPointsSummary(
+  tx: TenantTx,
+  tenantId: string,
+  lineUserId: string,
+): Promise<PointsSummary> {
+  const [customer] = await tx
+    .select({ id: schema.customer.id, pointBalance: schema.customer.pointBalance })
+    .from(schema.customer)
+    .where(and(eq(schema.customer.tenantId, tenantId), eq(schema.customer.lineUserId, lineUserId)));
+  if (!customer) return { balance: 0, nextExpiry: null };
+
+  const [soonestLot] = await tx
+    .select({ pointsRemaining: schema.pointLot.pointsRemaining, expiresAt: schema.pointLot.expiresAt })
+    .from(schema.pointLot)
+    .where(
+      and(
+        eq(schema.pointLot.customerId, customer.id),
+        gte(schema.pointLot.pointsRemaining, 1),
+        gte(schema.pointLot.expiresAt, new Date()),
+      ),
+    )
+    .orderBy(asc(schema.pointLot.expiresAt))
+    .limit(1);
+
+  return {
+    balance: customer.pointBalance,
+    nextExpiry: soonestLot?.expiresAt
+      ? { points: soonestLot.pointsRemaining, expiresAt: DateTime.fromJSDate(soonestLot.expiresAt) }
+      : null,
+  };
 }

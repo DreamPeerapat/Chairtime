@@ -13,6 +13,8 @@ import { LineApiError, createLineClient, loadLineCredentials } from '@/lib/line/
 import {
   bookingCancelledMessage,
   bookingConfirmedMessage,
+  pointsEarnedMessage,
+  pointsExpiringMessage,
   reminder24hMessage,
   reminder2hMessage,
   type BookingMessageData,
@@ -110,6 +112,10 @@ async function render(
   tenantId: string,
   item: DueNotification,
 ): Promise<Rendered | null> {
+  if (item.template === 'points_earned' || item.template === 'points_expiring') {
+    return renderPointsMessage(tx, tenantId, item);
+  }
+
   const bookingId = typeof item.payload.bookingId === 'string' ? item.payload.bookingId : null;
   if (!bookingId) return null;
 
@@ -133,6 +139,37 @@ async function render(
     default:
       return null;
   }
+}
+
+async function renderPointsMessage(
+  tx: TenantTx,
+  tenantId: string,
+  item: DueNotification,
+): Promise<Rendered | null> {
+  if (!item.customerId) return null;
+
+  const [customer] = await tx
+    .select({ lineUserId: schema.customer.lineUserId })
+    .from(schema.customer)
+    .where(eq(schema.customer.id, item.customerId));
+  if (!customer?.lineUserId) return null;
+
+  const [tenantRow] = await tx.select({ shopName: schema.tenant.name }).from(schema.tenant).where(eq(schema.tenant.id, tenantId));
+  const shopName = tenantRow?.shopName ?? '';
+
+  if (item.template === 'points_earned') {
+    const points = typeof item.payload.points === 'number' ? item.payload.points : 0;
+    const balance = typeof item.payload.balance === 'number' ? item.payload.balance : 0;
+    return { lineUserId: customer.lineUserId, message: pointsEarnedMessage({ shopName, points, balance }) };
+  }
+
+  const points = typeof item.payload.points === 'number' ? item.payload.points : 0;
+  const expiresAtRaw = typeof item.payload.expiresAt === 'string' ? item.payload.expiresAt : null;
+  if (!expiresAtRaw) return null;
+  return {
+    lineUserId: customer.lineUserId,
+    message: pointsExpiringMessage({ shopName, points, expiresAt: DateTime.fromISO(expiresAtRaw) }),
+  };
 }
 
 export interface LoadedBookingMessage {
