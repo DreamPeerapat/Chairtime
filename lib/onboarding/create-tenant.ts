@@ -76,6 +76,7 @@ export async function createTenantForStaff(input: CreateTenantInput): Promise<Cr
     await tx.insert(schema.staffTenant).values({ staffId: input.staffUserId, tenantId: created.id, role: 'owner' });
     if (isTrial) {
       await tx.insert(schema.tenantBookingPolicy).values({ tenantId: created.id });
+      await tx.insert(schema.pointRule).values({ tenantId: created.id });
       await copyBusinessTemplate(tx, created.id, input.businessType);
     }
   });
@@ -88,6 +89,7 @@ export async function activatePaidTenant(tenantId: string, businessType: string)
   await withTenant(tenantId, async (tx) => {
     await tx.update(schema.tenant).set({ status: 'active' }).where(eq(schema.tenant.id, tenantId));
     await tx.insert(schema.tenantBookingPolicy).values({ tenantId });
+    await tx.insert(schema.pointRule).values({ tenantId });
     await copyBusinessTemplate(tx, tenantId, businessType);
   });
 }

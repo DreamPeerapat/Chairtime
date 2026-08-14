@@ -17,11 +17,13 @@ import { requireSession } from '@/lib/auth';
 import { toPlainDate, toTstzRange } from '@/lib/time';
 import { findSlots, loadAvailabilityContext } from '@/lib/availability';
 import { cancelBookingInTx } from '@/lib/booking/cancel';
-import { createBookingInTx } from '@/lib/booking/create';
+import { createBookingInTx, toSatang, fromSatang } from '@/lib/booking/create';
 import { resolveCustomer, mergeCustomers } from '@/lib/customer/upsert';
 import { cancelBookingNotifications, enqueueBookingConfirmation } from '@/lib/notifications/queue';
 import { findTemplate } from './templates';
 import { isExclusionViolation } from '@/lib/booking/errors';
+import { earnPointsForBooking } from '@/lib/loyalty/earn';
+import { redeemPoints } from '@/lib/loyalty/redeem';
 
 export interface ActionResult {
   ok: boolean;
@@ -41,6 +43,9 @@ const ok: ActionResult = { ok: true };
 const statusSchema = z.object({
   bookingId: z.uuid(),
   status: z.enum(['pending', 'confirmed', 'in_progress', 'completed', 'no_show', 'cancelled']),
+  // "จ่ายบิลด้วยแต้มบางส่วน" — docs/logic.md ข้อ 3.1/3.2. Only looked at when
+  // this call is the one that first marks the booking completed.
+  redeemPoints: z.coerce.number().int().min(0).optional(),
 });
 
 export async function setBookingStatus(input: unknown): Promise<ActionResult> {
@@ -48,71 +53,101 @@ export async function setBookingStatus(input: unknown): Promise<ActionResult> {
   const parsed = statusSchema.safeParse(input);
   if (!parsed.success) return fail('ข้อมูลไม่ถูกต้อง');
 
-  const { bookingId, status } = parsed.data;
+  const { bookingId, status, redeemPoints: pointsToRedeem } = parsed.data;
   const now = DateTime.now();
 
-  await withTenant(session.tenantId, async (tx) => {
-    if (status === 'cancelled') {
-      await cancelBookingInTx(tx, {
-        tenantId: session.tenantId,
-        bookingId,
-        bypassCutoff: true, // shop staff are not bound by the customer cutoff
-        reason: 'ยกเลิกโดยร้าน',
-        now,
-      });
-      return;
-    }
+  try {
+    await withTenant(session.tenantId, async (tx) => {
+      if (status === 'cancelled') {
+        await cancelBookingInTx(tx, {
+          tenantId: session.tenantId,
+          bookingId,
+          bypassCutoff: true, // shop staff are not bound by the customer cutoff
+          reason: 'ยกเลิกโดยร้าน',
+          now,
+        });
+        return;
+      }
 
-    const patch: Partial<typeof schema.booking.$inferInsert> = {
-      status,
-      updatedAt: now.toJSDate(),
-    };
-    if (status === 'completed') {
-      patch.completedAt = now.toJSDate();
-      // Points are Phase 5's job and belong in lib/loyalty; iron rule #2 says
-      // they are only ever created there, on completion.
-    }
-
-    await tx
-      .update(schema.booking)
-      .set(patch)
-      .where(and(eq(schema.booking.tenantId, session.tenantId), eq(schema.booking.id, bookingId)));
-
-    if (status === 'no_show' || status === 'completed') {
-      // Nothing left to remind them about.
-      await cancelBookingNotifications(tx, session.tenantId, bookingId);
-    }
-
-    if (status === 'no_show') {
-      const [row] = await tx
-        .select({ customerId: schema.booking.customerId })
+      const [current] = await tx
+        .select({
+          status: schema.booking.status,
+          customerId: schema.booking.customerId,
+          total: schema.booking.total,
+        })
         .from(schema.booking)
-        .where(eq(schema.booking.id, bookingId));
-      if (row?.customerId) {
+        .where(and(eq(schema.booking.tenantId, session.tenantId), eq(schema.booking.id, bookingId)));
+      if (!current) throw new Error('ไม่พบรายการจองนี้');
+
+      // Re-pressing a status that already applied must not re-run its side
+      // effects — this is what makes "กดปุ่มเสร็จงาน 2 ครั้ง" safe for
+      // visitCount/lifetimeSpend/points, not just the point_ledger unique index.
+      const enteringCompleted = status === 'completed' && current.status !== 'completed';
+      const enteringNoShow = status === 'no_show' && current.status !== 'no_show';
+
+      const patch: Partial<typeof schema.booking.$inferInsert> = {
+        status,
+        updatedAt: now.toJSDate(),
+      };
+      if (enteringCompleted) {
+        patch.completedAt = now.toJSDate();
+      }
+
+      // Redeem first, so the completed total already excludes what was paid
+      // with points before points are earned on what's left — ข้อ 3.1 step 1.
+      if (enteringCompleted && pointsToRedeem && pointsToRedeem > 0 && current.customerId) {
+        const redemption = await redeemPoints(tx, {
+          tenantId: session.tenantId,
+          customerId: current.customerId,
+          pointsWanted: pointsToRedeem,
+          billTotalSatang: toSatang(current.total),
+          sourceType: 'booking',
+          sourceId: bookingId,
+        });
+        patch.pointDiscount = fromSatang(redemption.valueSatang);
+        patch.pointsSpent = redemption.pointsRedeemed;
+        patch.total = fromSatang(Math.max(0, toSatang(current.total) - redemption.valueSatang));
+      }
+
+      await tx
+        .update(schema.booking)
+        .set(patch)
+        .where(and(eq(schema.booking.tenantId, session.tenantId), eq(schema.booking.id, bookingId)));
+
+      if (status === 'no_show' || status === 'completed') {
+        // Nothing left to remind them about.
+        await cancelBookingNotifications(tx, session.tenantId, bookingId);
+      }
+
+      if (enteringNoShow && current.customerId) {
         await tx
           .update(schema.customer)
           .set({ noShowCount: sql`${schema.customer.noShowCount} + 1` })
-          .where(eq(schema.customer.id, row.customerId));
+          .where(eq(schema.customer.id, current.customerId));
       }
-    }
 
-    if (status === 'completed') {
-      const [row] = await tx
-        .select({ customerId: schema.booking.customerId, total: schema.booking.total })
-        .from(schema.booking)
-        .where(eq(schema.booking.id, bookingId));
-      if (row?.customerId) {
+      if (enteringCompleted && current.customerId) {
         await tx
           .update(schema.customer)
           .set({
             visitCount: sql`${schema.customer.visitCount} + 1`,
-            lifetimeSpend: sql`${schema.customer.lifetimeSpend} + ${row.total}::numeric`,
+            lifetimeSpend: sql`${schema.customer.lifetimeSpend} + ${patch.total ?? current.total}::numeric`,
             lastVisitAt: now.toJSDate(),
           })
-          .where(eq(schema.customer.id, row.customerId));
+          .where(eq(schema.customer.id, current.customerId));
+
+        const earned = await earnPointsForBooking(tx, session.tenantId, bookingId);
+        if (earned.pointsEarned > 0) {
+          await tx
+            .update(schema.booking)
+            .set({ pointsEarned: earned.pointsEarned })
+            .where(and(eq(schema.booking.tenantId, session.tenantId), eq(schema.booking.id, bookingId)));
+        }
       }
-    }
-  });
+    });
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : 'เปลี่ยนสถานะไม่สำเร็จ');
+  }
 
   revalidatePath('/dashboard');
   return ok;

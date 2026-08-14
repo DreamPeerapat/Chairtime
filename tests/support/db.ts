@@ -46,6 +46,14 @@ export async function createSimpleShop(options: {
   chairCount?: number;
   minLeadTimeMin?: number;
   durationMin?: number;
+  pointRule?: Partial<{
+    bahtPerPoint: number;
+    rounding: 'floor' | 'round' | 'ceil';
+    pointValueBaht: number;
+    minRedeemPoints: number;
+    maxRedeemPercent: number;
+    expiryMonths: number | null;
+  }>;
 }): Promise<SimpleShop> {
   const staffCount = options.staffCount ?? 1;
   const chairCount = options.chairCount ?? 1;
@@ -62,6 +70,16 @@ export async function createSimpleShop(options: {
       slotGranularityMin: 15,
       minLeadTimeMin: options.minLeadTimeMin ?? 0,
       maxAdvanceDays: 365,
+    });
+
+    await tx.insert(schema.pointRule).values({
+      tenantId,
+      bahtPerPoint: String(options.pointRule?.bahtPerPoint ?? 100),
+      rounding: options.pointRule?.rounding ?? 'floor',
+      pointValueBaht: String(options.pointRule?.pointValueBaht ?? 1),
+      minRedeemPoints: options.pointRule?.minRedeemPoints ?? 50,
+      maxRedeemPercent: String(options.pointRule?.maxRedeemPercent ?? 50),
+      expiryMonths: options.pointRule?.expiryMonths ?? null,
     });
 
     const [staffType] = await tx

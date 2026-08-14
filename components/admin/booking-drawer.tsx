@@ -32,6 +32,7 @@ export function BookingDrawer({
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [redeemPoints, setRedeemPoints] = useState('');
 
   const start = DateTime.fromISO(booking.startsAt).setZone(timezone);
   const end = DateTime.fromISO(booking.endsAt).setZone(timezone);
@@ -39,8 +40,9 @@ export function BookingDrawer({
 
   function change(next: string) {
     setError(null);
+    const points = next === 'completed' ? Number(redeemPoints || 0) : undefined;
     startTransition(async () => {
-      const result = await setBookingStatus({ bookingId: booking.id, status: next });
+      const result = await setBookingStatus({ bookingId: booking.id, status: next, redeemPoints: points });
       if (result.ok) onChanged();
       else setError(result.error ?? 'เปลี่ยนสถานะไม่สำเร็จ');
     });
@@ -89,6 +91,21 @@ export function BookingDrawer({
           <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
             {error}
           </p>
+        ) : null}
+
+        {booking.status !== 'completed' ? (
+          <label className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
+            ใช้แต้มลูกค้า (ถ้ามี ใส่ก่อนกด &quot;เสร็จแล้ว&quot;)
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={redeemPoints}
+              onChange={(e) => setRedeemPoints(e.target.value)}
+              placeholder="0"
+              className="w-24 rounded-lg border border-slate-200 px-2 py-1 text-right text-sm dark:border-slate-800 dark:bg-slate-900"
+            />
+          </label>
         ) : null}
 
         <div className="mt-4 flex flex-wrap gap-2">
