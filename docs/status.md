@@ -16,12 +16,12 @@ Phase 6–8 ยังไม่ได้ทำ แต่ **ตารางใน�
 | 2.5 — Self-serve signup | ✅ | OAuth (LINE+Google), onboarding, LINE OA wizard 4 ขั้น |
 | 3 — หลังบ้าน | ✅ | auth เปลี่ยนเป็น OAuth ทั้งหมดแล้ว |
 | 4 — ลูกค้า | ✅ | ไม่กระทบ |
-| 5 — แต้ม | ✅ | earn/redeem/expire/reconcile + notification + LINE command — ดูด้านล่าง |
+| 5 — แต้ม | ✅ | earn/redeem/expire/reconcile + notification + LINE command + LIFF page — ดูด้านล่าง |
 | 6 — Tier + Reward | ⬜ | tier คำนวณอัตโนมัติยังไม่มี (มีแค่ point_multiplier ที่ earn.ts อ่านถ้าตั้งเอง) |
 | 7 — Package | ⬜ | |
 | 8 — ขัดเงา | ⬜ | |
 
-**ผลทดสอบล่าสุด:** 95 unit + 80 integration + 19/20 e2e ผ่าน
+**ผลทดสอบล่าสุด:** 99 unit + 80 integration + 19/20 e2e ผ่าน
 typecheck / lint / build ผ่านทั้งหมด — เทสต์เดียวที่ไม่ผ่านเป็นของเดิม
 ไม่เกี่ยวกับงานที่ทำ (ดู "เทสต์ที่ไม่ผ่าน (ของเดิม ไม่ได้แตะ)" ด้านล่าง)
 
@@ -227,40 +227,58 @@ side-effect พวกนี้ (รวมถึง earn) เฉพาะตอ�
 ตามที่ logic.md ขอ) `points_expiring` เข้าคิวทุกวันสำหรับ lot ที่จะหมดอายุ
 ใน 30 วัน กันส่งซ้ำด้วย dedupe key ผูกกับ lot id
 
-**"หน้าดูแต้มใน LIFF"** — แทนที่จะทำเป็นหน้าเว็บ ผมทำเป็นคำสั่งแชท
-"แต้มของฉัน" ใน LINE bot (เหมือน "คิวของฉัน" ที่มีอยู่แล้ว) เพราะหน้า LIFF
-จริงต้องรู้ตัวตนลูกค้าผ่าน `@line/liff` SDK ฝั่ง client ซึ่ง**ยังไม่มีอยู่ใน
-โปรเจกต์และเป็น dependency ใหม่ที่ CLAUDE.md สั่งให้ถามก่อนเพิ่ม** ทางแชท
-ใช้ `userId` ที่ LINE ยืนยันมาให้ในทุก webhook event อยู่แล้ว ปลอดภัยกว่า
-และไม่ต้องเพิ่ม dependency — **ถ้าต้องการหน้าเว็บจริงในตัว LIFF ต้องตัดสินใจ
-เรื่องเพิ่ม `@line/liff` ก่อน**
+**"หน้าดูแต้มใน LIFF"** — ตอนแรกทำเป็นคำสั่งแชท "แต้มของฉัน" ใน LINE bot
+ก่อน (ไม่ต้องเพิ่ม dependency) แล้วผู้ใช้ยืนยันว่าต้องการหน้าเว็บจริงด้วย
+เลยเพิ่ม `@line/liff` (package ทางการของ LINE) และทำหน้า
+`/{tenantSlug}/points` จริง — ฝั่ง client เรียก `liff.getAccessToken()`
+เท่านั้น (ไม่เชื่อ `lineUserId` ที่ client ส่งมาตรงๆ) แล้วให้
+`/api/liff/points` เอา token นั้นไปยืนยันกับ LINE `/v2/profile` เองอีกที
+ก่อน query แต้ม — pattern เดียวกับที่ `lib/auth/oauth.ts` ใช้ตอน login
+`getPointsSummaryByLineUserId` (`lib/loyalty/summary.ts`) ใช้ร่วมกันทั้ง
+คำสั่งแชทและหน้าเว็บ ไม่ซ้ำโค้ด คำสั่งแชทยังอยู่เหมือนเดิม (เข้าถึงง่ายกว่า
+ไม่ต้องเปิดหน้าเว็บ) และตอนนี้แนบลิงก์ไปหน้า `/points` มาด้วยในข้อความ
 
 **ตั้งค่ากติกาแต้ม** — `/dashboard/settings/loyalty` แก้ `baht_per_point`,
 การปัดเศษ, มูลค่าแต้ม, ขั้นต่ำ/สูงสุดการใช้, อายุแต้ม, โบนัสต่างๆ ได้
 จำกัดไว้ที่ owner เท่านั้น (สูงกว่าหน้าตั้งค่าอื่นที่ manager แก้ได้) เพราะ
 กระทบส่วนต่างกำไรโดยตรง
 
-**ยังไม่ได้ทำ (นอกเหนือจาก Phase 5):** cron `/api/cron/loyalty` ยังไม่ได้
-ตั้ง schedule จริงบน platform (เหมือน cron อื่นๆ ที่มีอยู่ก่อน ต้องตั้งเองตอน
-deploy — ดู `docs/deploy.md`), หน้า LIFF จริงตามที่อธิบายไว้ข้างบน, และ
-`fixed`/`multiplier` point_earn_mode ยังไม่มี logic เฉพาะ
+**ยังไม่ได้ทำ (นอกเหนือจาก Phase 5):** `fixed`/`multiplier` point_earn_mode
+ยังไม่มี logic เฉพาะ (ดูหมายเหตุใน `earn.ts`)
+
+---
+
+## ✅ Cron scheduling + LIFF points page (เสร็จแล้ว)
+
+**`vercel.json`** — ตั้ง cron ให้ทั้ง 3 endpoint: `notifications` ทุกนาที,
+`trial-expiry` และ `loyalty` วันละครั้ง (ตี 2 เวลาไทย = 19:00 UTC)
+Vercel ส่ง header `Authorization: Bearer $CRON_SECRET` ให้เองถ้าตั้งค่า
+`CRON_SECRET` ไว้ใน environment variables ของ project — โค้ดที่เช็ค header
+นี้มีอยู่แล้วทุก route ไม่ต้องแก้อะไรเพิ่ม
+
+**⚠️ ข้อจำกัด Vercel Hobby (free) plan:** cron job รันได้ **วันละครั้งเท่านั้น**
+ต่อ 1 endpoint ทำให้ `notifications` (ที่ต้องรันทุกนาทีเพื่อส่ง reminder/
+confirmation ให้ทันเวลา) **จะไม่ทำงานตามที่ตั้งไว้ถ้ายังใช้ Hobby plan** —
+ต้องอัปเป็น Pro หรือใช้ scheduler ภายนอก (เช่น cron-job.org, GitHub Actions
+scheduled workflow) ยิง `GET /api/cron/notifications` ทุกนาทีแทน โดยใส่
+`Authorization: Bearer <CRON_SECRET>` เอง
 
 ---
 
 ## ทำอะไรต่อ
 
-**ก่อนขึ้นจริง (นอกเหนือจาก LINE credentials/cron/backup เดิม):**
-สมัคร LINE Login channel จริง + Google OAuth client จริง ใส่
-`LINE_LOGIN_CHANNEL_ID`/`LINE_LOGIN_CHANNEL_SECRET`/`GOOGLE_CLIENT_ID`/
-`GOOGLE_CLIENT_SECRET` ใน `.env.local` (ดูคอมเมนต์ใน `.env.example`) แล้ว
-เดิน signup flow จริงในเบราว์เซอร์สักครั้งตาม `docs/prompts.md` ข้อ 5.5 —
-ที่ทำมาทั้งหมดตรวจสอบด้วยการ mint session ตรงๆ กับยิง HTTP endpoint จริง
-ไม่เคยผ่านหน้า consent ของ LINE/Google จริงเพราะไม่มี credential ในนี้
-
-**ตัดสินใจก่อนไปต่อ:** อยากได้หน้า "แต้มของฉัน" เป็นหน้าเว็บจริงใน LIFF
-ไหม ถ้าใช่ต้องเพิ่ม `@line/liff` (npm package ทางการของ LINE, เล็ก) —
-ตอนนี้ทำเป็นคำสั่งแชท "แต้มของฉัน" แทนไปก่อนเพราะไม่ต้องเพิ่ม dependency
-(ดูรายละเอียดในหัวข้อ Phase 5 ด้านบน)
+**ก่อนขึ้นจริง:**
+1. สมัคร LINE Login channel จริง + Google OAuth client จริง ใส่
+   `LINE_LOGIN_CHANNEL_ID`/`LINE_LOGIN_CHANNEL_SECRET`/`GOOGLE_CLIENT_ID`/
+   `GOOGLE_CLIENT_SECRET` ใน production env (ดูคอมเมนต์ใน `.env.example`)
+   แล้วเดิน signup flow จริงในเบราว์เซอร์สักครั้งตาม `docs/prompts.md` ข้อ
+   5.5 — ที่ทำมาทั้งหมดตรวจสอบด้วยการ mint session ตรงๆ กับยิง HTTP
+   endpoint จริง ไม่เคยผ่านหน้า consent ของ LINE/Google จริงเพราะไม่มี
+   credential ในสภาพแวดล้อมนี้
+2. ตัดสินใจเรื่อง Vercel plan (Hobby vs Pro) สำหรับ cron ความถี่นาทีตามที่
+   อธิบายไว้ข้างบน หรือตั้ง external scheduler แทน
+3. ใส่เลขบัญชีธนาคารจริงใน `app/(onboarding)/onboarding/payment/page.tsx`
+   (ตอนนี้เป็น placeholder `xxx-x-xxxxx-x`)
 
 **ถ้าจะเขียนต่อ** เรียงตามความคุ้ม:
 

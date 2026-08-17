@@ -19,6 +19,7 @@ import {
   myPointsMessage,
   type BookingMessageData,
 } from './messages';
+import { getPointsSummaryByLineUserId } from '@/lib/loyalty/summary';
 import type { LineMessage, LineWebhookEvent } from './types';
 
 export interface WebhookContext {
@@ -84,10 +85,19 @@ export async function handleEvent(
         messages: [{ type: 'text', text: 'ขออภัยค่ะ ระบบไม่สามารถระบุตัวตนของคุณได้' }],
       };
     }
-    const summary = await loadPointsSummary(tx, ctx.tenantId, lineUserId);
+    const summary = await getPointsSummaryByLineUserId(tx, ctx.tenantId, lineUserId);
     return {
       replyToken: event.replyToken,
-      messages: [myPointsMessage({ shopName: ctx.shopName, ...summary })],
+      messages: [
+        myPointsMessage({
+          shopName: ctx.shopName,
+          balance: summary.balance,
+          nextExpiry: summary.nextExpiry
+            ? { points: summary.nextExpiry.points, expiresAt: DateTime.fromJSDate(summary.nextExpiry.expiresAt) }
+            : null,
+          pointsUrl: pointsUrl(ctx),
+        }),
+      ],
     };
   }
 
@@ -128,6 +138,17 @@ function bookingUrl(ctx: WebhookContext): string | null {
   if (ctx.liffId) return `https://liff.line.me/${ctx.liffId}`;
   const base = process.env.NEXT_PUBLIC_APP_URL;
   return base ? `${base.replace(/\/$/, '')}/${ctx.tenantSlug}` : null;
+}
+
+/**
+ * Not a liff.line.me deep link like bookingUrl: the shop's one registered
+ * LIFF endpoint URL is the booking page, and this codebase has no UI yet
+ * for configuring a second one for /points. The plain app URL still opens
+ * correctly — PointsView calls liff.init with withLoginOnExternalBrowser.
+ */
+function pointsUrl(ctx: WebhookContext): string | null {
+  const base = process.env.NEXT_PUBLIC_APP_URL;
+  return base ? `${base.replace(/\/$/, '')}/${ctx.tenantSlug}/points` : null;
 }
 
 /** A follower with no customer row yet gets one, so bookings can attach to it. */
@@ -213,39 +234,3 @@ async function loadUpcomingBookings(
   }));
 }
 
-interface PointsSummary {
-  balance: number;
-  nextExpiry: { points: number; expiresAt: DateTime } | null;
-}
-
-async function loadPointsSummary(
-  tx: TenantTx,
-  tenantId: string,
-  lineUserId: string,
-): Promise<PointsSummary> {
-  const [customer] = await tx
-    .select({ id: schema.customer.id, pointBalance: schema.customer.pointBalance })
-    .from(schema.customer)
-    .where(and(eq(schema.customer.tenantId, tenantId), eq(schema.customer.lineUserId, lineUserId)));
-  if (!customer) return { balance: 0, nextExpiry: null };
-
-  const [soonestLot] = await tx
-    .select({ pointsRemaining: schema.pointLot.pointsRemaining, expiresAt: schema.pointLot.expiresAt })
-    .from(schema.pointLot)
-    .where(
-      and(
-        eq(schema.pointLot.customerId, customer.id),
-        gte(schema.pointLot.pointsRemaining, 1),
-        gte(schema.pointLot.expiresAt, new Date()),
-      ),
-    )
-    .orderBy(asc(schema.pointLot.expiresAt))
-    .limit(1);
-
-  return {
-    balance: customer.pointBalance,
-    nextExpiry: soonestLot?.expiresAt
-      ? { points: soonestLot.pointsRemaining, expiresAt: DateTime.fromJSDate(soonestLot.expiresAt) }
-      : null,
-  };
-}

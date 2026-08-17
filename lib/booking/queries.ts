@@ -65,6 +65,17 @@ export async function findTenantBySlug(slug: string): Promise<TenantSummary | nu
   };
 }
 
+/** Only the LIFF id is read here — the token/secret stay encrypted and unread. */
+export async function loadLiffId(tenantId: string): Promise<string | null> {
+  const rows = await withTenant(tenantId, (tx) =>
+    tx
+      .select({ liffId: schema.tenantLineOa.liffId })
+      .from(schema.tenantLineOa)
+      .where(eq(schema.tenantLineOa.tenantId, tenantId)),
+  );
+  return rows[0]?.liffId ?? null;
+}
+
 export interface ServiceListItem {
   id: string;
   name: string;

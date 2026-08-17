@@ -209,17 +209,28 @@ export function pointsEarnedMessage(data: { shopName: string; points: number; ba
   };
 }
 
-/** Reply to "แต้มของฉัน" — docs/roadmap.md Phase 5 "หน้าดูแต้มใน LIFF" without a page. */
+/** Reply to "แต้มของฉัน", with an optional link to the full LIFF points page. */
 export function myPointsMessage(data: {
   shopName: string;
   balance: number;
   nextExpiry: { points: number; expiresAt: DateTime } | null;
+  pointsUrl?: string | null;
 }): LineTextMessage {
   const lines = [`แต้มของคุณที่ ${data.shopName}`, `คงเหลือ ${data.balance} แต้ม`];
   if (data.nextExpiry) {
     lines.push(`${data.nextExpiry.points} แต้มจะหมดอายุ ${formatThaiDate(data.nextExpiry.expiresAt)}`);
   }
-  return { type: 'text', text: lines.join('\n') };
+  return {
+    type: 'text',
+    text: lines.join('\n'),
+    ...(data.pointsUrl
+      ? {
+          quickReply: {
+            items: [{ type: 'action', action: { type: 'uri', label: 'ดูหน้าแต้ม', uri: data.pointsUrl } }],
+          },
+        }
+      : {}),
+  };
 }
 
 /** docs/logic.md §5 "points_expiring" — sent once, 30 days before a lot expires. */

@@ -1,9 +1,6 @@
 import { notFound } from 'next/navigation';
-import { eq } from 'drizzle-orm';
 import { BookingFlow } from '@/components/booking/booking-flow';
-import { findTenantBySlug, listBookableServices, listBookableStaff } from '@/lib/booking/queries';
-import { schema } from '@/lib/db/client';
-import { withTenant } from '@/lib/db/tenant';
+import { findTenantBySlug, listBookableServices, listBookableStaff, loadLiffId } from '@/lib/booking/queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,15 +40,4 @@ export default async function BookingPage({
       liffId={liffId}
     />
   );
-}
-
-/** Only the LIFF id is read here — the tokens stay encrypted and unread. */
-async function loadLiffId(tenantId: string): Promise<string | null> {
-  const rows = await withTenant(tenantId, (tx) =>
-    tx
-      .select({ liffId: schema.tenantLineOa.liffId })
-      .from(schema.tenantLineOa)
-      .where(eq(schema.tenantLineOa.tenantId, tenantId)),
-  );
-  return rows[0]?.liffId ?? null;
 }
