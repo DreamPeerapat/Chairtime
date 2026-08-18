@@ -244,3 +244,30 @@ export function pointsExpiringMessage(data: { shopName: string; points: number; 
     ].join('\n'),
   };
 }
+
+/** docs/logic.md §3.5 — "เลื่อนขึ้น → ทำทันที + ส่ง LINE แสดงความยินดี". */
+export function tierUpMessage(data: { shopName: string; tierName: string }): LineTextMessage {
+  return {
+    type: 'text',
+    text: [`ยินดีด้วยค่ะ! คุณได้เลื่อนขั้นเป็นระดับ ${data.tierName}`, `ที่ ${data.shopName}`].join('\n'),
+  };
+}
+
+/** docs/logic.md §3.5 — the 30-day grace-period warning before a demotion actually happens. */
+export function tierAtRiskMessage(data: { shopName: string; tierName: string; deadline: DateTime }): LineTextMessage {
+  return {
+    type: 'text',
+    text: [
+      `ระดับสมาชิก ${data.tierName} ของคุณที่ ${data.shopName} กำลังจะหมดสิทธิ์`,
+      `กลับมาใช้บริการก่อน ${formatThaiDate(data.deadline)} เพื่อรักษาระดับไว้นะคะ`,
+    ].join('\n'),
+  };
+}
+
+/** docs/roadmap.md Phase 6 "โบนัสวันเกิด". */
+export function birthdayMessage(data: { shopName: string; points: number }): LineTextMessage {
+  return {
+    type: 'text',
+    text: [`สุขสันต์วันเกิดค่ะ 🎂`, `${data.shopName} มอบ ${data.points} แต้มให้เป็นของขวัญ`].join('\n'),
+  };
+}

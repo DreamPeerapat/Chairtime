@@ -20,6 +20,9 @@ export interface PointRule {
   maxRedeemPercent: number;
   expiryMonths: number | null;
   isActive: boolean;
+  signupBonus: number;
+  birthdayBonus: number;
+  referralBonus: number;
 }
 
 /** Mirrors the column defaults in docs/schema.sql, for the rare tenant with no row yet. */
@@ -31,6 +34,9 @@ const DEFAULT_RULE: PointRule = {
   maxRedeemPercent: 50,
   expiryMonths: null,
   isActive: true,
+  signupBonus: 0,
+  birthdayBonus: 0,
+  referralBonus: 0,
 };
 
 export async function getPointRule(tx: TenantTx, tenantId: string): Promise<PointRule> {
@@ -45,6 +51,9 @@ export async function getPointRule(tx: TenantTx, tenantId: string): Promise<Poin
     maxRedeemPercent: Number(row.maxRedeemPercent),
     expiryMonths: row.expiryMonths,
     isActive: row.isActive,
+    signupBonus: row.signupBonus,
+    birthdayBonus: row.birthdayBonus,
+    referralBonus: row.referralBonus,
   };
 }
 

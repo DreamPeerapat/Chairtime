@@ -11,12 +11,15 @@ import { schema } from '@/lib/db/client';
 import { forEachTenant, withTenant, type TenantTx } from '@/lib/db/tenant';
 import { LineApiError, createLineClient, loadLineCredentials } from '@/lib/line/client';
 import {
+  birthdayMessage,
   bookingCancelledMessage,
   bookingConfirmedMessage,
   pointsEarnedMessage,
   pointsExpiringMessage,
   reminder24hMessage,
   reminder2hMessage,
+  tierAtRiskMessage,
+  tierUpMessage,
   type BookingMessageData,
 } from '@/lib/line/messages';
 import type { LineClient, LineMessage } from '@/lib/line/types';
@@ -112,8 +115,8 @@ async function render(
   tenantId: string,
   item: DueNotification,
 ): Promise<Rendered | null> {
-  if (item.template === 'points_earned' || item.template === 'points_expiring') {
-    return renderPointsMessage(tx, tenantId, item);
+  if (CUSTOMER_KEYED_TEMPLATES.has(item.template)) {
+    return renderCustomerMessage(tx, tenantId, item);
   }
 
   const bookingId = typeof item.payload.bookingId === 'string' ? item.payload.bookingId : null;
@@ -141,7 +144,16 @@ async function render(
   }
 }
 
-async function renderPointsMessage(
+const CUSTOMER_KEYED_TEMPLATES = new Set([
+  'points_earned',
+  'points_expiring',
+  'tier_up',
+  'tier_at_risk',
+  'birthday',
+]);
+
+/** Every template here is addressed by customer, not by booking. */
+async function renderCustomerMessage(
   tx: TenantTx,
   tenantId: string,
   item: DueNotification,
@@ -156,20 +168,44 @@ async function renderPointsMessage(
 
   const [tenantRow] = await tx.select({ shopName: schema.tenant.name }).from(schema.tenant).where(eq(schema.tenant.id, tenantId));
   const shopName = tenantRow?.shopName ?? '';
+  const lineUserId = customer.lineUserId;
+  const payload = item.payload;
 
-  if (item.template === 'points_earned') {
-    const points = typeof item.payload.points === 'number' ? item.payload.points : 0;
-    const balance = typeof item.payload.balance === 'number' ? item.payload.balance : 0;
-    return { lineUserId: customer.lineUserId, message: pointsEarnedMessage({ shopName, points, balance }) };
+  switch (item.template) {
+    case 'points_earned': {
+      const points = typeof payload.points === 'number' ? payload.points : 0;
+      const balance = typeof payload.balance === 'number' ? payload.balance : 0;
+      return { lineUserId, message: pointsEarnedMessage({ shopName, points, balance }) };
+    }
+    case 'points_expiring': {
+      const points = typeof payload.points === 'number' ? payload.points : 0;
+      const expiresAtRaw = typeof payload.expiresAt === 'string' ? payload.expiresAt : null;
+      if (!expiresAtRaw) return null;
+      return {
+        lineUserId,
+        message: pointsExpiringMessage({ shopName, points, expiresAt: DateTime.fromISO(expiresAtRaw) }),
+      };
+    }
+    case 'tier_up': {
+      const tierName = typeof payload.tierName === 'string' ? payload.tierName : '';
+      return { lineUserId, message: tierUpMessage({ shopName, tierName }) };
+    }
+    case 'tier_at_risk': {
+      const tierName = typeof payload.tierName === 'string' ? payload.tierName : '';
+      const deadlineRaw = typeof payload.deadline === 'string' ? payload.deadline : null;
+      if (!deadlineRaw) return null;
+      return {
+        lineUserId,
+        message: tierAtRiskMessage({ shopName, tierName, deadline: DateTime.fromISO(deadlineRaw) }),
+      };
+    }
+    case 'birthday': {
+      const points = typeof payload.points === 'number' ? payload.points : 0;
+      return { lineUserId, message: birthdayMessage({ shopName, points }) };
+    }
+    default:
+      return null;
   }
-
-  const points = typeof item.payload.points === 'number' ? item.payload.points : 0;
-  const expiresAtRaw = typeof item.payload.expiresAt === 'string' ? item.payload.expiresAt : null;
-  if (!expiresAtRaw) return null;
-  return {
-    lineUserId: customer.lineUserId,
-    message: pointsExpiringMessage({ shopName, points, expiresAt: DateTime.fromISO(expiresAtRaw) }),
-  };
 }
 
 export interface LoadedBookingMessage {

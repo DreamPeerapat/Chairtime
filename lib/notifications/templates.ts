@@ -7,6 +7,9 @@ export const NOTIFICATION_TEMPLATES = [
   'points_earned',
   'points_expiring',
   'tier_up',
+  // Not in docs/logic.md §5's table — added so a customer about to be
+  // demoted (ข้อ 3.5 "ตกชั้น ... เตือนล่วงหน้า") gets warned before it happens.
+  'tier_at_risk',
   'birthday',
   'winback',
 ] as const;
