@@ -8,7 +8,7 @@ const NAV = [
   { href: '/dashboard/customers', label: 'ลูกค้า' },
   { href: '/dashboard/services', label: 'บริการ' },
   { href: '/dashboard/resources', label: 'ช่างและที่นั่ง' },
-  { href: '/dashboard/rewards', label: 'รางวัล' },
+  { href: '/dashboard/rewards/redeem', label: 'รางวัล' },
   { href: '/dashboard/settings', label: 'ตั้งค่า' },
 ] as const;
 

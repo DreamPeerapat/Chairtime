@@ -40,3 +40,16 @@ export async function getPointsSummaryByLineUserId(
       : null,
   };
 }
+
+/** Shared by /api/liff/rewards — null if this LINE user has never become a customer row (no bookings, no bot use). */
+export async function getCustomerIdByLineUserId(
+  tx: TenantTx,
+  tenantId: string,
+  lineUserId: string,
+): Promise<string | null> {
+  const [customer] = await tx
+    .select({ id: schema.customer.id })
+    .from(schema.customer)
+    .where(and(eq(schema.customer.tenantId, tenantId), eq(schema.customer.lineUserId, lineUserId)));
+  return customer?.id ?? null;
+}

@@ -25,6 +25,8 @@ import { isExclusionViolation } from '@/lib/booking/errors';
 import { earnPointsForBooking } from '@/lib/loyalty/earn';
 import { redeemPoints } from '@/lib/loyalty/redeem';
 import { pointRuleFormSchema, rewardFormSchema } from '@/lib/loyalty/validation';
+import { useRewardCode } from '@/lib/loyalty/rewards';
+import { RewardCodeAlreadyUsedError, RewardCodeExpiredError, RewardCodeNotFoundError } from '@/lib/loyalty/errors';
 
 export interface ActionResult {
   ok: boolean;
@@ -923,4 +925,31 @@ export async function saveReward(input: unknown): Promise<ActionResult> {
 
   revalidatePath('/dashboard/rewards');
   return ok;
+}
+
+const rewardCodeSchema = z.object({ code: z.string().trim().min(1, 'กรอกโค้ด') });
+
+/** The counter-side check-in: any staff member can mark a code used, not just managers. */
+export async function checkInRewardCode(
+  input: unknown,
+): Promise<ActionResult & { rewardName?: string; customerName?: string }> {
+  const session = await requireSession('staff');
+  const parsed = rewardCodeSchema.safeParse(input);
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'ข้อมูลไม่ถูกต้อง');
+
+  try {
+    const result = await withTenant(session.tenantId, (tx) =>
+      useRewardCode(tx, { tenantId: session.tenantId, code: parsed.data.code }),
+    );
+    return { ok: true, rewardName: result.rewardName, customerName: result.customerName };
+  } catch (error) {
+    if (
+      error instanceof RewardCodeNotFoundError ||
+      error instanceof RewardCodeAlreadyUsedError ||
+      error instanceof RewardCodeExpiredError
+    ) {
+      return fail(error.message);
+    }
+    throw error;
+  }
 }

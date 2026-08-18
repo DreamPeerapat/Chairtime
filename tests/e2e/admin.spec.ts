@@ -318,3 +318,87 @@ test.describe('settings', () => {
     await expect(page.getByRole('button', { name: 'ใช้เทมเพลตนี้' }).first()).toBeDisabled();
   });
 });
+
+test.describe('rewards', () => {
+  test('creates a reward from the catalog page', async ({ page }) => {
+    // Unique per run: the seeded dev database persists across e2e runs, so a
+    // fixed name would collide with a leftover row from a previous run.
+    const rewardName = `ทดสอบส่วนลด 50 บาท ${Date.now()}`;
+
+    await login(page);
+    await page.getByRole('link', { name: 'รางวัล' }).click();
+    await page.waitForURL('**/dashboard/rewards/redeem');
+
+    await page.getByRole('link', { name: 'จัดการของรางวัล →' }).click();
+    await page.waitForURL('**/dashboard/rewards');
+    await expect(page.getByRole('heading', { name: 'รางวัลแลกแต้ม' })).toBeVisible();
+
+    await page.getByRole('button', { name: '+ เพิ่มของรางวัล' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('ชื่อของรางวัล').fill(rewardName);
+    await dialog.getByLabel('ใช้กี่แต้ม').fill('100');
+    // The type <select>'s accessible name absorbs its option text, so it also
+    // matches getByLabel('ส่วนลด (บาท)') — getByRole with the spinbutton role
+    // picks out just the number input.
+    await dialog.getByRole('spinbutton', { name: 'ส่วนลด (บาท)' }).fill('50');
+    await dialog.getByRole('button', { name: 'บันทึก' }).click();
+
+    await expect(dialog).toBeHidden({ timeout: 15_000 });
+    const row = page.getByRole('button', { name: new RegExp(rewardName) });
+    await expect(row).toBeVisible();
+    await expect(row.getByText('100 แต้ม')).toBeVisible();
+  });
+
+  test('checks in an issued code from the counter page', async ({ page }) => {
+    const [tenant] = await db
+      .select({ id: schema.tenant.id })
+      .from(schema.tenant)
+      .where(eq(schema.tenant.slug, OWNER_TENANT_SLUG));
+    if (!tenant) throw new Error('seeded tenant missing');
+
+    const code = await withTenant(tenant.id, async (tx) => {
+      const [customer] = await tx
+        .select({ id: schema.customer.id })
+        .from(schema.customer)
+        .where(eq(schema.customer.tenantId, tenant.id))
+        .limit(1);
+      if (!customer) throw new Error('seeded customer missing');
+
+      const [reward] = await tx
+        .insert(schema.reward)
+        .values({
+          tenantId: tenant.id,
+          name: 'ของรางวัลทดสอบเช็คอิน',
+          rewardType: 'free_item',
+          pointCost: 10,
+        })
+        .returning({ id: schema.reward.id });
+
+      const issuedCode = `E2E${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+      await tx.insert(schema.rewardRedemption).values({
+        tenantId: tenant.id,
+        customerId: customer.id,
+        rewardId: reward!.id,
+        pointsSpent: 10,
+        code: issuedCode,
+        status: 'issued',
+      });
+      return issuedCode;
+    });
+
+    await login(page);
+    await page.getByRole('link', { name: 'รางวัล' }).click();
+    await page.waitForURL('**/dashboard/rewards/redeem');
+
+    await page.getByPlaceholder('กรอกโค้ด 6 หลัก').fill(code);
+    await page.getByRole('button', { name: 'เช็คอิน' }).click();
+
+    await expect(page.getByText('ใช้โค้ดสำเร็จ')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('ของรางวัลทดสอบเช็คอิน')).toBeVisible();
+
+    // A second attempt with the same code must be refused, not silently reused.
+    await page.getByPlaceholder('กรอกโค้ด 6 หลัก').fill(code);
+    await page.getByRole('button', { name: 'เช็คอิน' }).click();
+    await expect(page.getByText('โค้ดนี้ถูกใช้ไปแล้ว')).toBeVisible({ timeout: 15_000 });
+  });
+});

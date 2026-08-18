@@ -8,6 +8,7 @@
  * being handed a different tenantSlug.
  */
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import liff from '@line/liff';
 import { DateTime } from 'luxon';
 import { thaiDateFull } from './format';
@@ -93,6 +94,13 @@ export function PointsView({ tenantSlug, liffId }: { tenantSlug: string; liffId:
           {data.nextExpiry.points} แต้มจะหมดอายุ {thaiDateFull(DateTime.fromISO(data.nextExpiry.expiresAt))}
         </p>
       ) : null}
+
+      <Link
+        href={`/${tenantSlug}/rewards`}
+        className="rounded-xl border border-slate-200 px-4 py-3 text-center text-sm font-medium dark:border-slate-800"
+      >
+        แลกแต้มเป็นรางวัล →
+      </Link>
     </div>
   );
 }
