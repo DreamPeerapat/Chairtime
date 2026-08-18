@@ -30,6 +30,7 @@ export interface RedeemResult {
   valueSatang: number;
 }
 
+/** Paying down part of a bill with points — the min/max-of-bill rules only make sense here, not for a reward. */
 export async function redeemPoints(tx: TenantTx, input: RedeemInput): Promise<RedeemResult> {
   const rule = await getPointRule(tx, input.tenantId);
 
@@ -43,11 +44,38 @@ export async function redeemPoints(tx: TenantTx, input: RedeemInput): Promise<Re
     throw new ExceedsMaxRedeemPercentError(rule.maxRedeemPercent);
   }
 
+  await deductPointsFifo(tx, {
+    tenantId: input.tenantId,
+    customerId: input.customerId,
+    points: input.pointsWanted,
+    sourceType: input.sourceType,
+    sourceId: input.sourceId,
+  });
+
+  return { pointsRedeemed: input.pointsWanted, valueSatang };
+}
+
+export interface DeductPointsInput {
+  tenantId: string;
+  customerId: string;
+  points: number;
+  sourceType: string;
+  sourceId: string | null;
+}
+
+/**
+ * The FIFO deduction core, shared by redeemPoints() (paying a bill) and
+ * lib/loyalty/rewards.ts (buying a catalog reward) — the two have entirely
+ * different eligibility rules (bill percentage vs. tier/stock), but the same
+ * "take from the soonest-expiring lot first, under a lock" mechanics once a
+ * point amount has been decided on.
+ */
+export async function deductPointsFifo(tx: TenantTx, input: DeductPointsInput): Promise<void> {
   const [customerRow] = await tx
     .select({ balance: schema.customer.pointBalance })
     .from(schema.customer)
     .where(eq(schema.customer.id, input.customerId));
-  if (!customerRow || input.pointsWanted > customerRow.balance) {
+  if (!customerRow || input.points > customerRow.balance) {
     throw new InsufficientPointsError();
   }
 
@@ -65,7 +93,7 @@ export async function redeemPoints(tx: TenantTx, input: RedeemInput): Promise<Re
     .orderBy(sql`${schema.pointLot.expiresAt} nulls last`, asc(schema.pointLot.earnedAt))
     .for('update');
 
-  let remaining = input.pointsWanted;
+  let remaining = input.points;
   const takes: Array<{ lotId: string; take: number }> = [];
 
   for (const lot of lots) {
@@ -90,7 +118,7 @@ export async function redeemPoints(tx: TenantTx, input: RedeemInput): Promise<Re
 
   const [updatedCustomer] = await tx
     .update(schema.customer)
-    .set({ pointBalance: sql`${schema.customer.pointBalance} - ${input.pointsWanted}` })
+    .set({ pointBalance: sql`${schema.customer.pointBalance} - ${input.points}` })
     .where(eq(schema.customer.id, input.customerId))
     .returning({ pointBalance: schema.customer.pointBalance });
 
@@ -102,12 +130,10 @@ export async function redeemPoints(tx: TenantTx, input: RedeemInput): Promise<Re
     tenantId: input.tenantId,
     customerId: input.customerId,
     entryType: 'redeem',
-    points: -input.pointsWanted,
+    points: -input.points,
     balanceAfter: updatedCustomer!.pointBalance,
     lotId: null,
     sourceType: input.sourceType,
     sourceId: input.sourceId,
   });
-
-  return { pointsRedeemed: input.pointsWanted, valueSatang };
 }

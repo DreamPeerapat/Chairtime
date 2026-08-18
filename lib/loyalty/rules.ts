@@ -76,3 +76,13 @@ export async function getTierMultiplier(tx: TenantTx, customerId: string): Promi
     .where(eq(schema.customerTier.customerId, customerId));
   return row ? Number(row.multiplier) : 1;
 }
+
+/** 0 for a customer with no tier — matches reward.min_tier_level's default of 0 (no tier required). */
+export async function getCustomerTierLevel(tx: TenantTx, customerId: string): Promise<number> {
+  const [row] = await tx
+    .select({ level: schema.membershipTier.level })
+    .from(schema.customerTier)
+    .innerJoin(schema.membershipTier, eq(schema.customerTier.tierId, schema.membershipTier.id))
+    .where(eq(schema.customerTier.customerId, customerId));
+  return row?.level ?? 0;
+}

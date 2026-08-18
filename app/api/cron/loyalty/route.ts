@@ -14,6 +14,7 @@ import { reconcileTenant } from '@/lib/loyalty/reconcile';
 import { enqueuePointsExpiringForTenant } from '@/lib/loyalty/notifications';
 import { recalculateTiersForTenant } from '@/lib/loyalty/tier';
 import { awardBirthdayBonusesForTenant } from '@/lib/loyalty/birthday';
+import { expireRewardCodesForTenant } from '@/lib/loyalty/rewards';
 import { safeEqual } from '@/lib/crypto';
 
 export const dynamic = 'force-dynamic';
@@ -39,11 +40,12 @@ export async function GET(request: Request) {
     const expiringNotified = await enqueuePointsExpiringForTenant(tx, tenantId);
     const tiers = await recalculateTiersForTenant(tx, tenantId);
     const birthdays = await awardBirthdayBonusesForTenant(tx, tenantId);
+    const rewardCodes = await expireRewardCodesForTenant(tx, tenantId);
     const mismatches = await reconcileTenant(tx, tenantId);
     for (const mismatch of mismatches) {
       console.error('loyalty reconcile mismatch', { tenantId, ...mismatch });
     }
-    return { ...expired, expiringNotified, ...tiers, ...birthdays, mismatchCount: mismatches.length };
+    return { ...expired, expiringNotified, ...tiers, ...birthdays, ...rewardCodes, mismatchCount: mismatches.length };
   });
 
   const totals = results.reduce(
@@ -56,6 +58,7 @@ export async function GET(request: Request) {
       tierDemoted: acc.tierDemoted + result.demoted,
       tierRequalified: acc.tierRequalified + result.requalified,
       birthdaysAwarded: acc.birthdaysAwarded + result.awarded,
+      rewardCodesExpired: acc.rewardCodesExpired + result.expired,
       mismatchCount: acc.mismatchCount + result.mismatchCount,
     }),
     {
@@ -67,6 +70,7 @@ export async function GET(request: Request) {
       tierDemoted: 0,
       tierRequalified: 0,
       birthdaysAwarded: 0,
+      rewardCodesExpired: 0,
       mismatchCount: 0,
     },
   );
