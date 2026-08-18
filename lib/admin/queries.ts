@@ -522,3 +522,28 @@ export async function findMergeCandidates(tenantId: string) {
     return [...rows];
   });
 }
+
+export async function listRewardsForAdmin(tenantId: string) {
+  return withTenant(tenantId, (tx) =>
+    tx
+      .select({
+        id: schema.reward.id,
+        name: schema.reward.name,
+        rewardType: schema.reward.rewardType,
+        pointCost: schema.reward.pointCost,
+        serviceId: schema.reward.serviceId,
+        serviceName: schema.service.name,
+        valueAmount: schema.reward.valueAmount,
+        minTierLevel: schema.reward.minTierLevel,
+        stock: schema.reward.stock,
+        stockUsed: schema.reward.stockUsed,
+        validFrom: schema.reward.validFrom,
+        validUntil: schema.reward.validUntil,
+        isActive: schema.reward.isActive,
+      })
+      .from(schema.reward)
+      .leftJoin(schema.service, eq(schema.service.id, schema.reward.serviceId))
+      .where(eq(schema.reward.tenantId, tenantId))
+      .orderBy(asc(schema.reward.pointCost)),
+  );
+}

@@ -24,7 +24,7 @@ import { findTemplate } from './templates';
 import { isExclusionViolation } from '@/lib/booking/errors';
 import { earnPointsForBooking } from '@/lib/loyalty/earn';
 import { redeemPoints } from '@/lib/loyalty/redeem';
-import { pointRuleFormSchema } from '@/lib/loyalty/validation';
+import { pointRuleFormSchema, rewardFormSchema } from '@/lib/loyalty/validation';
 
 export interface ActionResult {
   ok: boolean;
@@ -883,5 +883,44 @@ export async function savePointRule(input: unknown): Promise<ActionResult> {
   );
 
   revalidatePath('/dashboard/settings/loyalty');
+  return ok;
+}
+
+// ---------------------------------------------------------------------
+// Reward catalog — docs/roadmap.md Phase 6
+// ---------------------------------------------------------------------
+
+export async function saveReward(input: unknown): Promise<ActionResult> {
+  const session = await requireSession('manager');
+  const parsed = rewardFormSchema.safeParse(input);
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'ข้อมูลไม่ถูกต้อง');
+  const data = parsed.data;
+
+  const values = {
+    tenantId: session.tenantId,
+    name: data.name,
+    rewardType: data.rewardType,
+    pointCost: data.pointCost,
+    serviceId: data.rewardType === 'free_service' ? data.serviceId : null,
+    valueAmount: data.valueAmount !== null ? data.valueAmount.toFixed(2) : null,
+    minTierLevel: data.minTierLevel,
+    stock: data.stock,
+    validFrom: data.validFrom,
+    validUntil: data.validUntil,
+    isActive: data.isActive,
+  };
+
+  await withTenant(session.tenantId, async (tx) => {
+    if (data.id) {
+      await tx
+        .update(schema.reward)
+        .set(values)
+        .where(and(eq(schema.reward.tenantId, session.tenantId), eq(schema.reward.id, data.id)));
+      return;
+    }
+    await tx.insert(schema.reward).values(values);
+  });
+
+  revalidatePath('/dashboard/rewards');
   return ok;
 }
