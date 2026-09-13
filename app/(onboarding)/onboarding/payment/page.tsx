@@ -79,8 +79,8 @@ export default async function OnboardingPaymentPage({
 
       <div className="rounded-xl border border-slate-200 p-4 text-sm dark:border-slate-800">
         <p className="font-medium">ธนาคารกสิกรไทย</p>
-        <p className="text-slate-600 dark:text-slate-400">เลขบัญชี xxx-x-xxxxx-x</p>
-        <p className="text-slate-600 dark:text-slate-400">ชื่อบัญชี Chairtime Co., Ltd.</p>
+        <p className="text-slate-600 dark:text-slate-400">เลขบัญชี 842-2-36615-3</p>
+        <p className="text-slate-600 dark:text-slate-400">ชื่อบัญชี นายพีรพัฒน์ วงศ์สุวรรณ์</p>
       </div>
 
       <form action={confirm}>

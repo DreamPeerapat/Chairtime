@@ -331,8 +331,9 @@ roadmap Phase 6 ไม่ได้ระบุไว้ชัดว่าต้�
    credential ในสภาพแวดล้อมนี้
 2. ตัดสินใจเรื่อง Vercel plan (Hobby vs Pro) สำหรับ cron ความถี่นาทีตามที่
    อธิบายไว้ข้างบน หรือตั้ง external scheduler แทน
-3. ใส่เลขบัญชีธนาคารจริงใน `app/(onboarding)/onboarding/payment/page.tsx`
-   (ตอนนี้เป็น placeholder `xxx-x-xxxxx-x`)
+3. ~~ใส่เลขบัญชีธนาคารจริงใน `app/(onboarding)/onboarding/payment/page.tsx`~~
+   ✅ ใส่แล้ว (13 ก.ย. 2026) — บัญชีบุคคลธรรมดา ไม่ใช่นิติบุคคล
+   ร้านที่เป็นบริษัทอาจขอใบเสร็จ/ใบกำกับภาษี ต้องเตรียมคำตอบไว้
 
 **ถ้าจะเขียนต่อ** เรียงตามความคุ้ม:
 
