@@ -72,11 +72,29 @@ test.describe('staff authentication', () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test('offers LINE and Google, and nothing that looks like a password field', async ({ page }) => {
+  test('offers only providers this deployment can complete, and no password field', async ({
+    page,
+  }) => {
     await page.goto('/login');
-    await expect(page.getByRole('link', { name: /LINE/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Google/ })).toBeVisible();
+
+    // Iron rule #7: OAuth only, never a password.
     await expect(page.locator('input[type="password"]')).toHaveCount(0);
+
+    // A provider button is shown only when its credentials exist, so assert
+    // against the environment rather than hard-coding both. A deployment with
+    // neither configured would leave nobody able to sign in at all.
+    const ENV_PREFIX = { line: 'LINE_LOGIN_CHANNEL', google: 'GOOGLE_CLIENT' } as const;
+    const configured = (['line', 'google'] as const).filter((provider) => {
+      const prefix = ENV_PREFIX[provider];
+      return Boolean(process.env[`${prefix}_ID`] && process.env[`${prefix}_SECRET`]);
+    });
+    expect(configured.length, 'no OAuth provider is configured for the e2e run').toBeGreaterThan(0);
+
+    for (const provider of ['line', 'google'] as const) {
+      const label = provider === 'line' ? /LINE/ : /Google/;
+      const expected = configured.includes(provider) ? 1 : 0;
+      await expect(page.getByRole('link', { name: label })).toHaveCount(expected);
+    }
   });
 
   test('logs in and lands on today', async ({ page }) => {
@@ -165,20 +183,40 @@ test.describe('walk-in', () => {
   test('creates a booking from the counter', async ({ page }) => {
     await login(page);
 
-    // A real walk-in is "now", but by late evening the shop may have no slot
-    // left — which is correct behaviour, not a failure. Step to a day that is
-    // still open so the assertion is about the form, not about the clock.
-    await page.getByRole('button', { name: 'วันถัดไป' }).click();
-    await page.waitForLoadState('networkidle');
-
-    await page.getByRole('button', { name: '+ Walk-in' }).click();
+    // A real walk-in is "now", but the day on screen may legitimately have no
+    // slot: the shop closes on one weekday, and by late evening a day that is
+    // open can still be full. Both are correct behaviour, not failures.
+    //
+    // Stepping forward exactly one day used to be enough, which made this test
+    // depend on what day of the week it ran — it failed every Sunday, because
+    // the seeded shop is closed on Mondays. Walk forward until a day actually
+    // offers a slot, so the assertion is about the form, not about the calendar.
     const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible();
-
-    await dialog.getByRole('button', { name: 'สระ+ตัด' }).click();
-
     const create = dialog.getByRole('button', { name: 'สร้างคิว' });
-    await expect(create).toBeEnabled({ timeout: 15_000 });
+
+    let found = false;
+    for (let i = 0; i < 7 && !found; i += 1) {
+      await page.getByRole('button', { name: 'วันถัดไป' }).click();
+      await page.waitForLoadState('networkidle');
+
+      await page.getByRole('button', { name: '+ Walk-in' }).click();
+      await expect(dialog).toBeVisible();
+      await dialog.getByRole('button', { name: 'สระ+ตัด' }).click();
+
+      // isEnabled() reads the current state and returns, so it would answer
+      // before the availability request comes back. Only the expect form waits.
+      found = await expect(create)
+        .toBeEnabled({ timeout: 10_000 })
+        .then(() => true)
+        .catch(() => false);
+
+      if (!found) {
+        await page.keyboard.press('Escape');
+        await expect(dialog).toBeHidden();
+      }
+    }
+
+    expect(found, 'no day in the next week had a free slot for a walk-in').toBe(true);
 
     await dialog.getByPlaceholder('ชื่อลูกค้า (ไม่ใส่ก็ได้)').fill('คุณเดินเข้ามา');
     await dialog.getByPlaceholder('เบอร์โทร (ไม่ใส่ก็ได้)').fill('0891112222');

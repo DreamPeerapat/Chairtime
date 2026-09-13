@@ -95,23 +95,34 @@ describe('queueing on booking', () => {
   });
 
   it('skips a reminder that would have to fire in the past', async () => {
-    // Booked for tomorrow: the 24-hour reminder is already overdue.
+    // Booking three hours before the appointment: the 24-hour reminder is
+    // already overdue, while the 2-hour one is still ahead.
+    //
+    // `now` is injected rather than read from the clock. Booking "tomorrow"
+    // and trusting the wall clock only made the 24-hour reminder overdue when
+    // the suite happened to run later in the day than the shop opens, so this
+    // test failed every morning and passed every afternoon.
     const date = DateTime.now().setZone(ZONE).plus({ days: 1 }).toISODate()!;
     const slots = await getAvailability({
       tenantId: shop.tenantId,
       date,
       serviceIds: [shop.serviceId],
     });
+    const startsAt = slots[0]!.start;
     const booking = await createBooking({
       tenantId: shop.tenantId,
       customerId: shop.customerId,
-      startsAt: slots[0]!.start,
+      startsAt,
       serviceIds: [shop.serviceId],
+      now: startsAt.minus({ hours: 3 }),
     });
 
     const templates = (await queuedFor(booking.id)).map((r) => r.template);
     expect(templates).toContain('booking_confirmed');
     expect(templates).not.toContain('reminder_24h');
+    // the reminder that is still in the future must survive, otherwise this
+    // test would also pass if reminders were dropped altogether
+    expect(templates).toContain('reminder_2h');
   });
 
   it('queues nothing for a walk-in with no customer record', async () => {
