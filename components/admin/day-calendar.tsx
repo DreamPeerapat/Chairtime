@@ -146,6 +146,15 @@ export function DayCalendar({
           slotMinTime={slotMin}
           slotMaxTime={slotMax}
           slotDuration="00:15:00"
+          /**
+           * FullCalendar stacks concurrent events on top of each other by
+           * default, so a booking that starts later covers the one underneath.
+           * With one column for every member of staff that happens constantly,
+           * and the covered booking cannot be clicked at all — not by the
+           * e2e test, and not by whoever is standing at the counter.
+           * Laying them out side by side keeps every booking reachable.
+           */
+          slotEventOverlap={false}
           slotLabelInterval="01:00"
           slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
           eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
