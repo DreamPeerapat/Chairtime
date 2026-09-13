@@ -61,6 +61,24 @@ function googleConfig(): ProviderConfig {
   return { clientId, clientSecret };
 }
 
+/**
+ * Whether a provider has credentials at all.
+ *
+ * The login screen uses this to hide a button it cannot honour: offering
+ * "sign in with Google" on a deployment with no Google client turns a missing
+ * setting into what looks, to the shop owner, like a broken product.
+ */
+export function providerIsConfigured(provider: OAuthProviderId): boolean {
+  try {
+    if (provider === 'line') lineConfig();
+    else googleConfig();
+    return true;
+  } catch (error) {
+    if (error instanceof OAuthConfigError) return false;
+    throw error;
+  }
+}
+
 /** A fresh, unguessable state value for the CSRF check around the redirect round-trip. */
 export function generateState(): string {
   return randomBytes(24).toString('base64url');

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { currentSession } from '@/lib/auth';
+import { providerIsConfigured } from '@/lib/auth/oauth';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,10 @@ export default async function LoginPage({
 }) {
   const session = await currentSession();
   if (session) redirect('/dashboard');
+
+  // Only offer a provider this deployment can actually complete.
+  const lineReady = providerIsConfigured('line');
+  const googleReady = providerIsConfigured('google');
 
   const { error } = await searchParams;
   const message = error ? (ERROR_MESSAGES[error] ?? ERROR_MESSAGES.oauth) : null;
@@ -33,23 +38,36 @@ export default async function LoginPage({
           </p>
         ) : null}
 
-        <a
-          href="/auth/start?provider=line"
-          className="flex items-center justify-center gap-2 rounded-xl bg-[#06C755] py-3 text-sm font-medium text-white"
-        >
-          เข้าสู่ระบบด้วย LINE
-        </a>
+        {lineReady ? (
+          <a
+            href="/auth/start?provider=line"
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#06C755] py-3 text-sm font-medium text-white"
+          >
+            เข้าสู่ระบบด้วย LINE
+          </a>
+        ) : null}
 
-        <a
-          href="/auth/start?provider=google"
-          className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-medium text-slate-800 dark:border-slate-700 dark:text-slate-100"
-        >
-          เข้าสู่ระบบด้วย Google
-        </a>
+        {googleReady ? (
+          <a
+            href="/auth/start?provider=google"
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-medium text-slate-800 dark:border-slate-700 dark:text-slate-100"
+          >
+            เข้าสู่ระบบด้วย Google
+          </a>
+        ) : null}
+
+        {!lineReady && !googleReady ? (
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+            ยังไม่ได้ตั้งค่าช่องทางเข้าสู่ระบบ กรุณาติดต่อผู้ดูแลระบบ
+          </p>
+        ) : null}
 
         <p className="text-center text-xs text-slate-400">
           ยังไม่มีร้าน?{' '}
-          <a href="/auth/start?provider=line" className="underline">
+          <a
+            href={`/auth/start?provider=${lineReady ? 'line' : 'google'}`}
+            className="underline"
+          >
             สมัครใช้งานฟรี
           </a>
         </p>
