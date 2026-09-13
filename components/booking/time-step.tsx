@@ -41,7 +41,9 @@ export function TimeStep({
       <h2 className="text-base font-semibold">เลือกวันและเวลา</h2>
 
       <div className="-mx-5 overflow-x-auto px-5">
-        <div className="flex gap-2 pb-1">
+        {/* A labelled group so the strip announces itself as the day picker
+            rather than as a run of unrelated buttons. */}
+        <div role="group" aria-label="เลือกวัน" className="flex gap-2 pb-1">
           {days.map((day) => {
             const { day: dayName, date: dayNum, month } = shortThaiDate(day, timezone);
             const active = day === date;

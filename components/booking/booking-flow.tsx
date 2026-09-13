@@ -47,6 +47,17 @@ export function BookingFlow(props: BookingFlowProps) {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Somebody took the slot while this customer was filling in the form.
+   *
+   * Kept apart from `error` on purpose: loadSlots() clears `error` the moment
+   * it starts, and it starts in the same click that reports the clash, so the
+   * message used to be wiped before it ever rendered — the customer was thrown
+   * back to the time step with no idea why. This flag survives that, and it
+   * carries a way out rather than only an apology.
+   */
+  const [slotTaken, setSlotTaken] = useState(false);
+
   // With staff selection turned off, the shop assigns whoever is free.
   const staffStepEnabled = props.allowCustomerPickStaff && props.staff.length > 0;
 
@@ -89,6 +100,7 @@ export function BookingFlow(props: BookingFlowProps) {
   };
 
   const changeDate = (next: string) => {
+    setSlotTaken(false);
     setDate(next);
     void loadSlots(next);
   };
@@ -104,6 +116,32 @@ export function BookingFlow(props: BookingFlowProps) {
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
           {error}
         </p>
+      ) : null}
+
+      {slotTaken ? (
+        <div
+          role="alert"
+          className="rounded-lg bg-amber-50 px-3 py-2.5 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+        >
+          <p className="font-medium">ช่วงเวลานี้เพิ่งถูกจองไปเมื่อสักครู่</p>
+          <p className="mt-0.5">
+            {staffStepEnabled
+              ? 'กรุณาเลือกเวลาอื่นจากรายการด้านล่าง หรือเลือกช่างคนอื่นที่ยังว่างในเวลาเดิม'
+              : 'กรุณาเลือกเวลาอื่นจากรายการด้านล่าง'}
+          </p>
+          {staffStepEnabled ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSlotTaken(false);
+                setStep(1);
+              }}
+              className="mt-2 rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-medium dark:border-amber-800"
+            >
+              เลือกช่างคนอื่น
+            </button>
+          ) : null}
+        </div>
       ) : null}
 
       {step === 0 ? (
@@ -125,7 +163,10 @@ export function BookingFlow(props: BookingFlowProps) {
         <StaffStep
           staff={eligibleStaff}
           selected={staffId}
-          onChange={setStaffId}
+          onChange={(next) => {
+            setSlotTaken(false);
+            setStaffId(next);
+          }}
           onBack={goBack}
           onNext={() => goToTimeStep()}
         />
@@ -140,7 +181,10 @@ export function BookingFlow(props: BookingFlowProps) {
           slots={slots}
           loading={loadingSlots}
           selected={slot}
-          onSelect={setSlot}
+          onSelect={(next) => {
+            setSlotTaken(false);
+            setSlot(next);
+          }}
           onBack={() => setStep(staffStepEnabled ? 1 : 0)}
           onNext={goNext}
         />
@@ -156,7 +200,9 @@ export function BookingFlow(props: BookingFlowProps) {
           slot={slot}
           onBack={goBack}
           onSlotTaken={() => {
-            setError('ช่วงเวลานี้เพิ่งถูกจองไป กรุณาเลือกเวลาใหม่');
+            // No automatic retry (docs/logic.md §2) — the customer sees the
+            // refreshed options and decides, rather than being moved silently.
+            setSlotTaken(true);
             goToTimeStep();
           }}
         />
