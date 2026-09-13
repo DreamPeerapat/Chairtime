@@ -16,6 +16,14 @@ env:
   SESSION_SECRET: Y2hhaXJ0aW1lLWNpLXNlc3Npb24tc2VjcmV0LTMyYnl0ZXM=
   CRON_SECRET: ci-cron-secret
   NEXT_PUBLIC_APP_URL: http://127.0.0.1:3210
+  # Not real credentials and never used to complete a round trip: the login
+  # screen only offers a provider it has credentials for, so without these CI
+  # would render a page with no way in at all and test something no deployment
+  # ever looks like.
+  LINE_LOGIN_CHANNEL_ID: ci-line-channel-id
+  LINE_LOGIN_CHANNEL_SECRET: ci-line-channel-secret
+  GOOGLE_CLIENT_ID: ci-google-client-id
+  GOOGLE_CLIENT_SECRET: ci-google-client-secret
 
 jobs:
   test:
