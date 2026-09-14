@@ -37,7 +37,7 @@ export default async function PortfolioPage() {
             รูปที่ลูกค้าจะเห็นในหน้าแกลเลอรี่ และตอนเลือกช่าง
           </p>
         </div>
-        <PortfolioUploader />
+        <PortfolioUploader tenantId={session.tenantId} />
       </div>
 
       <PortfolioManager photos={photos} staff={options.staff} services={options.services} />

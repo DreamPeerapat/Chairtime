@@ -8,14 +8,14 @@
  *
  * That makes this route the only gate on who may write to the store, so it
  * checks the signed session before handing out a token, and pins the token to
- * what a portfolio photo may be. `tenantId` comes from the session and is
- * baked into the pathname — never from the request body, which the browser
- * controls and which would otherwise let one shop write into another's folder.
+ * what a portfolio photo may be — content type, size, and the folder it may
+ * land in. Every one of those comes from the session or from constants here,
+ * never from the request body, which the browser controls.
  */
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { NextResponse } from 'next/server';
 import { sessionForApi } from '@/lib/auth';
-import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES } from '@/lib/portfolio/validation';
+import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES, portfolioPrefix } from '@/lib/portfolio/validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,19 +31,26 @@ export async function POST(request: Request): Promise<NextResponse> {
     const result = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async () => ({
-        allowedContentTypes: ALLOWED_IMAGE_TYPES,
-        maximumSizeInBytes: MAX_IMAGE_BYTES,
-        // Everything this shop owns lands under its own prefix, so a listing
-        // or a cleanup can never wander into another tenant's photos.
-        pathname: `portfolio/${auth.session.tenantId}`,
-        addRandomSuffix: true,
-        // Nothing here needs to be secret — a gallery is for showing people —
-        // and public blobs are served from the CDN rather than through a
-        // function, which is both faster and cheaper.
-        access: 'public',
-        tokenPayload: JSON.stringify({ tenantId: auth.session.tenantId }),
-      }),
+      onBeforeGenerateToken: async (pathname) => {
+        // The destination path comes from the browser and the SDK honours it
+        // as sent — `onBeforeGenerateToken` cannot rewrite it, its return type
+        // accepts no pathname. So the only way to keep one shop out of
+        // another's folder is to refuse a token for a path that is not this
+        // shop's, which is what this does. Checking it here rather than
+        // trusting the client is the whole point of the route existing.
+        if (!pathname.startsWith(portfolioPrefix(auth.session.tenantId))) {
+          throw new Error('pathname outside this tenant');
+        }
+
+        return {
+          allowedContentTypes: ALLOWED_IMAGE_TYPES,
+          maximumSizeInBytes: MAX_IMAGE_BYTES,
+          // Two shops uploading "IMG_1234.webp" must not collide, and an
+          // upload must never overwrite a photo already in the gallery.
+          addRandomSuffix: true,
+          tokenPayload: JSON.stringify({ tenantId: auth.session.tenantId }),
+        };
+      },
       onUploadCompleted: async () => {
         // The row is written by the addPortfolioItem server action once the
         // browser reports the URL. Nothing to do here, but the SDK requires

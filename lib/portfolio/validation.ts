@@ -13,6 +13,17 @@ export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
  *  storage bill is the shop's, so the client shrinks before it uploads. */
 export const MAX_IMAGE_EDGE = 1600;
 
+/**
+ * Where one shop's photos live in the blob store.
+ *
+ * Shared by the uploader (which builds the path) and the token route (which
+ * refuses any path that does not start with it). Keeping both on one function
+ * is what stops the two drifting into a hole.
+ */
+export function portfolioPrefix(tenantId: string): string {
+  return `portfolio/${tenantId}/`;
+}
+
 const optionalUuid = z
   .union([z.literal(''), z.string().uuid()])
   .optional()

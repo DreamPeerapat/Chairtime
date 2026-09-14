@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { addPortfolioItem } from '@/lib/portfolio/actions';
 import { downscaleImage } from '@/lib/portfolio/downscale';
-import { ALLOWED_IMAGE_TYPES } from '@/lib/portfolio/validation';
+import { ALLOWED_IMAGE_TYPES, portfolioPrefix } from '@/lib/portfolio/validation';
 
 /**
  * The upload button.
@@ -15,7 +15,7 @@ import { ALLOWED_IMAGE_TYPES } from '@/lib/portfolio/validation';
  * store, and only then recorded in the database — so a failed upload leaves
  * no row pointing at a file that does not exist.
  */
-export function PortfolioUploader() {
+export function PortfolioUploader({ tenantId }: { tenantId: string }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -32,7 +32,10 @@ export function PortfolioUploader() {
     for (const [index, file] of Array.from(files).entries()) {
       try {
         const { blob, contentType } = await downscaleImage(file);
-        const uploaded = await upload(file.name.replace(/\.[^.]+$/, '.webp'), blob, {
+        // Under this shop's prefix — the token route refuses any other path,
+        // so this is organisation, not the security boundary.
+        const stem = file.name.replace(/\.[^.]+$/, '') || 'photo';
+        const uploaded = await upload(`${portfolioPrefix(tenantId)}${stem}.webp`, blob, {
           access: 'public',
           handleUploadUrl: '/api/admin/portfolio/upload',
           contentType,
