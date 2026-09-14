@@ -133,7 +133,7 @@ export function ConfirmStep({
           type="button"
           onClick={onBack}
           disabled={submitting}
-          className="rounded-xl border border-slate-200 px-5 py-3 text-sm dark:border-slate-800"
+          className="ct-press rounded-xl border border-slate-200 px-5 py-3 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
         >
           ย้อนกลับ
         </button>
@@ -141,7 +141,7 @@ export function ConfirmStep({
           type="button"
           disabled={!canSubmit}
           onClick={submit}
-          className="flex-1 rounded-xl bg-teal-700 py-3 text-sm font-medium text-white disabled:opacity-40"
+          className="flex-1 ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800 disabled:opacity-40"
         >
           {submitting ? 'กำลังจอง…' : 'ยืนยันการจอง'}
         </button>

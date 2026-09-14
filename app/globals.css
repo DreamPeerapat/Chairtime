@@ -22,6 +22,87 @@ body {
 }
 
 /*
+ * Motion primitives.
+ *
+ * Four utilities, no library: a booking screen that takes a second to answer
+ * needs somewhere for the eye to rest, not a dependency. Everything here is
+ * short — 120-200ms — because the animation runs on every step change and a
+ * receptionist goes through this all day; anything longer starts to feel like
+ * waiting. The reduced-motion block at the bottom is not optional: for some
+ * people this kind of movement causes nausea, and the OS setting is how they
+ * say so.
+ */
+
+@keyframes ct-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes ct-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes ct-shimmer {
+  to {
+    background-position: 200% 0;
+  }
+}
+
+/* Content arriving: a step, a page, a panel. */
+.ct-enter {
+  animation: ct-rise 190ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ct-fade {
+  animation: ct-fade 160ms ease-out both;
+}
+
+/* Anything clickable. Kept to transform + colour so it never triggers layout. */
+.ct-press {
+  transition:
+    transform 120ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.ct-press:active {
+  transform: scale(0.985);
+}
+
+/* Placeholder blocks while slots load — shape first, content after. */
+.ct-skeleton {
+  background-image: linear-gradient(
+    90deg,
+    rgb(148 163 184 / 0.12) 25%,
+    rgb(148 163 184 / 0.22) 37%,
+    rgb(148 163 184 / 0.12) 63%
+  );
+  background-size: 200% 100%;
+  animation: ct-shimmer 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ct-enter,
+  .ct-fade,
+  .ct-skeleton {
+    animation: none;
+  }
+
+  .ct-press {
+    transition: none;
+  }
+
+  .ct-press:active {
+    transform: none;
+  }
+}
+
+/*
  * FullCalendar theming.
  *
  * The library's defaults paint the whole of today's column in a strong yellow

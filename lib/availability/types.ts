@@ -65,9 +65,21 @@ export interface AvailabilityContext {
   /** closures that apply to the whole shop */
   shopClosures: AbsoluteInterval[];
   services: ServiceSpec[];
+  /**
+   * Every resource type the shop has defined — including ones with no resource
+   * in them yet. `resources` alone cannot answer "which type is empty", and
+   * that is exactly the gap that makes a brand-new shop unbookable.
+   */
+  resourceTypes: ResourceTypeSpec[];
   resources: ResourceSpec[];
   /** allocations and per-resource time off, already merged */
   busy: BusyInterval[];
+}
+
+export interface ResourceTypeSpec {
+  id: string;
+  name: string;
+  isHuman: boolean;
 }
 
 export interface AvailabilityQuery {

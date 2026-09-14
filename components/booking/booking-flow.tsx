@@ -23,6 +23,8 @@ export interface BookingFlowProps {
   timezone: string;
   maxAdvanceDays: number;
   allowCustomerPickStaff: boolean;
+  /** offered as the way through when the shop cannot take online bookings yet */
+  phone: string | null;
   services: ServiceListItem[];
   staff: StaffListItem[];
   liffId: string | null;
@@ -43,6 +45,8 @@ export function BookingFlow(props: BookingFlowProps) {
   const [staffId, setStaffId] = useState<string | null>(null);
   const [date, setDate] = useState(() => DateTime.now().setZone(props.timezone).toISODate()!);
   const [slots, setSlots] = useState<Slot[]>([]);
+  /** The shop has no staff/seats or no hours — no day will ever have a slot. */
+  const [setupIncomplete, setSetupIncomplete] = useState(false);
   const [slot, setSlot] = useState<Slot | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,11 +83,13 @@ export function BookingFlow(props: BookingFlowProps) {
 
         const response = await fetch(`/api/availability?${params}`);
         if (!response.ok) throw new Error('load failed');
-        const body = (await response.json()) as { slots: Slot[] };
+        const body = (await response.json()) as { slots: Slot[]; setupIncomplete?: boolean };
         setSlots(body.slots);
+        setSetupIncomplete(Boolean(body.setupIncomplete));
       } catch {
         setError('โหลดเวลาว่างไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
         setSlots([]);
+        setSetupIncomplete(false);
       } finally {
         setLoadingSlots(false);
       }
@@ -144,69 +150,76 @@ export function BookingFlow(props: BookingFlowProps) {
         </div>
       ) : null}
 
-      {step === 0 ? (
-        <ServiceStep
-          services={props.services}
-          selected={selectedServiceIds}
-          onChange={setSelectedServiceIds}
-          onNext={() => {
-            if (staffStepEnabled) goNext();
-            else {
-              setStaffId(null);
+      {/* Keyed on the step so React remounts on every move, which replays
+          .ct-enter — the customer sees the panel arrive rather than the page
+          silently becoming a different page. */}
+      <div key={step} className="ct-enter">
+        {step === 0 ? (
+          <ServiceStep
+            services={props.services}
+            selected={selectedServiceIds}
+            onChange={setSelectedServiceIds}
+            onNext={() => {
+              if (staffStepEnabled) goNext();
+              else {
+                setStaffId(null);
+                goToTimeStep();
+              }
+            }}
+          />
+        ) : null}
+
+        {step === 1 ? (
+          <StaffStep
+            staff={eligibleStaff}
+            selected={staffId}
+            onChange={(next) => {
+              setSlotTaken(false);
+              setStaffId(next);
+            }}
+            onBack={goBack}
+            onNext={() => goToTimeStep()}
+          />
+        ) : null}
+
+        {step === 2 ? (
+          <TimeStep
+            timezone={props.timezone}
+            maxAdvanceDays={props.maxAdvanceDays}
+            date={date}
+            onDateChange={changeDate}
+            slots={slots}
+            loading={loadingSlots}
+            setupIncomplete={setupIncomplete}
+            shopPhone={props.phone}
+            selected={slot}
+            onSelect={(next) => {
+              setSlotTaken(false);
+              setSlot(next);
+            }}
+            onBack={() => setStep(staffStepEnabled ? 1 : 0)}
+            onNext={goNext}
+          />
+        ) : null}
+
+        {step === 3 && slot ? (
+          <ConfirmStep
+            tenantId={props.tenantId}
+            tenantSlug={props.tenantSlug}
+            timezone={props.timezone}
+            services={props.services.filter((s) => selectedServiceIds.includes(s.id))}
+            staff={props.staff.find((s) => s.id === slot.staffResourceId) ?? null}
+            slot={slot}
+            onBack={goBack}
+            onSlotTaken={() => {
+              // No automatic retry (docs/logic.md §2) — the customer sees the
+              // refreshed options and decides, rather than being moved silently.
+              setSlotTaken(true);
               goToTimeStep();
-            }
-          }}
-        />
-      ) : null}
-
-      {step === 1 ? (
-        <StaffStep
-          staff={eligibleStaff}
-          selected={staffId}
-          onChange={(next) => {
-            setSlotTaken(false);
-            setStaffId(next);
-          }}
-          onBack={goBack}
-          onNext={() => goToTimeStep()}
-        />
-      ) : null}
-
-      {step === 2 ? (
-        <TimeStep
-          timezone={props.timezone}
-          maxAdvanceDays={props.maxAdvanceDays}
-          date={date}
-          onDateChange={changeDate}
-          slots={slots}
-          loading={loadingSlots}
-          selected={slot}
-          onSelect={(next) => {
-            setSlotTaken(false);
-            setSlot(next);
-          }}
-          onBack={() => setStep(staffStepEnabled ? 1 : 0)}
-          onNext={goNext}
-        />
-      ) : null}
-
-      {step === 3 && slot ? (
-        <ConfirmStep
-          tenantId={props.tenantId}
-          tenantSlug={props.tenantSlug}
-          timezone={props.timezone}
-          services={props.services.filter((s) => selectedServiceIds.includes(s.id))}
-          staff={props.staff.find((s) => s.id === slot.staffResourceId) ?? null}
-          slot={slot}
-          onBack={goBack}
-          onSlotTaken={() => {
-            // No automatic retry (docs/logic.md §2) — the customer sees the
-            // refreshed options and decides, rather than being moved silently.
-            setSlotTaken(true);
-            goToTimeStep();
-          }}
-        />
-      ) : null}
+            }}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -221,17 +234,42 @@ function StepIndicator({ current, disabled }: { current: number; disabled: numbe
             <span
               className={cn(
                 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-medium',
+                'transition-[background-color,color,transform] duration-200',
                 index === current
-                  ? 'bg-teal-700 text-white'
+                  ? 'scale-110 bg-teal-700 text-white shadow-sm shadow-teal-700/30'
                   : index < current
                     ? 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200'
                     : 'bg-slate-100 text-slate-400 dark:bg-slate-800',
                 skipped && 'opacity-40',
               )}
             >
-              {index + 1}
+              {/* A finished step says so, rather than repeating its number —
+                  but a step that was skipped (no staff to pick) was never
+                  done, so it keeps its number rather than claiming a tick. */}
+              {index < current && !skipped ? (
+                <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5">
+                  <path
+                    d="m4.5 10.5 3.5 3.5 7.5-8"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                index + 1
+              )}
             </span>
-            <span className={cn('truncate', index === current ? 'font-medium' : 'text-slate-400')}>
+            <span
+              className={cn(
+                'truncate transition-colors duration-200',
+                index === current
+                  ? 'font-medium'
+                  : index < current
+                    ? 'text-slate-500'
+                    : 'text-slate-400',
+              )}
+            >
               {label}
             </span>
           </li>

@@ -7,7 +7,7 @@ import {
 } from '@/lib/auth/session';
 
 beforeAll(() => {
-  process.env.SESSION_SECRET ??= 'dGVzdC1zZWNyZXQtZm9yLXVuaXQtdGVzdHMtMzJieXRlcw==';
+  process.env.SESSION_SECRET ||= 'dGVzdC1zZWNyZXQtZm9yLXVuaXQtdGVzdHMtMzJieXRlcw==';
 });
 
 describe('session tokens', () => {

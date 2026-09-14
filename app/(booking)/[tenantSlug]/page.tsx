@@ -35,6 +35,7 @@ export default async function BookingPage({
       timezone={tenant.timezone}
       maxAdvanceDays={tenant.maxAdvanceDays}
       allowCustomerPickStaff={tenant.allowCustomerPickStaff}
+      phone={tenant.phone}
       services={services}
       staff={staff}
       liffId={liffId}

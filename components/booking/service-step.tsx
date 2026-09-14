@@ -41,15 +41,40 @@ export function ServiceStep({
                 <li key={service.id}>
                   <button
                     type="button"
+                    role="checkbox"
                     onClick={() => toggle(service.id)}
-                    aria-pressed={isSelected}
+                    aria-checked={isSelected}
                     className={cn(
-                      'flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition',
+                      'ct-press flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left',
                       isSelected
-                        ? 'border-teal-600 bg-teal-50 dark:bg-teal-950/40'
-                        : 'border-slate-200 hover:border-slate-300 dark:border-slate-800',
+                        ? 'border-teal-600 bg-teal-50 dark:border-teal-500 dark:bg-teal-950/40'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:border-slate-700 dark:hover:bg-slate-900',
                     )}
                   >
+                    {/* A tick, not just a tinted border: on a dark screen the
+                        border alone is easy to miss, and picking services is
+                        the one step where getting it wrong is silent. */}
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border transition',
+                        isSelected
+                          ? 'border-teal-600 bg-teal-600 text-white dark:border-teal-500 dark:bg-teal-500'
+                          : 'border-slate-300 dark:border-slate-600',
+                      )}
+                    >
+                      {isSelected ? (
+                        <svg viewBox="0 0 20 20" fill="none" className="size-3.5">
+                          <path
+                            d="m4.5 10.5 3.5 3.5 7.5-8"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      ) : null}
+                    </span>
                     <span className="flex-1">
                       <span className="block text-sm font-medium">{service.name}</span>
                       <span className="mt-0.5 block text-xs text-slate-500">
@@ -82,7 +107,7 @@ export function ServiceStep({
           type="button"
           disabled={selected.length === 0}
           onClick={onNext}
-          className="w-full rounded-xl bg-teal-700 py-3 text-sm font-medium text-white disabled:opacity-40"
+          className="w-full ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800 disabled:opacity-40"
         >
           ถัดไป
         </button>

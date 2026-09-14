@@ -16,6 +16,10 @@ export const onboardingSetupSchema = z
     closeTime: z.string().regex(TIME_RE, 'รูปแบบเวลาไม่ถูกต้อง'),
     serviceIds: z.array(z.string().uuid()),
     servicePrices: z.array(z.coerce.number().positive('ราคาต้องมากกว่า 0')),
+    // Without at least one of each the shop is created unbookable: every
+    // service in the business templates needs a person and a seat.
+    staffCount: z.coerce.number().int().min(1, 'ต้องมีอย่างน้อย 1 คน').max(50, 'มากเกินไป'),
+    seatCount: z.coerce.number().int().min(1, 'ต้องมีอย่างน้อย 1 ที่').max(50, 'มากเกินไป'),
   })
   .refine((v) => v.closeTime > v.openTime, {
     message: 'เวลาปิดต้องหลังเวลาเปิด',

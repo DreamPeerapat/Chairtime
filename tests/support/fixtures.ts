@@ -110,6 +110,10 @@ export function context(partial: Partial<AvailabilityContext> = {}): Availabilit
     shopHours: openAllWeek,
     shopClosures: [],
     services: [],
+    resourceTypes: [
+      { id: TYPE_STAFF, name: 'ช่าง', isHuman: true },
+      { id: TYPE_CHAIR, name: 'เก้าอี้', isHuman: false },
+    ],
     resources: [],
     busy: [],
     ...partial,

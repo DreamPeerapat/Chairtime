@@ -145,6 +145,7 @@ export async function loadAvailabilityContext(
     shopHours,
     shopClosures,
     services,
+    resourceTypes: typeRows.map((t) => ({ id: t.id, name: t.name, isHuman: t.isHuman })),
     resources,
     busy,
   };

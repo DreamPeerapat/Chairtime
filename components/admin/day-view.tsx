@@ -116,7 +116,7 @@ export function DayView({
 function Stat({ label, value, tone }: { label: string; value: string; tone?: 'warn' }) {
   const currency = value.startsWith('฿');
   return (
-    <div className="rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-800">
+    <div className="rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 transition-colors duration-200 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:border-slate-700">
       <dt className="text-xs text-slate-500">{label}</dt>
       <dd className={`text-lg font-semibold ${tone === 'warn' ? 'text-red-600' : ''}`}>
         {currency ? (

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAvailability } from '@/lib/availability';
+import { getAvailabilityReport } from '@/lib/availability';
 import { availabilityQuerySchema, parseIdList } from '@/lib/booking/schemas';
 
 export const dynamic = 'force-dynamic';
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   const { tenantId, date, serviceIds, resourceId } = parsed.data;
 
   try {
-    const slots = await getAvailability({
+    const { slots, setup } = await getAvailabilityReport({
       tenantId,
       date,
       serviceIds,
@@ -44,6 +44,9 @@ export async function GET(request: Request) {
         durationMin: Math.round(slot.end.diff(slot.start, 'minutes').minutes),
         staffResourceId: slot.staffResourceId,
       })),
+      // Only the codes cross to the customer's browser: the Thai copy in
+      // `setup` is written for the owner and names the shop's internals.
+      setupIncomplete: setup.length > 0,
     });
   } catch (error) {
     if (error instanceof Error && /unknown service|unknown tenant/i.test(error.message)) {

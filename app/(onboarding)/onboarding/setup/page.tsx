@@ -20,13 +20,23 @@ export default async function OnboardingSetupPage({
 
   const { error } = await searchParams;
 
-  const services = await withTenant(session.tenantId, (tx) =>
-    tx
+  // One transaction for both reads — withTenant opens one per call.
+  const { services, resourceTypes } = await withTenant(session.tenantId, async (tx) => ({
+    services: await tx
       .select({ id: schema.service.id, name: schema.service.name, basePrice: schema.service.basePrice })
       .from(schema.service)
       .where(eq(schema.service.tenantId, session.tenantId))
       .orderBy(schema.service.displayOrder),
-  );
+    resourceTypes: await tx
+      .select({ name: schema.resourceType.name, isHuman: schema.resourceType.isHuman })
+      .from(schema.resourceType)
+      .where(eq(schema.resourceType.tenantId, session.tenantId)),
+  }));
+
+  // The business template decides what these are called — "ช่างทำเล็บ / โต๊ะ"
+  // for a nail shop, "หมอนวด / เตียงนวด" for a massage shop.
+  const staffLabel = resourceTypes.find((t) => t.isHuman)?.name ?? 'ช่าง';
+  const seatLabel = resourceTypes.find((t) => !t.isHuman)?.name ?? 'ที่นั่ง';
 
   async function submit(formData: FormData) {
     'use server';
@@ -38,6 +48,8 @@ export default async function OnboardingSetupPage({
       closeTime: formData.get('closeTime'),
       serviceIds: formData.getAll('serviceId'),
       servicePrices: formData.getAll('servicePrice'),
+      staffCount: formData.get('staffCount'),
+      seatCount: formData.get('seatCount'),
     });
     if (!parsed.success) redirect('/onboarding/setup?error=invalid');
 
@@ -49,6 +61,8 @@ export default async function OnboardingSetupPage({
         serviceId,
         price: parsed.data.servicePrices[i]!,
       })),
+      staffCount: parsed.data.staffCount,
+      seatCount: parsed.data.seatCount,
     });
 
     const token = await mintSessionToken(activeSession.staffUserId, {
@@ -101,6 +115,44 @@ export default async function OnboardingSetupPage({
           </div>
         </fieldset>
 
+        {/* Without these the shop finishes the wizard unbookable: every
+            service needs a person and a seat, and the template creates only
+            the categories, never anything to put in them. */}
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-xs font-medium text-slate-600 dark:text-slate-400">
+            ร้านมีเท่าไหร่
+          </legend>
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <label htmlFor="staffCount">{staffLabel} (คน)</label>
+            <input
+              id="staffCount"
+              type="number"
+              name="staffCount"
+              min="1"
+              max="50"
+              defaultValue={1}
+              required
+              className="w-24 rounded-lg border border-slate-200 px-3 py-1.5 text-right text-sm dark:border-slate-800 dark:bg-slate-900"
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <label htmlFor="seatCount">{seatLabel}</label>
+            <input
+              id="seatCount"
+              type="number"
+              name="seatCount"
+              min="1"
+              max="50"
+              defaultValue={1}
+              required
+              className="w-24 rounded-lg border border-slate-200 px-3 py-1.5 text-right text-sm dark:border-slate-800 dark:bg-slate-900"
+            />
+          </div>
+          <p className="text-xs text-slate-400">
+            ใส่คร่าวๆ ก่อนได้ แก้ชื่อและเพิ่มลดทีหลังได้ในหลังบ้าน
+          </p>
+        </fieldset>
+
         {services.length > 0 ? (
           <fieldset className="flex flex-col gap-2">
             <legend className="text-xs font-medium text-slate-600 dark:text-slate-400">ราคาบริการ</legend>
@@ -124,7 +176,7 @@ export default async function OnboardingSetupPage({
           <p className="text-sm text-slate-500">ยังไม่มีบริการ — เพิ่มได้ในหลังบ้านหลังเข้าใช้งาน</p>
         )}
 
-        <button type="submit" className="rounded-xl bg-teal-700 py-3 text-sm font-medium text-white">
+        <button type="submit" className="ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800">
           เสร็จสิ้น เข้าใช้งาน
         </button>
       </form>

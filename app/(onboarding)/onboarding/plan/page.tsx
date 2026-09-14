@@ -151,7 +151,7 @@ export default async function OnboardingPlanPage({
           </div>
         </fieldset>
 
-        <button type="submit" className="rounded-xl bg-teal-700 py-3 text-sm font-medium text-white">
+        <button type="submit" className="ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800">
           เริ่มใช้งาน
         </button>
       </form>

@@ -47,7 +47,7 @@ function insufficientPrivilege(): Error {
 }
 
 beforeAll(() => {
-  process.env.SESSION_SECRET ??= 'dGVzdC1zZWNyZXQtZm9yLXVuaXQtdGVzdHMtMzJieXRlcw==';
+  process.env.SESSION_SECRET ||= 'dGVzdC1zZWNyZXQtZm9yLXVuaXQtdGVzdHMtMzJieXRlcw==';
 });
 
 beforeEach(() => {

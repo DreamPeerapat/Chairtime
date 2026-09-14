@@ -12,6 +12,8 @@ export function TimeStep({
   onDateChange,
   slots,
   loading,
+  setupIncomplete,
+  shopPhone,
   selected,
   onSelect,
   onBack,
@@ -23,6 +25,9 @@ export function TimeStep({
   onDateChange: (date: string) => void;
   slots: Slot[];
   loading: boolean;
+  /** no day will have a slot until the shop finishes setting itself up */
+  setupIncomplete: boolean;
+  shopPhone: string | null;
   selected: Slot | null;
   onSelect: (slot: Slot) => void;
   onBack: () => void;
@@ -54,10 +59,10 @@ export function TimeStep({
                 onClick={() => onDateChange(day)}
                 aria-pressed={active}
                 className={cn(
-                  'flex w-14 shrink-0 flex-col items-center rounded-xl border py-2 text-xs',
+                  'ct-press flex w-14 shrink-0 flex-col items-center rounded-xl border py-2 text-xs',
                   active
-                    ? 'border-teal-600 bg-teal-700 text-white'
-                    : 'border-slate-200 dark:border-slate-800',
+                    ? 'border-teal-600 bg-teal-700 text-white shadow-sm shadow-teal-700/30'
+                    : 'border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-600',
                 )}
               >
                 <span className={active ? 'text-teal-100' : 'text-slate-400'}>{dayName}</span>
@@ -70,7 +75,41 @@ export function TimeStep({
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-slate-400">กำลังหาเวลาว่าง…</p>
+        // The shape of the answer, held while it loads: the grid does not jump
+        // when the real times land, and the wait reads as progress.
+        <div className="flex flex-col gap-4" aria-busy="true" aria-live="polite">
+          <span className="sr-only">กำลังหาเวลาว่าง</span>
+          {[8, 6].map((count, group) => (
+            <section key={group} className="flex flex-col gap-2">
+              <div className="ct-skeleton h-3 w-16 rounded" />
+              <div className="grid grid-cols-4 gap-2">
+                {Array.from({ length: count }, (_, i) => (
+                  <div key={i} className="ct-skeleton h-9 rounded-lg" />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : setupIncomplete ? (
+        // Telling this customer to try another day would send them round a
+        // loop with no exit — no day has slots until the shop adds staff,
+        // seats or opening hours. Hand them the phone instead.
+        <div className="rounded-xl border border-dashed border-amber-400 bg-amber-50 px-4 py-8 text-center dark:border-amber-700 dark:bg-amber-950/30">
+          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+            ร้านยังไม่เปิดรับจองออนไลน์
+          </p>
+          <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+            ร้านกำลังตั้งค่าระบบอยู่ ยังไม่สามารถเลือกเวลาได้
+          </p>
+          {shopPhone ? (
+            <a
+              href={`tel:${shopPhone}`}
+              className="mt-4 inline-block rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-medium text-white"
+            >
+              โทรจองที่ {shopPhone}
+            </a>
+          ) : null}
+        </div>
       ) : slots.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 py-8 text-center dark:border-slate-700">
           <p className="text-sm text-slate-500">วันนี้ไม่มีเวลาว่าง</p>
@@ -92,10 +131,10 @@ export function TimeStep({
                         onClick={() => onSelect(slot)}
                         aria-pressed={active}
                         className={cn(
-                          'rounded-lg border py-2 text-sm tabular-nums transition',
+                          'ct-press rounded-lg border py-2 text-sm tabular-nums',
                           active
-                            ? 'border-teal-600 bg-teal-700 text-white'
-                            : 'border-slate-200 hover:border-teal-500 dark:border-slate-800',
+                            ? 'border-teal-600 bg-teal-700 text-white shadow-sm shadow-teal-700/30'
+                            : 'border-slate-200 hover:border-teal-500 hover:bg-teal-50 dark:border-slate-800 dark:hover:bg-teal-950/40',
                         )}
                       >
                         {DateTime.fromISO(slot.startsAt).setZone(timezone).toFormat('HH:mm')}
@@ -113,7 +152,7 @@ export function TimeStep({
         <button
           type="button"
           onClick={onBack}
-          className="rounded-xl border border-slate-200 px-5 py-3 text-sm dark:border-slate-800"
+          className="ct-press rounded-xl border border-slate-200 px-5 py-3 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
         >
           ย้อนกลับ
         </button>
@@ -121,7 +160,7 @@ export function TimeStep({
           type="button"
           disabled={!selected}
           onClick={onNext}
-          className="flex-1 rounded-xl bg-teal-700 py-3 text-sm font-medium text-white disabled:opacity-40"
+          className="flex-1 ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800 disabled:opacity-40"
         >
           ถัดไป
         </button>

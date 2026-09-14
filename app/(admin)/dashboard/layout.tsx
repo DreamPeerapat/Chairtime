@@ -1,19 +1,20 @@
-import Link from 'next/link';
+import Image from 'next/image';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { eq } from 'drizzle-orm';
 import { SESSION_COOKIE, requireSession } from '@/lib/auth';
-
-const NAV = [
-  { href: '/dashboard', label: 'ปฏิทิน' },
-  { href: '/dashboard/customers', label: 'ลูกค้า' },
-  { href: '/dashboard/services', label: 'บริการ' },
-  { href: '/dashboard/resources', label: 'ช่างและที่นั่ง' },
-  { href: '/dashboard/rewards/redeem', label: 'รางวัล' },
-  { href: '/dashboard/settings', label: 'ตั้งค่า' },
-] as const;
+import { db, schema } from '@/lib/db/client';
+import { DashboardNav } from '@/components/admin/dashboard-nav';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession('staff');
+
+  // The header used to print the URL slug at the person who works here all
+  // day. `tenant` sits outside RLS, so this is a plain indexed lookup.
+  const [tenant] = await db
+    .select({ name: schema.tenant.name })
+    .from(schema.tenant)
+    .where(eq(schema.tenant.id, session.tenantId));
 
   async function logout() {
     'use server';
@@ -24,31 +25,41 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <span className="text-sm font-semibold">{session.tenantSlug}</span>
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Image
+              src="/icon.png"
+              alt=""
+              width={28}
+              height={28}
+              className="shrink-0"
+              priority
+            />
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span className="truncate text-sm font-semibold">
+                {tenant?.name ?? session.tenantSlug}
+              </span>
+              <span className="truncate text-[11px] text-slate-400">{session.displayName}</span>
+            </span>
+          </div>
+
           <form action={logout}>
-            <button type="submit" className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-slate-200">
+            <button
+              type="submit"
+              className="ct-press rounded-lg px-2.5 py-1.5 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            >
               ออกจากระบบ
             </button>
           </form>
         </div>
-        <nav className="mx-auto max-w-6xl overflow-x-auto px-4">
-          <ul className="flex gap-1 pb-2">
-            {NAV.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="block rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+
+        <DashboardNav />
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-5">{children}</main>
+
+      {/* Keyed on nothing in particular — the animation replays on every server
+          navigation, which is the point: it marks that the page changed. */}
+      <main className="ct-enter mx-auto max-w-6xl px-4 py-5">{children}</main>
     </div>
   );
 }

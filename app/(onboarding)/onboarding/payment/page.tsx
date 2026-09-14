@@ -84,7 +84,7 @@ export default async function OnboardingPaymentPage({
       </div>
 
       <form action={confirm}>
-        <button type="submit" className="w-full rounded-xl bg-teal-700 py-3 text-sm font-medium text-white">
+        <button type="submit" className="w-full ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800">
           ยืนยันว่าโอนเงินแล้ว
         </button>
       </form>
