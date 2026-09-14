@@ -30,7 +30,7 @@ export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mx-auto max-w-6xl overflow-x-auto px-4">
+    <nav className="ct-scroll-x mx-auto max-w-6xl overflow-x-auto px-4">
       <ul className="flex gap-1 pb-2">
         {NAV.map((item) => {
           // '/dashboard' is a prefix of every other tab, so it only wins on an

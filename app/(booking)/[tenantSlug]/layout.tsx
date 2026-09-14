@@ -37,7 +37,7 @@ export default async function BookingLayout({
           </Link>
         ) : null}
       </header>
-      <main className="flex-1 px-5 py-5">{children}</main>
+      <main className="flex flex-1 flex-col px-5 py-5">{children}</main>
       <footer className="px-5 py-6 text-center text-xs text-slate-400">
         จองคิวด้วย Chairtime
       </footer>

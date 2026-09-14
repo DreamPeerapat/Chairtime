@@ -118,7 +118,7 @@ export function BookingFlow(props: BookingFlowProps) {
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-1 flex-col gap-5">
       <StepIndicator current={step} disabled={staffStepEnabled ? [] : [1]} />
 
       {error ? (
@@ -156,7 +156,7 @@ export function BookingFlow(props: BookingFlowProps) {
       {/* Keyed on the step so React remounts on every move, which replays
           .ct-enter — the customer sees the panel arrive rather than the page
           silently becoming a different page. */}
-      <div key={step} className="ct-enter">
+      <div key={step} className="ct-enter flex flex-1 flex-col">
         {step === 0 ? (
           <ServiceStep
             services={props.services}

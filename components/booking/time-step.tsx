@@ -42,10 +42,10 @@ export function TimeStep({
   const groups = groupByPartOfDay(slots, timezone);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-1 flex-col gap-4">
       <h2 className="text-base font-semibold">เลือกวันและเวลา</h2>
 
-      <div className="-mx-5 overflow-x-auto px-5">
+      <div className="ct-scroll-x -mx-5 overflow-x-auto px-5">
         {/* A labelled group so the strip announces itself as the day picker
             rather than as a run of unrelated buttons. */}
         <div role="group" aria-label="เลือกวัน" className="flex gap-2 pb-1">
@@ -148,7 +148,7 @@ export function TimeStep({
         </div>
       )}
 
-      <div className="sticky bottom-0 -mx-5 flex gap-2 border-t border-slate-200 bg-white/95 px-5 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+      <div className="sticky bottom-0 -mx-5 mt-auto flex gap-2 border-t border-slate-200 bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
         <button
           type="button"
           onClick={onBack}

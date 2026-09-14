@@ -22,7 +22,7 @@ export function StaffStep({
   onNext: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-1 flex-col gap-4">
       <h2 className="text-base font-semibold">เลือกช่าง</h2>
 
       <ul className="flex flex-col gap-2">
@@ -47,7 +47,7 @@ export function StaffStep({
         ))}
       </ul>
 
-      <div className="flex gap-2">
+      <div className="sticky bottom-0 -mx-5 mt-auto flex gap-2 border-t border-slate-200 bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
         <button
           type="button"
           onClick={onBack}
@@ -98,7 +98,7 @@ function Option({
       {/* Whose work is this? — the question people are actually answering on
           this screen. A name alone cannot answer it. */}
       {photos.length > 0 ? (
-        <span className="mt-2.5 flex gap-1.5 overflow-x-auto">
+        <span className="ct-scroll-x mt-2.5 flex gap-1.5 overflow-x-auto">
           {photos.slice(0, 6).map((photo) => (
             <span
               key={photo.id}

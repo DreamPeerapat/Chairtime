@@ -26,14 +26,19 @@ export function ServiceStep({
   const toggle = (id: string) =>
     onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
 
+  // A single unnamed group needs no heading — "อื่นๆ" above the only list on
+  // the screen labels nothing and reads like a category the shop forgot to fill in.
+  const showCategoryHeadings = grouped.length > 1 || grouped[0]?.[0] != null;
+
   return (
-    // pb-28 keeps the last service clear of the sticky summary bar below.
-    <div className="flex flex-col gap-4 pb-28">
+    <div className="flex flex-1 flex-col gap-4">
       <h2 className="text-base font-semibold">เลือกบริการ</h2>
 
       {grouped.map(([category, items]) => (
         <section key={category ?? 'อื่นๆ'} className="flex flex-col gap-2">
-          <h3 className="text-xs font-medium text-slate-500">{category ?? 'อื่นๆ'}</h3>
+          {showCategoryHeadings ? (
+            <h3 className="text-xs font-medium text-slate-500">{category ?? 'อื่นๆ'}</h3>
+          ) : null}
           <ul className="flex flex-col gap-2">
             {items.map((service) => {
               const isSelected = selected.includes(service.id);
@@ -96,12 +101,22 @@ export function ServiceStep({
         </section>
       ))}
 
-      <div className="sticky bottom-0 -mx-5 border-t border-slate-200 bg-white/95 px-5 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
-        <div className="mb-2 flex justify-between text-sm">
-          <span className="text-slate-500">
-            เลือกแล้ว {selected.length} รายการ · {formatDuration(totalMin)}
-          </span>
-          <span className="font-medium tabular-nums">{formatBaht(totalSatang / 100)}</span>
+      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-slate-200 bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+        {/* "เลือกแล้ว 0 รายการ · 0 นาที ฿0" is three noughts telling the
+            customer nothing. Before the first pick, say what to do instead. */}
+        <div className="mb-2 flex items-baseline justify-between gap-3 text-sm">
+          {selected.length === 0 ? (
+            <span className="text-slate-400">เลือกบริการที่ต้องการ เลือกได้มากกว่าหนึ่งอย่าง</span>
+          ) : (
+            <>
+              <span className="text-slate-500">
+                {selected.length} รายการ · {formatDuration(totalMin)}
+              </span>
+              <span className="text-base font-semibold tabular-nums">
+                {formatBaht(totalSatang / 100)}
+              </span>
+            </>
+          )}
         </div>
         <button
           type="button"

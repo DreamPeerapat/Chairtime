@@ -78,8 +78,16 @@ export function ConfirmStep({
 
   const canSubmit = name.trim().length > 0 && phone.trim().length >= 9 && !submitting;
 
+  // A greyed-out button with no explanation is a dead end: the customer has
+  // filled the form in and the app just refuses, silently. Say what is left —
+  // but only once they have started, so the form does not open by nagging.
+  const missing: string[] = [];
+  if (name.trim().length === 0) missing.push('ชื่อ');
+  if (phone.trim().length < 9) missing.push('เบอร์โทร 9 หลักขึ้นไป');
+  const showMissing = missing.length > 0 && (name.length > 0 || phone.length > 0);
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-1 flex-col gap-4">
       <h2 className="text-base font-semibold">ยืนยันการจอง</h2>
 
       <dl className="rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-800">
@@ -128,23 +136,29 @@ export function ConfirmStep({
         </p>
       ) : null}
 
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={submitting}
-          className="ct-press rounded-xl border border-slate-200 px-5 py-3 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
-        >
-          ย้อนกลับ
-        </button>
-        <button
-          type="button"
-          disabled={!canSubmit}
-          onClick={submit}
-          className="flex-1 ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800 disabled:opacity-40"
-        >
-          {submitting ? 'กำลังจอง…' : 'ยืนยันการจอง'}
-        </button>
+      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-slate-200 bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+        {showMissing ? (
+          <p className="mb-2 text-xs text-slate-500">ยังขาด {missing.join(' และ ')}</p>
+        ) : null}
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={submitting}
+            className="ct-press rounded-xl border border-slate-200 px-5 py-3 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
+          >
+            ย้อนกลับ
+          </button>
+          <button
+            type="button"
+            disabled={!canSubmit}
+            onClick={submit}
+            className="flex-1 ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800 disabled:opacity-40"
+          >
+            {submitting ? 'กำลังจอง…' : 'ยืนยันการจอง'}
+          </button>
+        </div>
       </div>
     </div>
   );

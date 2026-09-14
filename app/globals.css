@@ -128,6 +128,23 @@ body {
   transform: scale(0.985);
 }
 
+/*
+ * Horizontal strips — the day picker, the gallery filters, the admin tabs.
+ *
+ * The scrollbar is hidden, not the scrolling: on a phone the bar is a grey
+ * stub under the content that never gets dragged, and the half-visible next
+ * item already says "there is more this way". Keyboard and wheel scrolling are
+ * untouched, and each strip stays a labelled group for screen readers.
+ */
+.ct-scroll-x {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ct-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
 /* Placeholder blocks while slots load — shape first, content after. */
 .ct-skeleton {
   background-image: linear-gradient(

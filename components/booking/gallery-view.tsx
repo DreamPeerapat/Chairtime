@@ -38,7 +38,7 @@ export function GalleryView({ photos, shopName }: { photos: PortfolioPhoto[]; sh
   return (
     <div className="flex flex-col gap-4">
       {filters.length > 0 ? (
-        <div className="-mx-5 overflow-x-auto px-5">
+        <div className="ct-scroll-x -mx-5 overflow-x-auto px-5">
           <div role="group" aria-label="กรองผลงาน" className="flex gap-2 pb-1">
             <FilterChip label="ทั้งหมด" active={filter === null} onClick={() => setFilter(null)} />
             {filters.map((name) => (
