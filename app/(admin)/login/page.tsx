@@ -7,6 +7,10 @@ export const dynamic = 'force-dynamic';
 const ERROR_MESSAGES: Record<string, string> = {
   oauth: 'เข้าสู่ระบบไม่สำเร็จ ลองใหม่อีกครั้ง',
   oauth_config: 'ระบบล็อกอินยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแล',
+  // The provider verified this person fine; the failure was on our side
+  // (database or SESSION_SECRET). Retrying the same login will not help,
+  // so the copy does not invite it — the detail is in the server log.
+  server: 'ระบบขัดข้องชั่วคราว ยืนยันตัวตนผ่านแล้วแต่เปิดบัญชีไม่สำเร็จ กรุณาติดต่อผู้ดูแล',
 };
 
 export default async function LoginPage({

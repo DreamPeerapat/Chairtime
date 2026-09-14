@@ -7,6 +7,7 @@
  * built as plain `NextResponse.redirect` and cookies are set on the response.
  */
 import { NextResponse } from 'next/server';
+import { findSqlState } from '@/lib/booking/errors';
 import { exchangeCode, OAuthConfigError, OAuthExchangeError, type OAuthProviderId } from './oauth';
 import { findOrCreateStaffUser, routeAfterLogin } from './identity';
 import {
@@ -60,27 +61,59 @@ export async function handleOAuthCallback(
     throw error;
   }
 
-  const { staffUserId } = await findOrCreateStaffUser(profile);
-  const route = await routeAfterLogin(staffUserId);
-
-  if (route.kind === 'dashboard') {
-    const response = NextResponse.redirect(new URL('/dashboard', url.origin));
-    response.cookies.set(SESSION_COOKIE, route.token, SESSION_COOKIE_OPTIONS);
-    response.cookies.delete(OAUTH_STATE_COOKIE);
-    return response;
+  // Everything from here on touches the database and SESSION_SECRET. Letting
+  // those throw hands the shop owner a blank browser 500 with nothing in the
+  // URL to say what broke, so each stage is caught and named: the reason goes
+  // to the runtime log, the person gets Thai copy on /login.
+  let staffUserId: string;
+  try {
+    ({ staffUserId } = await findOrCreateStaffUser(profile));
+  } catch (error) {
+    logCallbackFailure(provider, 'find_or_create_staff_user', error);
+    return toLogin(url, 'server');
   }
 
-  // 0 shops -> pick a plan; >1 shop -> pick which one. Either way there is a
-  // person but no tenant yet, so only the short-lived pending identity is set.
-  const destination = route.kind === 'onboarding' ? '/onboarding/plan' : '/select-store';
-  const response = NextResponse.redirect(new URL(destination, url.origin));
-  response.cookies.set(
-    PENDING_IDENTITY_COOKIE,
-    createPendingIdentityToken(staffUserId),
-    PENDING_IDENTITY_COOKIE_OPTIONS,
+  try {
+    const route = await routeAfterLogin(staffUserId);
+
+    if (route.kind === 'dashboard') {
+      const response = NextResponse.redirect(new URL('/dashboard', url.origin));
+      response.cookies.set(SESSION_COOKIE, route.token, SESSION_COOKIE_OPTIONS);
+      response.cookies.delete(OAUTH_STATE_COOKIE);
+      return response;
+    }
+
+    // 0 shops -> pick a plan; >1 shop -> pick which one. Either way there is a
+    // person but no tenant yet, so only the short-lived pending identity is set.
+    const destination = route.kind === 'onboarding' ? '/onboarding/plan' : '/select-store';
+    const response = NextResponse.redirect(new URL(destination, url.origin));
+    response.cookies.set(
+      PENDING_IDENTITY_COOKIE,
+      createPendingIdentityToken(staffUserId),
+      PENDING_IDENTITY_COOKIE_OPTIONS,
+    );
+    response.cookies.delete(OAUTH_STATE_COOKIE);
+    return response;
+  } catch (error) {
+    logCallbackFailure(provider, 'route_after_login', error);
+    return toLogin(url, 'server');
+  }
+}
+
+/**
+ * One line per failed login, carrying the SQLSTATE when there is one, because
+ * that is what names the cause: 42P01 (undefined table) means drizzle/0004 was
+ * never applied to this database, 42501 (insufficient privilege) means the app
+ * role never got the grants that migration hands out, 28P01/ECONNREFUSED mean
+ * DATABASE_URL is wrong. The profile is deliberately not logged — it holds the
+ * person's email and LINE user id.
+ */
+function logCallbackFailure(provider: OAuthProviderId, stage: string, error: unknown): void {
+  const sqlState = findSqlState(error);
+  console.error(
+    `[auth] ${provider} callback failed at ${stage}${sqlState ? ` (SQLSTATE ${sqlState})` : ''}`,
+    error,
   );
-  response.cookies.delete(OAUTH_STATE_COOKIE);
-  return response;
 }
 
 function toLogin(url: URL, error: string): NextResponse {

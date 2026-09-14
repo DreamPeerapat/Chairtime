@@ -53,8 +53,31 @@ pnpm db:migrate
 GRANT USAGE ON SCHEMA public TO <app_role>;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO <app_role>;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO <app_role>;
-GRANT EXECUTE ON FUNCTION staff_login_lookup(text) TO <app_role>;
+GRANT EXECUTE ON FUNCTION staff_tenant_lookup(uuid) TO <app_role>;
 ```
+
+> **ระวังชื่อ role** migration ข้อ 7 ของ `drizzle/0004` GRANT ให้ role ที่ชื่อ
+> `chairtime` เท่านั้น (หรือชื่อที่ตั้งไว้ใน `chairtime.app_role`) ถ้า managed
+> service สร้าง role มาให้ชื่ออื่น — Supabase, Neon มักเป็นอย่างนั้น —
+> **GRANT ทั้งบล็อกจะถูกข้ามไปเงียบๆ** migration ขึ้นว่าสำเร็จ แต่พอมีคนกดล็อกอิน
+> จะได้ 500 เพราะ role อ่าน `auth_identity` ไม่ได้ รันแบบนี้แทนเพื่อให้ migration
+> GRANT ให้ role ที่ใช้จริง:
+>
+> ```bash
+> APP_DB_ROLE=<app_role> pnpm db:migrate
+> ```
+
+### ตรวจว่าล็อกอินจะผ่านจริง
+
+หลัง migrate เสร็จ ตรวจด้วย **connection string ของ role แอป** (ไม่ใช่ owner)
+
+```bash
+pnpm db:check-login "$DATABASE_URL"
+```
+
+มันไล่เช็คทุกตารางและฟังก์ชันที่ `/auth/callback/{provider}` แตะ แล้วบอกแยก
+ระหว่าง "ยังไม่ได้ migrate" กับ "migrate แล้วแต่ role ไม่มีสิทธิ์" ซึ่งจากหน้าเว็บ
+เห็นเหมือนกันหมดคือล็อกอินไม่ผ่าน
 
 > **สำคัญ** ถ้าแอปต่อด้วย superuser หรือเจ้าของตาราง RLS จะถูกข้ามทั้งหมด
 > และข้อมูลรั่วข้ามร้านจะไม่โผล่จนกว่าจะมีลูกค้าจริง
