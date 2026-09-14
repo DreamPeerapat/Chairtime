@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { findTenantBySlug } from '@/lib/booking/queries';
-import { listPublishedPortfolio } from '@/lib/portfolio/queries';
+import { hasPublishedPortfolio } from '@/lib/portfolio/queries';
 
 export default async function BookingLayout({
   children,
@@ -14,7 +14,7 @@ export default async function BookingLayout({
   const tenant = await findTenantBySlug(tenantSlug);
   if (!tenant) notFound();
 
-  const hasPortfolio = (await listPublishedPortfolio(tenant.id)).length > 0;
+  const hasPortfolio = await hasPublishedPortfolio(tenant.id);
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col">

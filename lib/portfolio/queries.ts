@@ -63,8 +63,18 @@ export async function listPublishedPortfolio(tenantId: string): Promise<Portfoli
 export async function listPublishedPortfolioByStaff(
   tenantId: string,
 ): Promise<Map<string, PortfolioPhoto[]>> {
-  const photos = await listPublishedPortfolio(tenantId);
   const byStaff = new Map<string, PortfolioPhoto[]>();
+
+  // Same reasoning as hasPublishedPortfolio: these photos decorate the staff
+  // step. Booking is the thing the customer came for, and it must not fall
+  // over because the portfolio did.
+  let photos: PortfolioPhoto[];
+  try {
+    photos = await listPublishedPortfolio(tenantId);
+  } catch (error) {
+    console.error('[portfolio] staff strip failed', error);
+    return byStaff;
+  }
 
   for (const photo of photos) {
     if (!photo.resourceId) continue;
@@ -74,6 +84,35 @@ export async function listPublishedPortfolioByStaff(
   }
 
   return byStaff;
+}
+
+/**
+ * Is there anything to show? — for the "ดูผลงาน" link in the shop header.
+ *
+ * Deliberately cheap and deliberately non-fatal. It runs on every customer
+ * page, and it decides one decorative link: a shop whose portfolio query fails
+ * must still be able to take bookings, so a failure here means "no link", not
+ * a 500 on the booking flow. LIMIT 1 on the (tenant_id, display_order) index.
+ */
+export async function hasPublishedPortfolio(tenantId: string): Promise<boolean> {
+  try {
+    return await withTenant(tenantId, async (tx) => {
+      const [row] = await tx
+        .select({ id: schema.portfolioItem.id })
+        .from(schema.portfolioItem)
+        .where(
+          and(
+            eq(schema.portfolioItem.tenantId, tenantId),
+            eq(schema.portfolioItem.isPublished, true),
+          ),
+        )
+        .limit(1);
+      return Boolean(row);
+    });
+  } catch (error) {
+    console.error('[portfolio] header link check failed', error);
+    return false;
+  }
 }
 
 /** The blob pathname for one photo, so the file can be deleted with the row. */
