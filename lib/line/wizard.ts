@@ -20,6 +20,15 @@ export function liffEndpointFor(tenantSlug: string): string {
   return `${base}/${tenantSlug}`;
 }
 
+/**
+ * The link a customer taps — in a rich menu, a greeting message, or the
+ * webhook's reply. Opens the booking page inside LINE rather than in a
+ * browser, which is what makes the booking carry a LINE identity.
+ */
+export function liffUrlFor(liffId: string): string {
+  return `https://liff.line.me/${liffId}`;
+}
+
 export interface WizardState {
   stepOaCreated: boolean;
   stepApiEnabled: boolean;

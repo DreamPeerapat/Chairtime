@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireSession } from '@/lib/auth';
 import {
   liffEndpointFor,
+  liffUrlFor,
   loadWizardState,
   markStepDone,
   saveCredentials,
@@ -33,6 +34,7 @@ export default async function LineConnectPage({
   const state = await loadWizardState(session.tenantId);
   const webhookUrl = state.webhookUrl ?? webhookUrlFor(session.tenantSlug);
   const liffEndpoint = liffEndpointFor(session.tenantSlug);
+  const liffUrl = state.liffId ? liffUrlFor(state.liffId) : null;
 
   async function step(name: 'stepOaCreated' | 'stepApiEnabled') {
     'use server';
@@ -195,6 +197,51 @@ export default async function LineConnectPage({
           </form>
         )}
       </Step>
+
+      {/* The last mile. Everything above is plumbing the shop cannot see the
+          point of until a customer can actually reach the booking page, and a
+          rich menu is how they reach it — a button that sits under the chat
+          permanently rather than a keyword nobody knows to type. */}
+      {state.liffId ? (
+        <Step n={6} title="ใส่ปุ่มจองคิวใน Rich menu" done={false}>
+          <p className="mb-2 text-slate-500">
+            ปุ่มนี้จะค้างอยู่ใต้ห้องแชทตลอด ลูกค้าจึงกดจองได้โดยไม่ต้องจำว่าต้องพิมพ์อะไร
+          </p>
+
+          <p className="mb-1 text-xs font-medium text-slate-600 dark:text-slate-400">
+            ลิงก์สำหรับวางใน Rich menu
+          </p>
+          <code className="mb-3 block rounded-lg bg-slate-100 px-3 py-2 text-xs break-all dark:bg-slate-900">
+            {liffUrl}
+          </code>
+
+          <ol className="list-decimal space-y-1 pl-4 text-xs text-slate-500">
+            <li>
+              เปิด <span className="font-medium">manager.line.biz</span> → เลือก OA ของร้าน
+            </li>
+            <li>
+              เมนูซ้าย <span className="font-medium">Rich menu</span> → <span className="font-medium">Create</span>
+            </li>
+            <li>เลือก Template แล้วอัปโหลดรูปปุ่ม (ขนาด 2500 × 1686 หรือ 2500 × 843 px)</li>
+            <li>
+              ช่องที่จะให้กดจอง เลือก Action เป็น <span className="font-medium">Link</span> แล้ววาง URL ด้านบน
+            </li>
+            <li>
+              ตั้ง <span className="font-medium">Display period</span> ให้ครอบวันนี้ แล้วกด Save —
+              ถ้าไม่ตั้ง เมนูจะไม่ขึ้น
+            </li>
+          </ol>
+
+          <a
+            href="https://manager.line.biz/"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-block text-teal-700 underline dark:text-teal-400"
+          >
+            เปิด LINE Official Account Manager
+          </a>
+        </Step>
+      ) : null}
     </div>
   );
 }
