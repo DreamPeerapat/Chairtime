@@ -14,6 +14,12 @@ export function webhookUrlFor(tenantSlug: string): string {
   return `${base}/api/webhooks/line/${tenantSlug}`;
 }
 
+/** What the shop pastes into the LIFF app's "Endpoint URL" field. */
+export function liffEndpointFor(tenantSlug: string): string {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? '';
+  return `${base}/${tenantSlug}`;
+}
+
 export interface WizardState {
   stepOaCreated: boolean;
   stepApiEnabled: boolean;
@@ -24,6 +30,8 @@ export interface WizardState {
   webhookUrl: string | null;
   lastError: string | null;
   connectedAt: Date | null;
+  /** set once the shop registers a LIFF app — see saveLiffId */
+  liffId: string | null;
 }
 
 const EMPTY_STATE: WizardState = {
@@ -36,6 +44,7 @@ const EMPTY_STATE: WizardState = {
   webhookUrl: null,
   lastError: null,
   connectedAt: null,
+  liffId: null,
 };
 
 export async function loadWizardState(tenantId: string): Promise<WizardState> {
@@ -156,4 +165,25 @@ async function recordError(tenantId: string, message: string): Promise<void> {
       .set({ lastError: message, updatedAt: new Date() })
       .where(eq(schema.tenantLineOa.tenantId, tenantId)),
   );
+}
+
+/**
+ * Store the shop's LIFF id.
+ *
+ * Without one the OA can still send a booking link, but it opens in an
+ * ordinary browser — and a booking made there carries no LINE identity, so
+ * the shop has a phone number and no way to reply. The id is what turns that
+ * link into a LIFF page, which is where useLiffIdentity gets a token.
+ *
+ * Not a secret: a LIFF id appears in the URL of every page it opens. Stored
+ * in plain text, unlike the channel token and secret beside it.
+ */
+export async function saveLiffId(tenantId: string, liffId: string | null): Promise<void> {
+  await withTenant(tenantId, async (tx) => {
+    await ensureRow(tx, tenantId);
+    await tx
+      .update(schema.tenantLineOa)
+      .set({ liffId: liffId || null, updatedAt: new Date() })
+      .where(eq(schema.tenantLineOa.tenantId, tenantId));
+  });
 }

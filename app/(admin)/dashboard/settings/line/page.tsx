@@ -1,9 +1,22 @@
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { requireSession } from '@/lib/auth';
-import { loadWizardState, markStepDone, saveCredentials, testConnection, webhookUrlFor } from '@/lib/line/wizard';
+import {
+  liffEndpointFor,
+  loadWizardState,
+  markStepDone,
+  saveCredentials,
+  saveLiffId,
+  testConnection,
+  webhookUrlFor,
+} from '@/lib/line/wizard';
 
 export const dynamic = 'force-dynamic';
+
+const liffIdSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{10}-[0-9a-zA-Z]+$/, 'รูปแบบ LIFF ID ไม่ถูกต้อง');
 
 const credentialsSchema = z.object({
   channelAccessToken: z.string().trim().min(10, 'กรุณาวาง Channel Access Token ให้ครบ'),
@@ -19,6 +32,7 @@ export default async function LineConnectPage({
   const { error, ok } = await searchParams;
   const state = await loadWizardState(session.tenantId);
   const webhookUrl = state.webhookUrl ?? webhookUrlFor(session.tenantSlug);
+  const liffEndpoint = liffEndpointFor(session.tenantSlug);
 
   async function step(name: 'stepOaCreated' | 'stepApiEnabled') {
     'use server';
@@ -39,6 +53,17 @@ export default async function LineConnectPage({
     redirect('/dashboard/settings/line');
   }
 
+  async function saveLiff(formData: FormData) {
+    'use server';
+    const active = await requireSession('manager');
+    // A LIFF id looks like "1234567890-abcdefgh". Rejecting anything else here
+    // saves the shop from a silently broken link they cannot see is broken.
+    const parsed = liffIdSchema.safeParse(formData.get('liffId'));
+    if (!parsed.success) redirect('/dashboard/settings/line?error=liff');
+    await saveLiffId(active.tenantId, parsed.data);
+    redirect('/dashboard/settings/line');
+  }
+
   async function runTest() {
     'use server';
     const active = await requireSession('manager');
@@ -53,6 +78,9 @@ export default async function LineConnectPage({
       {ok ? <Banner tone="ok">ทดสอบสำเร็จ! ระบบเชื่อมต่อ LINE OA ของร้านแล้ว</Banner> : null}
       {error === 'invalid' ? <Banner tone="error">กรุณากรอก Token และ Secret ให้ครบ</Banner> : null}
       {error === 'test' ? <Banner tone="error">{state.lastError ?? 'ทดสอบเชื่อมต่อไม่สำเร็จ'}</Banner> : null}
+      {error === 'liff' ? (
+        <Banner tone="error">LIFF ID ไม่ถูกต้อง ต้องเป็นรูปแบบ 1234567890-abcdefgh</Banner>
+      ) : null}
 
       <Step n={1} title="สร้าง LINE Official Account" done={state.stepOaCreated}>
         <p>ถ้ายังไม่มี OA ของร้าน สร้างได้ที่ manager.line.biz</p>
@@ -124,6 +152,47 @@ export default async function LineConnectPage({
               <NextButton>ทดสอบอีกครั้ง</NextButton>
             </form>
           </div>
+        )}
+      </Step>
+
+      {/* Without this the OA still sends a booking link, but it opens an
+          ordinary browser — the booking then carries no LINE identity, so the
+          shop ends up with a phone number and no way to reply on LINE. */}
+      <Step n={5} title="เปิดหน้าจองใน LINE (LIFF)" done={Boolean(state.liffId)} locked={!state.isVerified}>
+        <p className="mb-2 text-slate-500">
+          ขั้นนี้ทำให้ลูกค้าจองในแอป LINE ได้เลย ร้านจะได้บัญชี LINE ของลูกค้าไว้ส่งคำยืนยัน
+          เตือนนัด และตอบกลับ — ถ้าไม่ทำ ลูกค้ายังจองได้ แต่ร้านจะได้แค่เบอร์โทร
+        </p>
+
+        <ol className="mb-3 list-decimal space-y-1 pl-4 text-xs text-slate-500">
+          <li>
+            เปิด <span className="font-medium">developers.line.biz</span> → เลือก Provider →
+            แท็บ <span className="font-medium">LIFF</span> → Add
+          </li>
+          <li>
+            Size เลือก <span className="font-medium">Full</span>, Scope ติ๊ก{' '}
+            <span className="font-medium">profile</span> และ{' '}
+            <span className="font-medium">openid</span>
+          </li>
+          <li>
+            Endpoint URL ใส่ค่านี้
+            <code className="mt-1 block rounded bg-slate-100 px-2 py-1 break-all dark:bg-slate-800">
+              {liffEndpoint}
+            </code>
+          </li>
+          <li>คัดลอก LIFF ID ที่ได้มาวางด้านล่าง</li>
+        </ol>
+
+        {state.isVerified && (
+          <form action={saveLiff} className="flex flex-col gap-2">
+            <input
+              name="liffId"
+              defaultValue={state.liffId ?? ''}
+              placeholder="1234567890-abcdefgh"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm dark:border-slate-800 dark:bg-slate-900"
+            />
+            <NextButton>{state.liffId ? 'บันทึกใหม่' : 'บันทึก LIFF ID'}</NextButton>
+          </form>
         )}
       </Step>
     </div>
