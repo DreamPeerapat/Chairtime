@@ -214,6 +214,7 @@ export function BookingFlow(props: BookingFlowProps) {
             services={props.services.filter((s) => selectedServiceIds.includes(s.id))}
             staff={props.staff.find((s) => s.id === slot.staffResourceId) ?? null}
             slot={slot}
+            liffId={props.liffId}
             onBack={goBack}
             onSlotTaken={() => {
               // No automatic retry (docs/logic.md §2) — the customer sees the

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { ServiceListItem, StaffListItem } from '@/lib/booking/queries';
 import type { Slot } from './booking-flow';
 import { formatBaht, formatDuration, splitBaht, thaiDateFull, thaiTimeRange } from './format';
+import { useLiffIdentity } from './use-liff-identity';
 
 export function ConfirmStep({
   tenantId,
@@ -14,6 +15,7 @@ export function ConfirmStep({
   services,
   staff,
   slot,
+  liffId,
   onBack,
   onSlotTaken,
 }: {
@@ -23,10 +25,13 @@ export function ConfirmStep({
   services: ServiceListItem[];
   staff: StaffListItem | null;
   slot: Slot;
+  /** set when the shop has connected LINE — lets the booking carry a LINE identity */
+  liffId: string | null;
   onBack: () => void;
   onSlotTaken: () => void;
 }) {
   const router = useRouter();
+  const liff = useLiffIdentity(liffId);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [note, setNote] = useState('');
@@ -49,8 +54,10 @@ export function ConfirmStep({
           startsAt: slot.startsAt,
           serviceIds: services.map((s) => s.id),
           resourceId: slot.staffResourceId ?? undefined,
-          customerName: name.trim(),
+          customerName: name.trim() || liffName || undefined,
           customerPhone: phone.trim(),
+          // The token, not an id: the server exchanges it with LINE.
+          lineAccessToken: liff.status === 'ready' ? liff.accessToken : undefined,
           customerNote: note.trim() || null,
         }),
       });
@@ -76,13 +83,19 @@ export function ConfirmStep({
     }
   }
 
-  const canSubmit = name.trim().length > 0 && phone.trim().length >= 9 && !submitting;
+  const viaLine = liff.status === 'ready';
+  const liffName = viaLine ? liff.displayName : null;
+
+  // Opened from the shop's LINE: the name comes with the identity, so the
+  // phone is the only thing left to ask for.
+  const canSubmit =
+    (viaLine || name.trim().length > 0) && phone.trim().length >= 9 && !submitting;
 
   // A greyed-out button with no explanation is a dead end: the customer has
   // filled the form in and the app just refuses, silently. Say what is left —
   // but only once they have started, so the form does not open by nagging.
   const missing: string[] = [];
-  if (name.trim().length === 0) missing.push('ชื่อ');
+  if (!viaLine && name.trim().length === 0) missing.push('ชื่อ');
   if (phone.trim().length < 9) missing.push('เบอร์โทร 9 หลักขึ้นไป');
   const showMissing = missing.length > 0 && (name.length > 0 || phone.length > 0);
 
@@ -100,15 +113,27 @@ export function ConfirmStep({
       </dl>
 
       <div className="flex flex-col gap-3">
-        <Field label="ชื่อ" required>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="name"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900"
-            placeholder="ชื่อที่ให้ร้านเรียก"
-          />
-        </Field>
+        {/* In LIFF the shop already knows who this is, and the confirmation
+            and reminders will reach them on LINE. Asking for a name as well
+            is a field for its own sake. */}
+        {viaLine ? (
+          <p className="rounded-lg bg-teal-50 px-3 py-2.5 text-xs text-teal-900 dark:bg-teal-950/40 dark:text-teal-200">
+            จองในนาม <span className="font-medium">{liffName ?? 'บัญชี LINE ของคุณ'}</span>
+            <span className="mt-0.5 block text-teal-800/80 dark:text-teal-300/80">
+              ร้านจะส่งคำยืนยันและติดต่อกลับทาง LINE นี้
+            </span>
+          </p>
+        ) : (
+          <Field label="ชื่อ" required>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900"
+              placeholder="ชื่อที่ให้ร้านเรียก"
+            />
+          </Field>
+        )}
         <Field label="เบอร์โทร" required>
           <input
             value={phone}

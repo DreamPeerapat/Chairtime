@@ -5,6 +5,7 @@ import { withTenant } from '@/lib/db/tenant';
 import { resolveCustomer } from '@/lib/customer/upsert';
 import { BookingPolicyError, SlotTakenError, SlotUnavailableError } from '@/lib/booking/errors';
 import { createBookingSchema } from '@/lib/booking/schemas';
+import { fetchLineProfile } from '@/lib/line/profile';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,16 @@ export async function POST(request: Request) {
 
   const input = parsed.data;
 
+  // Resolve the LINE identity from the token before opening the transaction:
+  // it is a network call to LINE, and holding a database transaction open
+  // across it would pin a connection for the round trip. A token LINE rejects
+  // simply yields no id — the booking still goes through on the phone number,
+  // because a customer standing in the shop's LIFF page should not lose their
+  // appointment over an expired token.
+  const lineUserId = input.lineAccessToken
+    ? ((await fetchLineProfile(input.lineAccessToken))?.userId ?? null)
+    : null;
+
   try {
     // Customer lookup and booking share one transaction: a booking that fails
     // the exclusion constraint must not leave a half-created customer behind.
@@ -42,7 +53,7 @@ export async function POST(request: Request) {
           tenantId: input.tenantId,
           name: input.customerName,
           phone: input.customerPhone,
-          lineUserId: input.lineUserId,
+          lineUserId,
         }));
 
       return createBookingInTx(tx, {

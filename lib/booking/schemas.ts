@@ -19,7 +19,16 @@ export const createBookingSchema = z.object({
   // finds or creates the customer record from these.
   customerName: z.string().trim().min(1).max(120).nullish(),
   customerPhone: z.string().trim().min(8).max(20).nullish(),
-  lineUserId: z.string().trim().max(64).nullish(),
+  /**
+   * A LIFF access token, never a lineUserId.
+   *
+   * This endpoint is public and unauthenticated, so a raw lineUserId is a
+   * claim anyone can make — and `resolveCustomer` prefers a LINE match over a
+   * phone match, so the claim would attach the booking to whoever really owns
+   * that id. They would then get LINE messages about an appointment they never
+   * made. The route exchanges this token with LINE for the id instead.
+   */
+  lineAccessToken: z.string().trim().min(10).max(500).nullish(),
   startsAt: z.iso.datetime({ offset: true }),
   serviceIds: z.array(uuid).min(1, 'ต้องเลือกบริการอย่างน้อย 1 อย่าง'),
   resourceId: uuid.optional(),

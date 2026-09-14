@@ -26,16 +26,30 @@ export default async function BookingLayout({
           ) : null}
         </div>
 
-        {/* Only offered when there is something behind it — a link to an empty
-            gallery is a worse first impression than no link. */}
-        {hasPortfolio ? (
-          <Link
-            href={`/${tenantSlug}/gallery`}
-            className="ct-press shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-xs whitespace-nowrap hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
-          >
-            ดูผลงาน
-          </Link>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-2">
+          {/* A booking form answers "when", never "can you do X for my hair".
+              The shop's number belongs where that question gets asked, not
+              buried at the end of the flow. */}
+          {tenant.phone ? (
+            <a
+              href={`tel:${tenant.phone}`}
+              className="ct-press rounded-lg border border-slate-200 px-3 py-1.5 text-xs whitespace-nowrap hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+            >
+              โทรหาร้าน
+            </a>
+          ) : null}
+
+          {/* Only offered when there is something behind it — a link to an
+              empty gallery is a worse first impression than no link. */}
+          {hasPortfolio ? (
+            <Link
+              href={`/${tenantSlug}/gallery`}
+              className="ct-press rounded-lg border border-slate-200 px-3 py-1.5 text-xs whitespace-nowrap hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+            >
+              ดูผลงาน
+            </Link>
+          ) : null}
+        </div>
       </header>
       <main className="flex flex-1 flex-col px-5 py-5">{children}</main>
       <footer className="px-5 py-6 text-center text-xs text-slate-400">
