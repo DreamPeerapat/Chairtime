@@ -20,6 +20,7 @@ import {
   type BookingMessageData,
 } from './messages';
 import { getPointsSummaryByLineUserId } from '@/lib/loyalty/summary';
+import { LOYALTY_ENABLED } from '@/lib/features';
 import type { LineMessage, LineWebhookEvent } from './types';
 
 export interface WebhookContext {
@@ -78,7 +79,9 @@ export async function handleEvent(
     };
   }
 
-  if (matches(text, ['แต้มของฉัน', 'แต้มฉัน', 'ดูแต้ม', 'my points', 'mypoints'])) {
+  // While loyalty is hidden this keyword falls through to the default reply,
+  // so the OA never confirms a feature the customer has no way to use.
+  if (LOYALTY_ENABLED && matches(text, ['แต้มของฉัน', 'แต้มฉัน', 'ดูแต้ม', 'my points', 'mypoints'])) {
     if (!lineUserId) {
       return {
         replyToken: event.replyToken,

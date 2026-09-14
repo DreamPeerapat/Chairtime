@@ -617,6 +617,32 @@ CREATE TABLE tenant_line_oa (
 
 
 -- =====================================================================
+--  12.5 PORTFOLIO — ผลงานของร้านที่โชว์ให้ลูกค้าดู
+-- =====================================================================
+
+-- ไฟล์รูปอยู่ที่ Vercel Blob ไม่ได้อยู่ใน Postgres — เก็บ bytea จะทำให้
+-- backup บวมและต้องเสิร์ฟรูปผ่าน serverless function
+-- เก็บ blob_pathname ไว้ด้วยเพราะตอนลบไฟล์ต้องใช้ pathname
+-- resource_id กับ service_id ใส่หรือไม่ใส่ก็ได้ และไม่เกี่ยวกัน ทำให้ตารางเดียว
+-- ใช้ได้ทั้งหน้าแกลเลอรี่รวมและแถบผลงานของช่างแต่ละคนในหน้าเลือกช่าง
+-- ON DELETE SET NULL ไม่ใช่ CASCADE — ช่างลาออกต้องไม่ลบผลงานของร้านทิ้ง
+CREATE TABLE portfolio_item (
+    id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id     uuid NOT NULL REFERENCES tenant(id) ON DELETE CASCADE,
+    image_url     text NOT NULL,
+    blob_pathname text,
+    caption       text,
+    resource_id   uuid REFERENCES resource(id) ON DELETE SET NULL,
+    service_id    uuid REFERENCES service(id)  ON DELETE SET NULL,
+    display_order integer NOT NULL DEFAULT 0,
+    is_published  boolean NOT NULL DEFAULT true,
+    created_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX ON portfolio_item (tenant_id, display_order);
+CREATE INDEX ON portfolio_item (resource_id);
+
+
+-- =====================================================================
 --  13. ROW LEVEL SECURITY  (กันข้อมูลข้ามร้าน — สำคัญมากสำหรับ multi-tenant)
 -- =====================================================================
 
@@ -625,6 +651,7 @@ ALTER TABLE customer       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE point_lot      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE staff_tenant   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenant_line_oa ENABLE ROW LEVEL SECURITY;
+ALTER TABLE portfolio_item ENABLE ROW LEVEL SECURITY;
 -- ... ทำกับทุกตารางที่มี tenant_id
 -- หมายเหตุ: auth_identity, staff_user, subscription_plan, business_type_template
 --           ไม่มี tenant_id ตรงๆ (เป็น global/cross-tenant) ไม่ต้องเปิด RLS แบบนี้
@@ -638,6 +665,8 @@ CREATE POLICY tenant_isolation ON point_lot
 CREATE POLICY tenant_isolation ON staff_tenant
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
 CREATE POLICY tenant_isolation ON tenant_line_oa
+    USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+CREATE POLICY tenant_isolation ON portfolio_item
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
 -- ก่อนทุก query ให้ตั้ง:  SET LOCAL app.tenant_id = '<uuid>';
 

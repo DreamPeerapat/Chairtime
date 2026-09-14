@@ -12,6 +12,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { DateTime } from 'luxon';
 import { cn } from '@/lib/utils';
 import type { ServiceListItem, StaffListItem } from '@/lib/booking/queries';
+import type { PortfolioPhoto } from '@/lib/portfolio/queries';
 import { ServiceStep } from './service-step';
 import { StaffStep } from './staff-step';
 import { TimeStep } from './time-step';
@@ -27,6 +28,8 @@ export interface BookingFlowProps {
   phone: string | null;
   services: ServiceListItem[];
   staff: StaffListItem[];
+  /** published photos by resource id, shown on the staff step */
+  portfolio: Record<string, PortfolioPhoto[]>;
   liffId: string | null;
 }
 
@@ -172,6 +175,7 @@ export function BookingFlow(props: BookingFlowProps) {
         {step === 1 ? (
           <StaffStep
             staff={eligibleStaff}
+            portfolio={props.portfolio}
             selected={staffId}
             onChange={(next) => {
               setSlotTaken(false);

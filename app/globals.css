@@ -52,13 +52,67 @@ body {
   }
 }
 
-/* Content arriving: a step, a page, a panel. */
+/*
+ * Content arriving: a step, a page, a panel.
+ *
+ * `both` leaves a computed `transform` on the element for good — an identity
+ * matrix, but still a transform, and that is enough to make the element a
+ * containing block for any `position: fixed` descendant. Putting this on a
+ * page wrapper once sent every modal inside it to the middle of the *page*
+ * instead of the middle of the screen. So: never on an element that can
+ * contain a modal, and modals render through a portal (components/ui/modal)
+ * so they sit outside whatever is animating.
+ */
 .ct-enter {
   animation: ct-rise 190ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Opacity only — safe to put on a wrapper, since it creates no containing block. */
 .ct-fade {
   animation: ct-fade 160ms ease-out both;
+}
+
+/* Modals. The backdrop and the panel move separately so the panel leads. */
+@keyframes ct-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes ct-backdrop-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes ct-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+@keyframes ct-panel-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+}
+
+.ct-backdrop-in {
+  animation: ct-backdrop-in 150ms ease-out both;
+}
+
+.ct-backdrop-out {
+  animation: ct-backdrop-out 130ms ease-in both;
+}
+
+.ct-panel-in {
+  animation: ct-panel-in 190ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ct-panel-out {
+  animation: ct-panel-out 130ms ease-in both;
 }
 
 /* Anything clickable. Kept to transform + colour so it never triggers layout. */
@@ -89,7 +143,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .ct-enter,
   .ct-fade,
-  .ct-skeleton {
+  .ct-skeleton,
+  .ct-backdrop-in,
+  .ct-backdrop-out,
+  .ct-panel-in,
+  .ct-panel-out {
     animation: none;
   }
 

@@ -2,6 +2,7 @@
  * docs/logic.md ข้อ 3.4 (expiry) + ข้อ 4 (reconciliation) + docs/prompts.md
  * ข้อ 6: "แต้มหมดอายุแล้วยอดต้องตรงกันทั้ง balance, lot, ledger".
  */
+import '../support/loyalty-enabled';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { DateTime } from 'luxon';
 import { eq, sql } from 'drizzle-orm';

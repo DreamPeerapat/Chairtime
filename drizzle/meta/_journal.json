@@ -36,6 +36,13 @@
       "when": 1786622938216,
       "tag": "0004_oauth_self_serve",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789371141499,
+      "tag": "0005_portfolio",
+      "breakpoints": true
     }
   ]
 }

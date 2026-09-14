@@ -8,6 +8,7 @@
  * Customer-facing text is Thai. Times are formatted in the tenant's timezone by
  * the caller passing an already-zoned DateTime.
  */
+import { LOYALTY_ENABLED } from '@/lib/features';
 import type { DateTime } from 'luxon';
 import { thaiDateShort, thaiTimeRange } from '@/lib/time/thai';
 import type { FlexBubble, FlexComponent, LineFlexMessage, LineTextMessage } from './types';
@@ -175,7 +176,9 @@ export function helpMessage(shopName: string, bookingUrl?: string | null): LineT
       'พิมพ์ข้อความเหล่านี้ได้เลยค่ะ',
       '• "คิวของฉัน" — ดูคิวที่จองไว้',
       '• "จองคิว" — เปิดหน้าจอง',
-      '• "แต้มของฉัน" — ดูแต้มสะสม',
+      // Advertising a keyword the webhook no longer answers would be worse
+      // than not mentioning it at all.
+      ...(LOYALTY_ENABLED ? ['• "แต้มของฉัน" — ดูแต้มสะสม'] : []),
       '• "ติดต่อ" — ข้อมูลติดต่อร้าน',
     ].join('\n'),
     ...(bookingUrl

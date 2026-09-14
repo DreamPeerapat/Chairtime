@@ -1,3 +1,4 @@
+import { LOYALTY_ENABLED } from '@/lib/features';
 import Link from 'next/link';
 import { eq } from 'drizzle-orm';
 import { requireSession } from '@/lib/auth';
@@ -81,12 +82,14 @@ export default async function SettingsPage() {
       lineConnected={lineChannel.length > 0 && (lineChannel[0]?.isVerified ?? false)}
       liffId={lineChannel[0]?.liffId ?? null}
     >
-      <Link
-        href="/dashboard/settings/loyalty"
-        className="mt-2 block rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-800"
-      >
-        ตั้งค่ากติกาแต้มสะสม
-      </Link>
+      {LOYALTY_ENABLED ? (
+        <Link
+          href="/dashboard/settings/loyalty"
+          className="ct-press mt-2 block rounded-xl border border-slate-200 px-4 py-3 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
+        >
+          ตั้งค่ากติกาแต้มสะสม
+        </Link>
+      ) : null}
     </SettingsView>
   );
 }

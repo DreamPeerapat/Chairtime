@@ -1,3 +1,4 @@
+import { LOYALTY_ENABLED } from '@/lib/features';
 import { notFound } from 'next/navigation';
 import { findTenantBySlug, loadLiffId } from '@/lib/booking/queries';
 import { RewardsView } from '@/components/booking/rewards-view';
@@ -9,6 +10,9 @@ export default async function RewardsPage({
 }: {
   params: Promise<{ tenantSlug: string }>;
 }) {
+  // Loyalty is hidden pre-launch: a bookmarked URL must not get in either.
+  if (!LOYALTY_ENABLED) notFound();
+
   const { tenantSlug } = await params;
   const tenant = await findTenantBySlug(tenantSlug);
   if (!tenant) notFound();

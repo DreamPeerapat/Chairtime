@@ -1,4 +1,5 @@
-import { redirect } from 'next/navigation';
+import { LOYALTY_ENABLED } from '@/lib/features';
+import { notFound, redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { requireSession } from '@/lib/auth';
 import { schema } from '@/lib/db/client';
@@ -12,6 +13,9 @@ export default async function LoyaltySettingsPage({
 }: {
   searchParams: Promise<{ error?: string; ok?: string }>;
 }) {
+  // Loyalty is hidden pre-launch: a bookmarked URL must not get in either.
+  if (!LOYALTY_ENABLED) notFound();
+
   const session = await requireSession('manager'); // page is viewable by managers; saving requires owner
   const { error, ok } = await searchParams;
 

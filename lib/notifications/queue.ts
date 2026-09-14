@@ -10,6 +10,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { DateTime } from 'luxon';
 import { schema } from '@/lib/db/client';
 import type { TenantTx } from '@/lib/db/tenant';
+import { LOYALTY_ENABLED, isLoyaltyTemplate } from '@/lib/features';
 import { REMINDER_OFFSETS, dedupeKey, type NotificationTemplate } from './templates';
 
 export interface EnqueueInput {
@@ -27,6 +28,12 @@ export interface EnqueueInput {
  * the message is already scheduled, which is exactly what we want.
  */
 export async function enqueue(tx: TenantTx, input: EnqueueInput): Promise<void> {
+  // The one chokepoint for loyalty being hidden. Five separate call sites
+  // (earn, expiry, birthday, tier up, tier at risk) would each message a
+  // customer about points they cannot see, and guarding them one by one is
+  // how one gets missed. Every message goes through here, so this does not.
+  if (!LOYALTY_ENABLED && isLoyaltyTemplate(input.template)) return;
+
   await tx
     .insert(schema.notificationQueue)
     .values({

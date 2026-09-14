@@ -1,3 +1,5 @@
+import { LOYALTY_ENABLED } from '@/lib/features';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { hasRole, requireSession } from '@/lib/auth';
 import { RewardCheckin } from '@/components/admin/reward-checkin';
@@ -5,6 +7,9 @@ import { RewardCheckin } from '@/components/admin/reward-checkin';
 export const dynamic = 'force-dynamic';
 
 export default async function RewardRedeemPage() {
+  // Loyalty is hidden pre-launch: a bookmarked URL must not get in either.
+  if (!LOYALTY_ENABLED) notFound();
+
   const session = await requireSession('staff');
 
   return (

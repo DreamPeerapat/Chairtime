@@ -2,6 +2,7 @@
  * docs/roadmap.md Phase 6 "โบนัสวันเกิด" — once per calendar year per
  * customer, never for anyone else, never twice on the same run.
  */
+import '../support/loyalty-enabled';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { DateTime } from 'luxon';
 import { eq } from 'drizzle-orm';

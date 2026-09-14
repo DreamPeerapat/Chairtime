@@ -8,6 +8,7 @@
  * minutes without touching the database.
  */
 import { useState, useTransition } from 'react';
+import { Modal } from '@/components/ui/modal';
 import { useRouter } from 'next/navigation';
 import { DateTime } from 'luxon';
 import { cn } from '@/lib/utils';
@@ -579,24 +580,6 @@ function TimeOffTab({ resources, timeOff, timezone }: Props) {
           </ul>
         )}
       </section>
-    </div>
-  );
-}
-
-function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 sm:items-center"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-    >
-      <div
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 dark:bg-slate-900 sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {children}
-      </div>
     </div>
   );
 }

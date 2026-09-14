@@ -1,5 +1,6 @@
 'use client';
 
+import { LOYALTY_ENABLED } from '@/lib/features';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
@@ -70,7 +71,12 @@ export function CustomerDetail({
           value={`${customer.noShowCount} ครั้ง`}
           tone={customer.noShowCount >= 3 ? 'warn' : undefined}
         />
-        <Stat label="แต้มคงเหลือ" value={String(customer.pointBalance)} />
+        {/* Points keep accruing while the feature is hidden, but showing the
+            balance would have staff answering questions about something the
+            customer cannot spend yet. */}
+        {LOYALTY_ENABLED ? (
+          <Stat label="แต้มคงเหลือ" value={String(customer.pointBalance)} />
+        ) : null}
         <Stat label="ยอดสะสม" value={formatBaht(customer.lifetimeSpend)} />
       </dl>
 

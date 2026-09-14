@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { MODAL_TITLE_ID, Modal } from '@/components/ui/modal';
 import { saveReward } from '@/lib/admin/actions';
 import type { AdminReward } from './reward-manager';
 
@@ -41,18 +42,12 @@ export function RewardForm({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 sm:items-center"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-    >
-      <form
-        action={submit}
-        onClick={(e) => e.stopPropagation()}
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 dark:bg-slate-900 sm:rounded-2xl"
-      >
-        <h2 className="text-lg font-semibold">{reward ? 'แก้ไขของรางวัล' : 'เพิ่มของรางวัล'}</h2>
+    <Modal onClose={onClose} labelledBy={MODAL_TITLE_ID}>
+      {(close) => (
+        <form action={submit}>
+        <h2 id={MODAL_TITLE_ID} className="text-lg font-semibold">
+          {reward ? 'แก้ไขของรางวัล' : 'เพิ่มของรางวัล'}
+        </h2>
 
         <div className="mt-4 flex flex-col gap-3">
           <Field label="ชื่อของรางวัล">
@@ -150,7 +145,7 @@ export function RewardForm({
         <div className="mt-4 flex gap-2">
           <button
             type="button"
-            onClick={onClose}
+            onClick={close}
             className="rounded-xl border border-slate-200 px-5 py-3 text-sm dark:border-slate-800"
           >
             ยกเลิก
@@ -163,8 +158,9 @@ export function RewardForm({
             {pending ? 'กำลังบันทึก…' : 'บันทึก'}
           </button>
         </div>
-      </form>
-    </div>
+        </form>
+      )}
+    </Modal>
   );
 }
 

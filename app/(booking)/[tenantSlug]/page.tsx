@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { BookingFlow } from '@/components/booking/booking-flow';
+import { listPublishedPortfolioByStaff } from '@/lib/portfolio/queries';
 import { findTenantBySlug, listBookableServices, listBookableStaff, loadLiffId } from '@/lib/booking/queries';
 
 export const dynamic = 'force-dynamic';
@@ -13,10 +14,11 @@ export default async function BookingPage({
   const tenant = await findTenantBySlug(tenantSlug);
   if (!tenant) notFound();
 
-  const [services, staff, liffId] = await Promise.all([
+  const [services, staff, liffId, portfolioByStaff] = await Promise.all([
     listBookableServices(tenant.id),
     listBookableStaff(tenant.id),
     loadLiffId(tenant.id),
+    listPublishedPortfolioByStaff(tenant.id),
   ]);
 
   if (services.length === 0) {
@@ -38,6 +40,7 @@ export default async function BookingPage({
       phone={tenant.phone}
       services={services}
       staff={staff}
+      portfolio={Object.fromEntries(portfolioByStaff)}
       liffId={liffId}
     />
   );

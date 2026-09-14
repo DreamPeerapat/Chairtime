@@ -3,6 +3,7 @@
  * created when a booking is marked completed, and pressing "เสร็จงาน" twice
  * must not create them twice.
  */
+import '../support/loyalty-enabled';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { schema, sqlClient } from '@/lib/db/client';

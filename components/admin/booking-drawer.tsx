@@ -4,6 +4,8 @@
  * The panel that opens when staff tap a booking. Status changes live here
  * because they are the second most frequent action after looking at the day.
  */
+import { LOYALTY_ENABLED } from '@/lib/features';
+import { MODAL_TITLE_ID, Modal } from '@/components/ui/modal';
 import { useState, useTransition } from 'react';
 import { DateTime } from 'luxon';
 import { cn } from '@/lib/utils';
@@ -49,19 +51,14 @@ export function BookingDrawer({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 sm:items-center"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md rounded-t-2xl bg-white p-5 dark:bg-slate-900 sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal onClose={onClose} labelledBy={MODAL_TITLE_ID}>
+      {(close) => (
+        <>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold">{booking.customerName}</h2>
+            <h2 id={MODAL_TITLE_ID} className="text-lg font-semibold">
+              {booking.customerName}
+            </h2>
             <p className="font-mono text-xs text-slate-500">{booking.code}</p>
           </div>
           <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', status.tone)}>
@@ -93,7 +90,7 @@ export function BookingDrawer({
           </p>
         ) : null}
 
-        {booking.status !== 'completed' ? (
+        {LOYALTY_ENABLED && booking.status !== 'completed' ? (
           <label className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
             ใช้แต้มลูกค้า (ถ้ามี ใส่ก่อนกด &quot;เสร็จแล้ว&quot;)
             <input
@@ -124,13 +121,14 @@ export function BookingDrawer({
 
         <button
           type="button"
-          onClick={onClose}
-          className="mt-4 w-full rounded-xl border border-slate-200 py-2.5 text-sm dark:border-slate-800"
+          onClick={close}
+          className="ct-press mt-4 w-full rounded-xl border border-slate-200 py-2.5 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
         >
           ปิด
         </button>
-      </div>
-    </div>
+        </>
+      )}
+    </Modal>
   );
 }
 

@@ -8,7 +8,8 @@
  * and a name. Availability still comes from the server, and the booking still
  * goes through the exclusion constraint.
  */
-import { useEffect, useState, useTransition } from 'react';
+import { MODAL_TITLE_ID, Modal } from '@/components/ui/modal';
+import { useState, useTransition } from 'react';
 import { DateTime } from 'luxon';
 import { cn } from '@/lib/utils';
 import type { DayCalendar } from '@/lib/admin/queries';
@@ -101,26 +102,14 @@ export function WalkInForm({
     });
   }
 
-  useEffect(() => {
-    const onEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onEscape);
-    return () => window.removeEventListener('keydown', onEscape);
-  }, [onClose]);
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 sm:items-center"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-    >
-      <div
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 dark:bg-slate-900 sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-lg font-semibold">สร้างคิว Walk-in</h2>
+    // Escape, the scroll lock and the exit animation all live in Modal now.
+    <Modal onClose={onClose} labelledBy={MODAL_TITLE_ID}>
+      {(close) => (
+        <>
+        <h2 id={MODAL_TITLE_ID} className="text-lg font-semibold">
+          สร้างคิว Walk-in
+        </h2>
 
         <section className="mt-4">
           <h3 className="mb-2 text-xs font-medium text-slate-500">บริการ</h3>
@@ -232,8 +221,8 @@ export function WalkInForm({
         <div className="mt-4 flex gap-2">
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-xl border border-slate-200 px-5 py-3 text-sm dark:border-slate-800"
+            onClick={close}
+            className="ct-press rounded-xl border border-slate-200 px-5 py-3 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
           >
             ยกเลิก
           </button>
@@ -241,12 +230,13 @@ export function WalkInForm({
             type="button"
             disabled={!slot || pending}
             onClick={submit}
-            className="flex-1 rounded-xl bg-teal-700 py-3 text-sm font-medium text-white disabled:opacity-40"
+            className="ct-press flex-1 rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800 disabled:opacity-40"
           >
             {pending ? 'กำลังสร้าง…' : 'สร้างคิว'}
           </button>
         </div>
-      </div>
-    </div>
+        </>
+      )}
+    </Modal>
   );
 }

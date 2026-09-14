@@ -8,6 +8,7 @@
  * LINE itself vouches for.
  */
 import { NextResponse } from 'next/server';
+import { LOYALTY_ENABLED } from '@/lib/features';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db, schema } from '@/lib/db/client';
@@ -23,6 +24,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request) {
+  // Loyalty is hidden pre-launch — the LIFF pages are gone, and so is this.
+  if (!LOYALTY_ENABLED) return NextResponse.json({ error: 'ไม่พบหน้านี้' }, { status: 404 });
+
   const json = await request.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {

@@ -2,6 +2,7 @@
  * docs/logic.md ข้อ 3.5: promotion is immediate, demotion gets a 30-day
  * grace period, and a manually-set tier is never touched by the cron.
  */
+import '../support/loyalty-enabled';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { DateTime } from 'luxon';
 import { eq } from 'drizzle-orm';

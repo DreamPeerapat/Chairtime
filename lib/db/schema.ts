@@ -827,3 +827,45 @@ export const auditLog = pgTable(
   },
   (t) => [index('audit_log_tenant_id_created_at_index').on(t.tenantId, t.createdAt.desc())],
 );
+
+// =====================================================================
+//  10. PORTFOLIO — the shop's own work, shown to customers
+// =====================================================================
+
+/**
+ * One photo of work the shop has done.
+ *
+ * `resourceId` and `serviceId` are both optional and independent: a photo can
+ * be filed under the stylist who did it, under the service it shows, under
+ * both, or under neither. That is what lets the same table feed the shop-wide
+ * gallery and the "here is this person's work" strip on the staff step,
+ * without a second table or a join table nobody would maintain.
+ *
+ * `blobPathname` is kept beside the URL because deleting from the blob store
+ * needs the pathname, and parsing it back out of the URL is the kind of thing
+ * that breaks silently when the provider changes its URL shape.
+ */
+export const portfolioItem = pgTable(
+  'portfolio_item',
+  {
+    id: id(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenant.id, { onDelete: 'cascade' }),
+    imageUrl: text('image_url').notNull(),
+    blobPathname: text('blob_pathname'),
+    caption: text('caption'),
+    /** the person whose work this is */
+    resourceId: uuid('resource_id').references(() => resource.id, { onDelete: 'set null' }),
+    /** the service this photo is an example of */
+    serviceId: uuid('service_id').references(() => service.id, { onDelete: 'set null' }),
+    displayOrder: integer('display_order').notNull().default(0),
+    /** unpublished photos stay in the dashboard and off the customer's screen */
+    isPublished: boolean('is_published').notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('portfolio_item_tenant_id_display_order_index').on(t.tenantId, t.displayOrder),
+    index('portfolio_item_resource_id_index').on(t.resourceId),
+  ],
+);

@@ -3,15 +3,21 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { LOYALTY_ENABLED } from '@/lib/features';
 
-export const NAV = [
+const ALL_NAV = [
   { href: '/dashboard', label: 'ปฏิทิน' },
   { href: '/dashboard/customers', label: 'ลูกค้า' },
   { href: '/dashboard/services', label: 'บริการ' },
   { href: '/dashboard/resources', label: 'ช่างและที่นั่ง' },
-  { href: '/dashboard/rewards/redeem', label: 'รางวัล' },
+  { href: '/dashboard/portfolio', label: 'ผลงาน' },
+  { href: '/dashboard/rewards/redeem', label: 'รางวัล', loyalty: true },
   { href: '/dashboard/settings', label: 'ตั้งค่า' },
 ] as const;
+
+// The pages themselves 404 while loyalty is hidden; dropping the tab is so
+// nobody is offered a door that does not open.
+export const NAV = ALL_NAV.filter((item) => LOYALTY_ENABLED || !('loyalty' in item));
 
 /**
  * The back-office tab bar.
