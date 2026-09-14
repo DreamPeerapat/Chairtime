@@ -111,6 +111,23 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 ---
 
+## region ต้องอยู่ใกล้ฐานข้อมูล
+
+`vercel.json` ตั้ง `"regions": ["sin1"]` (สิงคโปร์) ไว้ให้ตรงกับ Neon ที่อยู่
+`ap-southeast-1` — **ห้ามลบทิ้ง**
+
+Vercel ตั้ง `iad1` (Washington D.C.) เป็นค่าเริ่มต้นของทุก project ใหม่
+ถ้าปล่อยไว้ ทุก query จะวิ่งข้ามแปซิฟิกไปกลับรอบละ ~200ms และเพราะ
+`withTenant` เปิด transaction (`BEGIN` → `SET LOCAL` → query → `COMMIT`)
+หนึ่งหน้าที่เรียกสี่ครั้งจะกลายเป็น 16 รอบ = **3 วินาทีขึ้นไป** วัดจริงตอนที่ยัง
+เป็น `iad1` ได้ผลว่า query เดียวกินเพิ่ม 0.4 วินาที
+
+> ถ้าย้ายฐานข้อมูลไป region อื่นเมื่อไร **ต้องแก้ `regions` ตามด้วย**
+> แพ็กเกจ Hobby ตั้งได้ region เดียว ดูรหัส region ที่
+> https://vercel.com/docs/regions
+
+---
+
 ## cron
 
 ต้องมีตัวเดียว เรียกทุก 1 นาที
