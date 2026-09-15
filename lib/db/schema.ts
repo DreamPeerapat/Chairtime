@@ -676,16 +676,22 @@ export const notificationQueue = pgTable(
     payload: jsonb('payload').notNull().default({}),
     scheduledAt: timestamp('scheduled_at', { withTimezone: true }).notNull(),
     sentAt: timestamp('sent_at', { withTimezone: true }),
-    status: text('status').notNull().default('pending'), // pending | sent | failed | cancelled
+    // `skipped` is not a quieter `sent`: the worker had nothing to deliver to,
+    // so nobody received anything. Keeping them apart is what makes a shop
+    // whose messages are all going nowhere look different from one whose
+    // messages all arrived.
+    status: text('status').notNull().default('pending'), // pending | sent | skipped | failed | cancelled
     attempts: integer('attempts').notNull().default(0),
     lastError: text('last_error'),
+    /** Why the worker gave up. Only skipped rows carry one. */
+    skipReason: text('skip_reason'),
     dedupeKey: text('dedupe_key').unique(),
   },
   (t) => [
     index('notification_queue_status_scheduled_at_index').on(t.status, t.scheduledAt),
     check(
       'notification_queue_status_check',
-      sql`${t.status} in ('pending','sent','failed','cancelled')`,
+      sql`${t.status} in ('pending','sent','skipped','failed','cancelled')`,
     ),
   ],
 );

@@ -177,6 +177,32 @@ export async function markSent(tx: TenantTx, id: number, now: DateTime): Promise
 }
 
 /**
+ * The worker had nothing to deliver to, so it stopped trying.
+ *
+ * This is deliberately not `sent`. The row is finished either way, but only
+ * one of them means a customer received something — and a shop whose messages
+ * are all going nowhere has to look different from a shop whose messages all
+ * arrived, or nobody finds out until a customer asks why they were not
+ * reminded.
+ */
+export async function markSkipped(
+  tx: TenantTx,
+  id: number,
+  reason: string,
+  now: DateTime,
+): Promise<void> {
+  await tx
+    .update(schema.notificationQueue)
+    .set({
+      status: 'skipped',
+      sentAt: now.toJSDate(),
+      skipReason: reason.slice(0, 200),
+      attempts: sql`${schema.notificationQueue.attempts} + 1`,
+    })
+    .where(eq(schema.notificationQueue.id, id));
+}
+
+/**
  * A failure that may succeed later stays pending until MAX_ATTEMPTS; one that
  * never will (a malformed message, a revoked token) is failed immediately so it
  * stops consuming worker time.

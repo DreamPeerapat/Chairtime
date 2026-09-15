@@ -23,7 +23,13 @@ import {
   type BookingMessageData,
 } from '@/lib/line/messages';
 import type { LineClient, LineMessage } from '@/lib/line/types';
-import { claimDueNotifications, markFailed, markSent, type DueNotification } from './queue';
+import {
+  claimDueNotifications,
+  markFailed,
+  markSent,
+  markSkipped,
+  type DueNotification,
+} from './queue';
 
 export interface WorkerResult {
   claimed: number;
@@ -81,8 +87,9 @@ export async function processTenant(
         const rendered = await render(tx, tenantId, item);
         if (!rendered) {
           // Nothing to send: the booking was deleted, or the customer has never
-          // linked their LINE account.
-          await markSent(tx, item.id, now);
+          // linked their LINE account. Recorded as skipped rather than sent so
+          // the reason survives past the end of this run.
+          await markSkipped(tx, item.id, 'ไม่มีปลายทาง LINE ของลูกค้า หรือไม่พบรายการจอง', now);
           result.skipped += 1;
           continue;
         }

@@ -43,6 +43,13 @@
       "when": 1789371141499,
       "tag": "0005_portfolio",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789447353548,
+      "tag": "0006_notification_skipped",
+      "breakpoints": true
     }
   ]
 }

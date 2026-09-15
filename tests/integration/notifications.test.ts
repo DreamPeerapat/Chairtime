@@ -202,6 +202,44 @@ describe('worker', () => {
     expect(JSON.stringify(client.sent[0]!.messages)).toContain(booking.code);
   });
 
+  it('marks a message with nobody to deliver to as skipped, not sent', async () => {
+    // The customer booked through a browser rather than LIFF, so there is no
+    // LINE account to push to. The row is finished either way - but recording
+    // it as sent is what hid, on production, the fact that the shop's very
+    // first confirmation never reached anyone.
+    const booking = await bookSomething();
+    const client = createRecordingLineClient();
+
+    const result = await processTenant(shop.tenantId, {
+      clientFactory: async () => client,
+      now: DateTime.now().plus({ minutes: 1 }),
+    });
+
+    expect(result.sent).toBe(0);
+    expect(result.skipped).toBeGreaterThan(0);
+    expect(client.sent).toHaveLength(0);
+
+    const rows = await withTenant(shop.tenantId, (tx) =>
+      tx
+        .select({
+          status: schema.notificationQueue.status,
+          skipReason: schema.notificationQueue.skipReason,
+        })
+        .from(schema.notificationQueue)
+        .where(
+          and(
+            eq(schema.notificationQueue.tenantId, shop.tenantId),
+            eq(schema.notificationQueue.template, 'booking_confirmed'),
+          ),
+        ),
+    );
+
+    expect(booking.code).toBeTruthy();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.status).toBe('skipped');
+    expect(rows[0]!.skipReason).toBeTruthy();
+  });
+
   it('does not send the same message on the next run', async () => {
     await linkCustomerToLine();
     await bookSomething();
