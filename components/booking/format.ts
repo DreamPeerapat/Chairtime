@@ -60,3 +60,31 @@ export function statusLabel(status: string): { label: string; tone: string } {
       return { label: status, tone: 'bg-slate-100 text-slate-600' };
   }
 }
+
+/**
+ * The letter to put in the circle.
+ *
+ * Taking the first character is wrong in Thai salons: staff are listed as
+ * ช่างแนน, ช่างมิ้นท์, ช่างเบล, so every circle reads "ช" and the avatars
+ * stop telling anyone apart. The title goes first, then the letter.
+ */
+const TITLES = ['ช่าง', 'คุณ', 'หมอ', 'พี่', 'น้อง', 'แม่'];
+
+/** Thai vowels written to the LEFT of the consonant they are pronounced after. */
+const LEADING_VOWELS = new Set(['เ', 'แ', 'โ', 'ใ', 'ไ']);
+
+export function initialOf(name: string): string {
+  const trimmed = name.trim();
+  const bare =
+    TITLES.reduce(
+      (out, title) =>
+        out.startsWith(title) && out.length > title.length ? out.slice(title.length) : out,
+      trimmed,
+    ).trim() || trimmed;
+
+  const chars = [...bare];
+  if (chars.length === 0) return '';
+  // "แนน" starts with a vowel that is written before its consonant, so one
+  // character alone is a mark floating on its own. Keep the consonant with it.
+  return LEADING_VOWELS.has(chars[0]!) ? chars.slice(0, 2).join('') : chars[0]!;
+}

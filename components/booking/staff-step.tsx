@@ -2,10 +2,18 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
-import { MODAL_TITLE_ID, Modal } from '@/components/ui/modal';
 import { cn } from '@/lib/utils';
 import type { PortfolioPhoto } from '@/lib/portfolio/queries';
 import type { StaffListItem } from '@/lib/booking/queries';
+import { initialOf } from './format';
+import { PhotoViewer } from './photo-viewer';
+
+/**
+ * Four, because a 375px phone fits four 64px thumbnails inside the card and
+ * clips the fifth — and the fifth is the one carrying the "+N" badge, so five
+ * would hide the very thing that says there is more to see.
+ */
+const THUMBS_SHOWN = 4;
 
 export function StaffStep({
   staff,
@@ -33,52 +41,40 @@ export function StaffStep({
     <div className="flex flex-1 flex-col gap-4">
       <h2 className="text-base font-semibold">เลือกช่าง</h2>
 
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-2.5">
         <li>
-          <Option
-            label="ช่างคนไหนก็ได้"
-            hint="ระบบจะจัดช่างที่ว่างให้ — มักได้เวลาที่ต้องการมากกว่า"
-            active={selected === null}
-            onClick={() => onChange(null)}
-          />
+          <Card active={selected === null} onSelect={() => onChange(null)}>
+            <Avatar name="ช่างคนไหนก็ได้" photoUrl={null} anyone />
+            <Text
+              name="ช่างคนไหนก็ได้"
+              hint="ระบบจะจัดช่างที่ว่างให้ — มักได้เวลาที่ต้องการมากกว่า"
+            />
+            <Tick shown={selected === null} />
+          </Card>
         </li>
+
         {staff.map((person) => {
           const photos = portfolio[person.id] ?? [];
           return (
-            <li key={person.id} className="flex flex-col gap-2">
-              <Option
-                label={person.name}
-                hint={person.bio}
+            <li key={person.id}>
+              <Card
                 active={selected === person.id}
-                onClick={() => onChange(person.id)}
-              />
-
-              {/* Outside the selection button, not inside it: a button within
-                  a button is invalid, and the browser would have swallowed
-                  the tap. A thumbnail this size cannot show whether the work
-                  is any good, which is the question this screen exists to
-                  answer — so each one opens. */}
-              {photos.length > 0 ? (
-                <div className="ct-scroll-x -mx-5 flex gap-2 overflow-x-auto px-5">
-                  {photos.slice(0, 8).map((photo) => (
-                    <button
-                      key={photo.id}
-                      type="button"
-                      onClick={() => setViewing({ photos, index: photos.indexOf(photo), staffName: person.name })}
-                      aria-label={`ดูผลงานของ ${person.name}`}
-                      className="ct-press relative size-16 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800"
-                    >
-                      <Image
-                        src={photo.imageUrl}
-                        alt={photo.caption ?? `ผลงานของ ${person.name}`}
-                        fill
-                        sizes="64px"
-                        className="object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              ) : null}
+                onSelect={() => onChange(person.id)}
+                label={person.name}
+                below={
+                  photos.length > 0 ? (
+                    <PortfolioStrip
+                      photos={photos}
+                      staffName={person.name}
+                      onOpen={(index) => setViewing({ photos, index, staffName: person.name })}
+                    />
+                  ) : null
+                }
+              >
+                <Avatar name={person.name} photoUrl={person.photoUrl} />
+                <Text name={person.name} hint={person.bio} />
+                <Tick shown={selected === person.id} />
+              </Card>
             </li>
           );
         })}
@@ -114,96 +110,158 @@ export function StaffStep({
   );
 }
 
-/** One photo, full width, with a way through the rest without closing. */
-function PhotoViewer({
-  photos,
-  index,
-  staffName,
-  onIndexChange,
-  onClose,
+/**
+ * One person: the tap target and their work, in the same box.
+ *
+ * The photos used to sit under the card, edge to edge, which read as a strip
+ * belonging to nobody — or worse, to the person listed below. They belong
+ * inside, but a button cannot contain another button: the browser drops the
+ * inner one. So the selection button stretches its own hit area across the
+ * whole card with `after:inset-0`, and the thumbnails sit above it on z-10.
+ *
+ * `ct-press` goes on the card rather than the button because its :active
+ * transform would make the button the containing block, shrinking the
+ * stretched overlay away from under the finger mid-press.
+ */
+function Card({
+  active,
+  onSelect,
+  label,
+  children,
+  below,
 }: {
-  photos: PortfolioPhoto[];
-  index: number;
-  staffName: string;
-  onIndexChange: (index: number) => void;
-  onClose: () => void;
+  active: boolean;
+  onSelect: () => void;
+  label?: string;
+  children: React.ReactNode;
+  below?: React.ReactNode;
 }) {
-  const photo = photos[index]!;
-
   return (
-    <Modal onClose={onClose} labelledBy={MODAL_TITLE_ID} className="max-w-lg">
-      <h2 id={MODAL_TITLE_ID} className="text-sm font-medium">
-        ผลงานของ {staffName}
-      </h2>
-
-      <div className="relative mt-3 aspect-square w-full overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
-        <Image
-          src={photo.imageUrl}
-          alt={photo.caption ?? `ผลงานของ ${staffName}`}
-          fill
-          sizes="(max-width: 640px) 90vw, 512px"
-          className="object-contain"
-        />
-      </div>
-
-      {photo.caption ? <p className="mt-3 text-sm">{photo.caption}</p> : null}
-      {photo.serviceName ? (
-        <p className="mt-1 text-xs text-slate-500">{photo.serviceName}</p>
-      ) : null}
-
-      {photos.length > 1 ? (
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            disabled={index === 0}
-            onClick={() => onIndexChange(index - 1)}
-            className="ct-press rounded-lg border border-slate-200 px-4 py-2 text-sm disabled:opacity-30 dark:border-slate-700"
-          >
-            ‹ ก่อนหน้า
-          </button>
-          <span className="text-xs tabular-nums text-slate-500">
-            {index + 1} / {photos.length}
-          </span>
-          <button
-            type="button"
-            disabled={index === photos.length - 1}
-            onClick={() => onIndexChange(index + 1)}
-            className="ct-press rounded-lg border border-slate-200 px-4 py-2 text-sm disabled:opacity-30 dark:border-slate-700"
-          >
-            ถัดไป ›
-          </button>
-        </div>
-      ) : null}
-    </Modal>
+    <div
+      className={cn(
+        'ct-press relative overflow-hidden rounded-2xl border',
+        active
+          ? 'border-teal-600 bg-teal-50 dark:border-teal-500 dark:bg-teal-950/40'
+          : 'border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700',
+      )}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-pressed={active}
+        aria-label={label}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left after:absolute after:inset-0"
+      >
+        {children}
+      </button>
+      {below}
+    </div>
   );
 }
 
-function Option({
-  label,
-  hint,
-  active,
-  onClick,
+/** Their face if the shop uploaded one, their initial if not. */
+function Avatar({
+  name,
+  photoUrl,
+  anyone,
 }: {
-  label: string;
-  hint: string | null;
-  active: boolean;
-  onClick: () => void;
+  name: string;
+  photoUrl: string | null;
+  anyone?: boolean;
 }) {
+  if (photoUrl) {
+    return (
+      <span className="relative size-11 shrink-0 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+        <Image src={photoUrl} alt="" fill sizes="44px" className="object-cover" />
+      </span>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
+    <span
+      aria-hidden
       className={cn(
-        'ct-press w-full rounded-xl border px-4 py-3 text-left',
-        active
-          ? 'border-teal-600 bg-teal-50 dark:border-teal-500 dark:bg-teal-950/40'
-          : 'border-slate-200 hover:border-slate-300 dark:border-slate-800',
+        'grid size-11 shrink-0 place-items-center rounded-full text-sm font-medium',
+        anyone
+          ? 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+          : 'bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200',
       )}
     >
-      <span className="block text-sm font-medium">{label}</span>
-      {hint ? <span className="mt-0.5 block text-xs text-slate-500">{hint}</span> : null}
+      {anyone ? '✨' : initialOf(name)}
+    </span>
+  );
+}
 
-    </button>
+function Text({ name, hint }: { name: string; hint: string | null }) {
+  return (
+    <span className="min-w-0 flex-1">
+      <span className="block truncate text-sm font-medium">{name}</span>
+      {hint ? <span className="mt-0.5 block text-xs text-slate-500">{hint}</span> : null}
+    </span>
+  );
+}
+
+function Tick({ shown }: { shown: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'grid size-5 shrink-0 place-items-center rounded-full border text-[11px] leading-none',
+        shown
+          ? 'border-teal-600 bg-teal-600 text-white dark:border-teal-500 dark:bg-teal-500'
+          : 'border-slate-300 text-transparent dark:border-slate-700',
+      )}
+    >
+      ✓
+    </span>
+  );
+}
+
+/**
+ * The strip of work, captioned.
+ *
+ * A thumbnail this size cannot show whether the work is any good, which is the
+ * question this screen exists to answer — so each one opens full size.
+ */
+function PortfolioStrip({
+  photos,
+  staffName,
+  onOpen,
+}: {
+  photos: PortfolioPhoto[];
+  staffName: string;
+  onOpen: (index: number) => void;
+}) {
+  const shown = photos.slice(0, THUMBS_SHOWN);
+  const hidden = photos.length - shown.length;
+
+  return (
+    <div className="relative z-10 px-4 pb-3">
+      <p className="mb-1.5 text-[11px] text-slate-500">ผลงานของ{staffName}</p>
+      <div className="ct-scroll-x flex gap-2 overflow-x-auto">
+        {shown.map((photo, index) => (
+          <button
+            key={photo.id}
+            type="button"
+            onClick={() => onOpen(index)}
+            aria-label={`ดูผลงานของ${staffName} รูปที่ ${index + 1}`}
+            className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-slate-100 ring-1 ring-black/5 dark:bg-slate-800 dark:ring-white/10"
+          >
+            <Image
+              src={photo.imageUrl}
+              alt={photo.caption ?? `ผลงานของ${staffName}`}
+              fill
+              sizes="64px"
+              className="object-cover"
+            />
+            {hidden > 0 && index === shown.length - 1 ? (
+              <span className="absolute inset-0 grid place-items-center bg-slate-900/60 text-xs font-medium text-white">
+                +{hidden}
+              </span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
