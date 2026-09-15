@@ -15,6 +15,7 @@ import { db, schema } from '../../lib/db/client.ts';
 import { withTenant } from '../../lib/db/tenant.ts';
 import { mintSessionToken } from '../../lib/auth/identity.ts';
 import { SESSION_COOKIE } from '../../lib/auth/session.ts';
+import { LOYALTY_ENABLED } from '../../lib/features.ts';
 
 const OWNER_TENANT_SLUG = 'thehair-thonglor';
 
@@ -358,6 +359,12 @@ test.describe('settings', () => {
 });
 
 test.describe('rewards', () => {
+  // The whole reward area is hidden while LOYALTY_ENABLED is false: the pages
+  // 404 and the nav link is gone, so these would fail for the one reason that
+  // is not a regression. Skipping on the flag keeps them ready for the day it
+  // flips instead of deleting the coverage.
+  test.skip(!LOYALTY_ENABLED, 'loyalty is hidden behind LOYALTY_ENABLED');
+
   test('creates a reward from the catalog page', async ({ page }) => {
     // Unique per run: the seeded dev database persists across e2e runs, so a
     // fixed name would collide with a leftover row from a previous run.

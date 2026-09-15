@@ -183,29 +183,19 @@ describe('inbound messages', () => {
     expect(JSON.stringify(handled?.messages)).toContain('liff.line.me/1234567890-abcdefgh');
   });
 
-  it('answers "แต้มของฉัน" with the point balance', async () => {
-    const lineUserId = 'U_points_check';
-    const customerId = await withTenant(shop.tenantId, (tx) =>
-      ensureCustomer(tx, shop.tenantId, lineUserId, 'คุณลูกค้าแต้ม'),
-    );
-    await withTenant(shop.tenantId, (tx) =>
-      tx.update(schema.customer).set({ pointBalance: 42 }).where(eq(schema.customer.id, customerId)),
-    );
-
-    const handled = await withTenant(shop.tenantId, (tx) =>
-      handleEvent(tx, ctx, textEvent('แต้มของฉัน', lineUserId)),
-    );
-    expect(JSON.stringify(handled?.messages)).toContain('42 แต้ม');
-  });
-
-  it('says zero points plainly for a customer who has never earned any', async () => {
-    const lineUserId = 'U_no_points';
+  it('sends the keyword for points to the help text while loyalty is hidden', async () => {
+    // LOYALTY_ENABLED is false in production today, so the keyword must not
+    // advertise a feature nobody can use. The reply itself, for the day the
+    // flag flips, is covered in line-webhook-loyalty.test.ts.
+    const lineUserId = 'U_points_hidden';
     await withTenant(shop.tenantId, (tx) => ensureCustomer(tx, shop.tenantId, lineUserId));
 
     const handled = await withTenant(shop.tenantId, (tx) =>
       handleEvent(tx, ctx, textEvent('แต้มของฉัน', lineUserId)),
     );
-    expect(JSON.stringify(handled?.messages)).toContain('0 แต้ม');
+    const body = JSON.stringify(handled?.messages);
+    expect(body).not.toContain('แต้ม');
+    expect(body).toContain('คิวของฉัน');
   });
 
   it('falls back to the help text for anything it does not understand', async () => {

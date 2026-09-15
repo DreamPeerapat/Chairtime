@@ -22,7 +22,9 @@ const SHOP = 'thehair-thonglor';
 async function reachConfirmStep(page: Page): Promise<void> {
   await page.goto(`/${SHOP}`);
 
-  await page.getByRole('button', { name: 'สระ+ตัด' }).click();
+  // Services are checkboxes, not buttons - the step takes more than one - and
+  // each one is labelled with its price and duration as well as its name.
+  await page.getByRole('checkbox', { name: /สระ\+ตัด/ }).first().click();
   await page.getByRole('button', { name: 'ถัดไป' }).click();
 
   // Staff step: take whatever the shop offers first and move on. Entering the
