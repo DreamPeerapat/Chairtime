@@ -524,6 +524,44 @@ export async function saveResource(input: unknown): Promise<ActionResult> {
   return ok;
 }
 
+// ---------------------------------------------------------------------
+// Shop profile
+// ---------------------------------------------------------------------
+
+const shopProfileSchema = z.object({
+  name: z.string().trim().min(1, 'กรุณาใส่ชื่อร้าน').max(120),
+  phone: z.string().trim().max(30).nullish(),
+  address: z.string().trim().max(300).nullish(),
+});
+
+/**
+ * Name, phone and address — the three things the LINE "ติดต่อ" reply and the
+ * rich menu read out to customers. The columns existed from the start and the
+ * settings screen already loaded them, but nothing could write them: a shop
+ * could only get a phone number onto its own contact card by editing the
+ * database.
+ */
+export async function saveShopProfile(input: unknown): Promise<ActionResult> {
+  const session = await requireSession('manager');
+  const parsed = shopProfileSchema.safeParse(input);
+  if (!parsed.success) {
+    return fail(parsed.error.issues[0]?.message ?? 'ข้อมูลไม่ถูกต้อง');
+  }
+
+  const { name, phone, address } = parsed.data;
+
+  await withTenant(session.tenantId, (tx) =>
+    tx
+      .update(schema.tenant)
+      .set({ name, phone: phone || null, address: address || null })
+      .where(eq(schema.tenant.id, session.tenantId)),
+  );
+
+  revalidatePath('/dashboard/settings');
+  revalidatePath('/dashboard');
+  return ok;
+}
+
 const hoursSchema = z.object({
   resourceId: z.uuid().nullish(),
   rows: z

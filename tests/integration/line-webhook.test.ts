@@ -132,6 +132,35 @@ describe('inbound messages', () => {
     expect(JSON.stringify(handled?.messages)).toContain(booking.code);
   });
 
+  it('points the manage button at that booking, not at the booking form', async () => {
+    // The button says "ดู / เลื่อน / ยกเลิกคิว". It used to open the page for making a
+    // new booking, which is the opposite of what a customer asking to see
+    // their appointment wants.
+    const lineUserId = 'U_manage_link';
+    const customerId = await withTenant(shop.tenantId, (tx) =>
+      ensureCustomer(tx, shop.tenantId, lineUserId, 'คุณลูกค้า'),
+    );
+    const date = DateTime.now().setZone(ZONE).plus({ days: 4 }).toISODate()!;
+    const slots = await getAvailability({
+      tenantId: shop.tenantId,
+      date,
+      serviceIds: [shop.serviceId],
+    });
+    const booking = await createBooking({
+      tenantId: shop.tenantId,
+      customerId,
+      startsAt: slots[0]!.start,
+      serviceIds: [shop.serviceId],
+    });
+
+    const handled = await withTenant(shop.tenantId, (tx) =>
+      handleEvent(tx, ctx, textEvent('คิวของฉัน', lineUserId)),
+    );
+
+    const body = JSON.stringify(handled?.messages);
+    expect(body).toContain(`/booking/${booking.code}`);
+  });
+
   it('says so politely when there is nothing booked', async () => {
     const lineUserId = 'U_no_booking';
     await withTenant(shop.tenantId, (tx) => ensureCustomer(tx, shop.tenantId, lineUserId));

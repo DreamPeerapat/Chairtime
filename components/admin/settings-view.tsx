@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { applyShopTemplate } from '@/lib/admin/actions';
+import { ShopProfileForm } from './shop-profile-form';
 
 interface Props {
   role: string;
@@ -62,6 +63,15 @@ export function SettingsView(props: Props) {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-lg font-semibold">ตั้งค่า</h1>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">ข้อมูลร้าน</h2>
+        <ShopProfileForm
+          name={props.tenant.name}
+          phone={props.tenant.phone}
+          address={props.tenant.address}
+        />
+      </section>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">ลิงก์จองของร้าน</h2>

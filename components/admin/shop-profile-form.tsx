@@ -1,0 +1,99 @@
+'use client';
+
+/**
+ * Name, phone and address.
+ *
+ * These are what the LINE "ติดต่อ" reply reads out to a customer and what the
+ * generated rich menu points at. The columns and the settings loader were
+ * there from the start, but nothing could write them — a shop could only get
+ * a phone number onto its own contact card by editing the database.
+ */
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { saveShopProfile } from '@/lib/admin/actions';
+import { ErrorText } from './ui';
+
+const field =
+  'rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900';
+
+export function ShopProfileForm({
+  name,
+  phone,
+  address,
+}: {
+  name: string;
+  phone: string | null;
+  address: string | null;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function save(formData: FormData) {
+    setError(null);
+    setSaved(false);
+    startTransition(async () => {
+      const result = await saveShopProfile({
+        name: formData.get('name'),
+        phone: formData.get('phone'),
+        address: formData.get('address'),
+      });
+      if (result.ok) {
+        setSaved(true);
+        router.refresh();
+      } else {
+        setError(result.error ?? 'บันทึกไม่สำเร็จ');
+      }
+    });
+  }
+
+  return (
+    <form
+      action={save}
+      className="flex flex-col gap-3 rounded-xl border border-slate-200 px-4 py-4 dark:border-slate-800"
+    >
+      <label className="flex flex-col gap-1 text-sm">
+        ชื่อร้าน
+        <input name="name" defaultValue={name} required maxLength={120} className={field} />
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        เบอร์โทร
+        <input
+          name="phone"
+          defaultValue={phone ?? ''}
+          maxLength={30}
+          placeholder="02-000-0000"
+          className={field}
+        />
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        ที่อยู่
+        <textarea
+          name="address"
+          defaultValue={address ?? ''}
+          rows={2}
+          maxLength={300}
+          className={field}
+        />
+      </label>
+
+      <p className="text-xs text-slate-500">
+        ลูกค้าเห็นข้อมูลนี้เมื่อกดปุ่ม ติดต่อ ใน LINE
+      </p>
+
+      {error ? <ErrorText>{error}</ErrorText> : null}
+      {saved ? <p className="text-xs text-teal-700 dark:text-teal-400">บันทึกแล้ว</p> : null}
+
+      <button
+        type="submit"
+        disabled={pending}
+        className="ct-press w-fit rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+      >
+        {pending ? 'กำลังบันทึก…' : 'บันทึกข้อมูลร้าน'}
+      </button>
+    </form>
+  );
+}

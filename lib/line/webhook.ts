@@ -22,6 +22,7 @@ import {
 import { getPointsSummaryByLineUserId } from '@/lib/loyalty/summary';
 import { LOYALTY_ENABLED } from '@/lib/features';
 import type { LineMessage, LineWebhookEvent } from './types';
+import { galleryUrl, manageBookingUrl, pointsUrl } from './links';
 
 export interface WebhookContext {
   tenantId: string;
@@ -98,7 +99,7 @@ export async function handleEvent(
           nextExpiry: summary.nextExpiry
             ? { points: summary.nextExpiry.points, expiresAt: DateTime.fromJSDate(summary.nextExpiry.expiresAt) }
             : null,
-          pointsUrl: pointsUrl(ctx),
+          pointsUrl: pointsUrl(ctx.tenantSlug),
         }),
       ],
     };
@@ -125,7 +126,7 @@ export async function handleEvent(
   if (matches(text, ['ผลงาน', 'ดูผลงาน', 'รูปงาน', 'portfolio', 'gallery'])) {
     // The rich menu the product generates carries a ผลงาน button, and a menu
     // button that falls through to the help text reads as broken.
-    const url = galleryUrl(ctx);
+    const url = galleryUrl(ctx.tenantSlug);
     return {
       replyToken: event.replyToken,
       messages: [
@@ -161,27 +162,6 @@ function bookingUrl(ctx: WebhookContext): string | null {
   if (ctx.liffId) return `https://liff.line.me/${ctx.liffId}`;
   const base = process.env.NEXT_PUBLIC_APP_URL;
   return base ? `${base.replace(/\/$/, '')}/${ctx.tenantSlug}` : null;
-}
-
-/**
- * Not a liff.line.me deep link like bookingUrl: the shop's one registered
- * LIFF endpoint URL is the booking page, and this codebase has no UI yet
- * for configuring a second one for /points. The plain app URL still opens
- * correctly — PointsView calls liff.init with withLoginOnExternalBrowser.
- */
-/**
- * The shop's portfolio page. A plain app URL rather than a liff.line.me deep
- * link, for the same reason pointsUrl is: the shop registers one LIFF endpoint
- * and it is the booking page.
- */
-function galleryUrl(ctx: WebhookContext): string | null {
-  const base = process.env.NEXT_PUBLIC_APP_URL;
-  return base ? `${base.replace(/\/$/, '')}/${ctx.tenantSlug}/gallery` : null;
-}
-
-function pointsUrl(ctx: WebhookContext): string | null {
-  const base = process.env.NEXT_PUBLIC_APP_URL;
-  return base ? `${base.replace(/\/$/, '')}/${ctx.tenantSlug}/points` : null;
 }
 
 /** A follower with no customer row yet gets one, so bookings can attach to it. */
@@ -263,7 +243,7 @@ async function loadUpcomingBookings(
     serviceNames: items.filter((i) => i.bookingId === b.id).map((i) => i.serviceName),
     staffName: null,
     total: b.total,
-    manageUrl: bookingUrl(ctx),
+    manageUrl: manageBookingUrl(ctx.tenantSlug, b.code),
   }));
 }
 

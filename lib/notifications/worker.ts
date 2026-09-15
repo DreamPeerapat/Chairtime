@@ -23,6 +23,7 @@ import {
   type BookingMessageData,
 } from '@/lib/line/messages';
 import type { LineClient, LineMessage } from '@/lib/line/types';
+import { manageBookingUrl } from '@/lib/line/links';
 import {
   claimDueNotifications,
   markFailed,
@@ -277,7 +278,7 @@ export async function loadBookingMessageData(
       serviceNames: items.map((i) => i.serviceName),
       staffName,
       total: row.total,
-      manageUrl: buildManageUrl(row.tenantSlug, row.code),
+      manageUrl: manageBookingUrl(row.tenantSlug, row.code),
     },
   };
 }
@@ -302,12 +303,6 @@ async function loadStaffName(
       ),
     );
   return rows.find((r) => r.isHuman)?.name ?? null;
-}
-
-function buildManageUrl(tenantSlug: string, code: string): string | null {
-  const base = process.env.NEXT_PUBLIC_APP_URL;
-  if (!base) return null;
-  return `${base.replace(/\/$/, '')}/${tenantSlug}/booking/${code}`;
 }
 
 /** Used by the admin screens to show what is waiting to go out. */
