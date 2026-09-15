@@ -215,6 +215,21 @@ export default async function LineConnectPage({
             {liffUrl}
           </code>
 
+          {/* The step used to stop here, at "upload a 2500x1686 image" — which
+              for a salon owner with no design tool is where the setup ends.
+              The product draws one, labelled to match the keywords the webhook
+              already answers. */}
+          <p className="mb-1 text-xs font-medium text-slate-600 dark:text-slate-400">
+            รูปปุ่มสำหรับ Rich menu
+          </p>
+          <a
+            href="/dashboard/settings/line/rich-menu.png"
+            download="chairtime-rich-menu.png"
+            className="mb-3 inline-block rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-700"
+          >
+            ดาวน์โหลดรูปปุ่ม (2500 × 1686)
+          </a>
+
           <ol className="list-decimal space-y-1 pl-4 text-xs text-slate-500">
             <li>
               เปิด <span className="font-medium">manager.line.biz</span> → เลือก OA ของร้าน
@@ -222,7 +237,11 @@ export default async function LineConnectPage({
             <li>
               เมนูซ้าย <span className="font-medium">Rich menu</span> → <span className="font-medium">Create</span>
             </li>
-            <li>เลือก Template แล้วอัปโหลดรูปปุ่ม (ขนาด 2500 × 1686 หรือ 2500 × 843 px)</li>
+            <li>
+              เลือก Template แบบ <span className="font-medium">แถบบนเต็ม 1 ช่อง + แถวล่าง 3 ช่อง</span>{' '}
+              ให้ตรงกับรูป แล้วอัปโหลดรูปที่ดาวน์มา
+              — ถ้าไม่มี ให้ใช้แบบ 6 ช่อง แล้วตั้งสามช่องบนให้ชี้ไปที่ลิงก์เดียวกัน
+            </li>
             <li>
               ช่องที่จะให้กดจอง เลือก Action เป็น <span className="font-medium">Link</span> แล้ววาง URL ด้านบน
             </li>
