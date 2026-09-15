@@ -27,6 +27,7 @@ import { redeemPoints } from '@/lib/loyalty/redeem';
 import { pointRuleFormSchema, rewardFormSchema } from '@/lib/loyalty/validation';
 import { useRewardCode } from '@/lib/loyalty/rewards';
 import { RewardCodeAlreadyUsedError, RewardCodeExpiredError, RewardCodeNotFoundError } from '@/lib/loyalty/errors';
+import { validateHourRows } from './hours';
 
 export interface ActionResult {
   ok: boolean;
@@ -543,11 +544,12 @@ export async function saveHours(input: unknown): Promise<ActionResult> {
 
   const { resourceId, rows } = parsed.data;
 
-  for (const row of rows) {
-    if (row.closeTime <= row.openTime) {
-      return fail(`เวลาปิดต้องหลังเวลาเปิด (${row.openTime}-${row.closeTime})`);
-    }
-  }
+  // A weekday may hold several ranges now, so "close after open" is no longer
+  // the whole story: two ranges that overlap would feed the availability
+  // engine the same minute twice. The form checks this too; this is the copy
+  // that decides, because the form is not the only way in.
+  const problem = validateHourRows(rows);
+  if (problem) return fail(problem);
 
   await withTenant(session.tenantId, async (tx) => {
     await tx

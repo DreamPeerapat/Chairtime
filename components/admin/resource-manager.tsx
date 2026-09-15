@@ -14,8 +14,16 @@ import { DateTime } from 'luxon';
 import { cn } from '@/lib/utils';
 import { createTimeOff, deleteTimeOff, saveHours, saveResource } from '@/lib/admin/actions';
 import { thaiDayMonth } from '@/components/booking/format';
-
-const WEEKDAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+import { HoursTab } from './hours-tab';
+import {
+  ErrorText,
+  WEEKDAYS,
+  activeChip,
+  idleChip,
+  inputClass,
+  primaryButton,
+  secondaryButton,
+} from './ui';
 
 export interface AdminResource {
   id: string;
@@ -322,142 +330,6 @@ function ResourceForm({
   );
 }
 
-function HoursTab({ resources, shopHours }: Props) {
-  const router = useRouter();
-  const [target, setTarget] = useState<string | null>(null); // null = whole shop
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-
-  const current =
-    target === null
-      ? shopHours.map((h) => ({ weekday: h.weekday, openTime: h.openTime, closeTime: h.closeTime }))
-      : (resources.find((r) => r.id === target)?.hours ?? []);
-
-  const [rows, setRows] = useState(() => toEditable(current));
-
-  function switchTarget(next: string | null) {
-    setTarget(next);
-    const hours =
-      next === null
-        ? shopHours.map((h) => ({ weekday: h.weekday, openTime: h.openTime, closeTime: h.closeTime }))
-        : (resources.find((r) => r.id === next)?.hours ?? []);
-    setRows(toEditable(hours));
-    setError(null);
-  }
-
-  function save() {
-    setError(null);
-    startTransition(async () => {
-      const payload = rows
-        .filter((r) => r.open)
-        .map((r) => ({ weekday: r.weekday, openTime: r.openTime, closeTime: r.closeTime }));
-      const result = await saveHours({ resourceId: target, rows: payload });
-      if (result.ok) router.refresh();
-      else setError(result.error ?? 'บันทึกไม่สำเร็จ');
-    });
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-1.5">
-        <button
-          type="button"
-          onClick={() => switchTarget(null)}
-          className={cn('rounded-lg border px-3 py-1.5 text-xs', target === null ? activeChip : idleChip)}
-        >
-          ทั้งร้าน
-        </button>
-        {resources
-          .filter((r) => r.isHuman && r.isActive)
-          .map((person) => (
-            <button
-              key={person.id}
-              type="button"
-              onClick={() => switchTarget(person.id)}
-              className={cn(
-                'rounded-lg border px-3 py-1.5 text-xs',
-                target === person.id ? activeChip : idleChip,
-              )}
-            >
-              {person.name}
-            </button>
-          ))}
-      </div>
-
-      <p className="text-xs text-slate-500">
-        {target === null
-          ? 'เวลาเปิด-ปิดของร้าน ใช้กับทุกคนที่ไม่ได้ตั้งเวลาเฉพาะตัว'
-          : 'ถ้าไม่ติ๊กวันไหนเลย คนนี้จะใช้เวลาของร้านแทน'}
-      </p>
-
-      <ul className="flex flex-col gap-2">
-        {rows.map((row, index) => (
-          <li key={row.weekday} className="flex items-center gap-2">
-            <label className="flex w-28 items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={row.open}
-                onChange={(e) =>
-                  setRows((prev) =>
-                    prev.map((r, i) => (i === index ? { ...r, open: e.target.checked } : r)),
-                  )
-                }
-                className="h-4 w-4"
-              />
-              {WEEKDAYS[row.weekday]}
-            </label>
-            <input
-              type="time"
-              value={row.openTime}
-              disabled={!row.open}
-              onChange={(e) =>
-                setRows((prev) =>
-                  prev.map((r, i) => (i === index ? { ...r, openTime: e.target.value } : r)),
-                )
-              }
-              className={cn(inputClass, 'w-28')}
-            />
-            <span className="text-slate-400">–</span>
-            <input
-              type="time"
-              value={row.closeTime}
-              disabled={!row.open}
-              onChange={(e) =>
-                setRows((prev) =>
-                  prev.map((r, i) => (i === index ? { ...r, closeTime: e.target.value } : r)),
-                )
-              }
-              className={cn(inputClass, 'w-28')}
-            />
-          </li>
-        ))}
-      </ul>
-
-      <p className="text-xs text-slate-400">
-        พักเที่ยงให้ตั้งเวลาปิดตอนเที่ยง แล้วเพิ่มช่วงบ่ายผ่านผู้ดูแลระบบ — หน้านี้รองรับหนึ่งช่วงต่อวัน
-      </p>
-
-      {error ? <ErrorText>{error}</ErrorText> : null}
-
-      <button type="button" onClick={save} disabled={pending} className={primaryButton}>
-        {pending ? 'กำลังบันทึก…' : 'บันทึกเวลาทำการ'}
-      </button>
-    </div>
-  );
-}
-
-function toEditable(hours: Array<{ weekday: number; openTime: string; closeTime: string }>) {
-  return Array.from({ length: 7 }, (_, weekday) => {
-    const match = hours.find((h) => h.weekday === weekday);
-    return {
-      weekday,
-      open: !!match,
-      openTime: match?.openTime.slice(0, 5) ?? '10:00',
-      closeTime: match?.closeTime.slice(0, 5) ?? '20:00',
-    };
-  });
-}
-
 function TimeOffTab({ resources, timeOff, timezone }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -583,20 +455,3 @@ function TimeOffTab({ resources, timeOff, timezone }: Props) {
     </div>
   );
 }
-
-function ErrorText({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
-      {children}
-    </p>
-  );
-}
-
-const inputClass =
-  'w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900 disabled:opacity-50';
-const primaryButton =
-  'flex-1 rounded-xl bg-teal-700 py-3 text-sm font-medium text-white disabled:opacity-40';
-const secondaryButton =
-  'rounded-xl border border-slate-200 px-5 py-3 text-sm dark:border-slate-800';
-const activeChip = 'border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900';
-const idleChip = 'border-slate-200 dark:border-slate-700';
