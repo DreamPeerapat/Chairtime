@@ -198,6 +198,15 @@ describe('inbound messages', () => {
     expect(body).toContain('คิวของฉัน');
   });
 
+  it('answers ผลงาน with a link to the gallery', async () => {
+    // The generated rich menu has this button on it; a button that lands on the
+    // help text reads as broken.
+    const handled = await withTenant(shop.tenantId, (tx) =>
+      handleEvent(tx, ctx, textEvent('ผลงาน')),
+    );
+    expect(JSON.stringify(handled?.messages)).toContain('/gallery');
+  });
+
   it('falls back to the help text for anything it does not understand', async () => {
     const handled = await withTenant(shop.tenantId, (tx) =>
       handleEvent(tx, ctx, textEvent('สวัสดีครับ อยากทราบราคา')),

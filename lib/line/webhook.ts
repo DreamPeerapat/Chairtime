@@ -122,6 +122,26 @@ export async function handleEvent(
     };
   }
 
+  if (matches(text, ['ผลงาน', 'ดูผลงาน', 'รูปงาน', 'portfolio', 'gallery'])) {
+    // The rich menu the product generates carries a ผลงาน button, and a menu
+    // button that falls through to the help text reads as broken.
+    const url = galleryUrl(ctx);
+    return {
+      replyToken: event.replyToken,
+      messages: [
+        url
+          ? {
+              type: 'text',
+              text: 'ดูรูปงานของร้านได้ที่นี่เลยค่ะ',
+              quickReply: {
+                items: [{ type: 'action', action: { type: 'uri', label: 'ผลงาน', uri: url } }],
+              },
+            }
+          : { type: 'text', text: 'ขณะนี้ยังดูรูปงานทางนี้ไม่ได้ค่ะ' },
+      ],
+    };
+  }
+
   if (matches(text, ['ติดต่อ', 'เบอร์', 'ที่อยู่', 'contact'])) {
     return {
       replyToken: event.replyToken,
@@ -149,6 +169,16 @@ function bookingUrl(ctx: WebhookContext): string | null {
  * for configuring a second one for /points. The plain app URL still opens
  * correctly — PointsView calls liff.init with withLoginOnExternalBrowser.
  */
+/**
+ * The shop's portfolio page. A plain app URL rather than a liff.line.me deep
+ * link, for the same reason pointsUrl is: the shop registers one LIFF endpoint
+ * and it is the booking page.
+ */
+function galleryUrl(ctx: WebhookContext): string | null {
+  const base = process.env.NEXT_PUBLIC_APP_URL;
+  return base ? `${base.replace(/\/$/, '')}/${ctx.tenantSlug}/gallery` : null;
+}
+
 function pointsUrl(ctx: WebhookContext): string | null {
   const base = process.env.NEXT_PUBLIC_APP_URL;
   return base ? `${base.replace(/\/$/, '')}/${ctx.tenantSlug}/points` : null;
