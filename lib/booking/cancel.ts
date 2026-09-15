@@ -10,7 +10,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import { DateTime } from 'luxon';
 import { schema } from '@/lib/db/client';
 import { withTenant, type TenantTx } from '@/lib/db/tenant';
-import { cancelBookingNotifications, enqueue } from '@/lib/notifications/queue';
+import { cancelBookingNotifications, enqueue, isStillPending } from '@/lib/notifications/queue';
 import { dedupeKey } from '@/lib/notifications/templates';
 import { BookingPolicyError } from './errors';
 
@@ -20,6 +20,12 @@ export interface CancelBookingInput {
   reason?: string | null;
   /** admin cancellations ignore the customer-facing cutoff */
   bypassCutoff?: boolean;
+  /**
+   * Who pressed cancel. The shop only needs telling when it was not them —
+   * staff cancelling from the calendar already know, and echoing it back is
+   * how a notification channel becomes noise the owner mutes.
+   */
+  actor?: 'customer' | 'staff';
   now?: DateTime;
 }
 
@@ -91,6 +97,16 @@ export async function cancelBookingInTx(tx: TenantTx, input: CancelBookingInput)
     })
     .where(and(eq(schema.booking.tenantId, input.tenantId), eq(schema.booking.id, input.bookingId)));
 
+  // Asked before the retraction below wipes it: if the shop's "new booking"
+  // alert never went out, the owner has never heard of this booking, and the
+  // whole pair is better off silent than a cancellation out of nowhere.
+  const shopAlertStillWaiting = await isStillPending(
+    tx,
+    input.tenantId,
+    input.bookingId,
+    'booking_created_shop',
+  );
+
   // Retract the reminders before telling the customer it is off, or they get a
   // "see you tomorrow" for a booking that no longer exists.
   await cancelBookingNotifications(tx, input.tenantId, input.bookingId);
@@ -108,6 +124,17 @@ export async function cancelBookingInTx(tx: TenantTx, input: CancelBookingInput)
       scheduledAt: now,
       payload: { bookingId: input.bookingId },
       dedupeKey: dedupeKey('booking_cancelled', 'booking', input.bookingId),
+    });
+  }
+
+  if ((input.actor ?? 'customer') === 'customer' && !shopAlertStillWaiting) {
+    await enqueue(tx, {
+      tenantId: input.tenantId,
+      customerId: customer?.id ?? null,
+      template: 'booking_cancelled_shop',
+      scheduledAt: now,
+      payload: { bookingId: input.bookingId },
+      dedupeKey: dedupeKey('booking_cancelled_shop', 'booking', input.bookingId),
     });
   }
 }

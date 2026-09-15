@@ -72,12 +72,13 @@ beforeEach(async () => {
 });
 
 describe('queueing on booking', () => {
-  it('queues a confirmation plus both reminders', async () => {
+  it('queues a confirmation plus both reminders, and tells the shop', async () => {
     const booking = await bookSomething();
     const rows = await queuedFor(booking.id);
 
     expect(rows.map((r) => r.template).sort()).toEqual([
       'booking_confirmed',
+      'booking_created_shop',
       'reminder_24h',
       'reminder_2h',
     ]);
@@ -368,6 +369,8 @@ describe('worker', () => {
     });
 
     expect(client.sent).toHaveLength(0);
-    expect(result.skipped).toBe(1);
+    // Two: the customer's confirmation has no LINE account to reach, and the
+    // shop's new-booking alert has no owner linked to receive it.
+    expect(result.skipped).toBe(2);
   });
 });

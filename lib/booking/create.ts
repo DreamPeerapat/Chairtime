@@ -91,6 +91,10 @@ export async function createBookingInTx(
     customerId: input.customerId ?? null,
     startsAt: slot.start,
     now: (input.now ?? DateTime.now()).setZone(ctx.timezone),
+    // Only a booking the customer made on their own is news to the shop. One
+    // typed in at the till by staff is not, and alerting on it would train the
+    // owner to ignore the alerts.
+    notifyShop: (input.source ?? 'online') === 'online',
   });
 
   return booking;

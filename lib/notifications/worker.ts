@@ -12,8 +12,10 @@ import { forEachTenant, withTenant, type TenantTx } from '@/lib/db/tenant';
 import { LineApiError, createLineClient, loadLineCredentials } from '@/lib/line/client';
 import {
   birthdayMessage,
+  bookingCancelledForShopMessage,
   bookingCancelledMessage,
   bookingConfirmedMessage,
+  bookingCreatedForShopMessage,
   pointsEarnedMessage,
   pointsExpiringMessage,
   reminder24hMessage,
@@ -24,6 +26,7 @@ import {
 } from '@/lib/line/messages';
 import type { LineClient, LineMessage } from '@/lib/line/types';
 import { manageBookingUrl } from '@/lib/line/links';
+import { ownerLineUserId } from '@/lib/line/owner-link';
 import {
   claimDueNotifications,
   markFailed,
@@ -131,7 +134,23 @@ async function render(
   if (!bookingId) return null;
 
   const data = await loadBookingMessageData(tx, tenantId, bookingId);
-  if (!data || !data.lineUserId) return null;
+  if (!data) return null;
+
+  // Aimed at the shop rather than the customer, so the recipient is the owner
+  // who claimed alerts — not whoever the booking belongs to. A shop that never
+  // linked a phone simply has nowhere to send it, and the row is skipped with
+  // a reason rather than silently marked sent.
+  if (SHOP_FACING_TEMPLATES.has(item.template)) {
+    const owner = await ownerLineUserId(tx, tenantId);
+    if (!owner) return null;
+    const build =
+      item.template === 'booking_created_shop'
+        ? bookingCreatedForShopMessage
+        : bookingCancelledForShopMessage;
+    return { lineUserId: owner, message: build(data.message, data.customerName) };
+  }
+
+  if (!data.lineUserId) return null;
 
   switch (item.template) {
     case 'booking_confirmed':
@@ -151,6 +170,9 @@ async function render(
       return null;
   }
 }
+
+/** Addressed to the owner who claimed alerts, not to the booking's customer. */
+const SHOP_FACING_TEMPLATES = new Set(['booking_created_shop', 'booking_cancelled_shop']);
 
 const CUSTOMER_KEYED_TEMPLATES = new Set([
   'points_earned',
@@ -219,6 +241,8 @@ async function renderCustomerMessage(
 export interface LoadedBookingMessage {
   lineUserId: string | null;
   status: string;
+  /** Only the shop-facing message needs this — a customer knows their own name. */
+  customerName: string | null;
   message: BookingMessageData;
 }
 
@@ -258,18 +282,21 @@ export async function loadBookingMessageData(
   );
 
   let lineUserId: string | null = null;
+  let customerName: string | null = null;
   if (row.customerId) {
     const [customer] = await tx
-      .select({ lineUserId: schema.customer.lineUserId })
+      .select({ lineUserId: schema.customer.lineUserId, name: schema.customer.name })
       .from(schema.customer)
       .where(eq(schema.customer.id, row.customerId));
     lineUserId = customer?.lineUserId ?? null;
+    customerName = customer?.name ?? null;
   }
 
   const zone = row.timezone;
   return {
     lineUserId,
     status: row.status,
+    customerName,
     message: {
       shopName: row.shopName,
       bookingCode: row.code,

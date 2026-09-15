@@ -6,6 +6,7 @@ import { resolveCustomer } from '@/lib/customer/upsert';
 import { BookingPolicyError, SlotTakenError, SlotUnavailableError } from '@/lib/booking/errors';
 import { createBookingSchema } from '@/lib/booking/schemas';
 import { fetchLineProfile } from '@/lib/line/profile';
+import { drainSoon } from '@/lib/notifications/drain';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +67,8 @@ export async function POST(request: Request) {
         customerNote: input.customerNote ?? null,
       });
     });
+
+    drainSoon(input.tenantId);
 
     return NextResponse.json(
       {

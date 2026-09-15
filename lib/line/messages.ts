@@ -131,6 +131,61 @@ export function bookingCancelledMessage(data: BookingMessageData): LineFlexMessa
   };
 }
 
+/**
+ * The shop's copy of a booking bubble.
+ *
+ * The customer bubbles carry a "ดู / เลื่อน / ยกเลิกคิว" button aimed at the
+ * customer's own manage page. Handing the shop that same button offers the
+ * owner a way to cancel on the customer's behalf from a notification, which is
+ * not what the alert is for — so the shop's copy has no button.
+ */
+function withoutCustomerButton(data: BookingMessageData): BookingMessageData {
+  return { ...data, manageUrl: null };
+}
+
+/**
+ * Sent to the shop, not the customer: a booking just arrived on its own.
+ *
+ * The shop sees this in the dashboard too, but only while looking at it. The
+ * owner of a one-chair shop is usually holding scissors, not a laptop.
+ */
+export function bookingCreatedForShopMessage(
+  data: BookingMessageData,
+  customerName: string | null,
+): LineFlexMessage {
+  return {
+    type: 'flex',
+    altText: `คิวใหม่ ${data.bookingCode} — ${formatThaiDate(data.startsAt)} ${data.startsAt.toFormat('HH:mm')} น.`,
+    contents: bubble(
+      'มีคิวใหม่เข้ามา',
+      BRAND,
+      withoutCustomerButton(data),
+      customerName ? `จองโดย ${customerName}` : 'ลูกค้าจองเองผ่านลิงก์ร้าน',
+    ),
+  };
+}
+
+/**
+ * Sent to the shop, not the customer: somebody just cancelled their own
+ * booking. Without it the shop finds out by noticing a gap in the calendar,
+ * which on a quiet evening might be the next morning.
+ */
+export function bookingCancelledForShopMessage(
+  data: BookingMessageData,
+  customerName: string | null,
+): LineFlexMessage {
+  return {
+    type: 'flex',
+    altText: `ลูกค้ายกเลิกคิว ${data.bookingCode}`,
+    contents: bubble(
+      'ลูกค้ายกเลิกคิว',
+      MUTED,
+      withoutCustomerButton(data),
+      customerName ? `ยกเลิกโดย ${customerName}` : 'ลูกค้ายกเลิกด้วยตนเอง',
+    ),
+  };
+}
+
 /** The reply to "คิวของฉัน". A reply message, so it costs no quota. */
 export function myBookingsMessage(
   shopName: string,

@@ -727,6 +727,18 @@ export const tenantLineOa = pgTable(
     // reason the old tenant_line_channel table existed: LINE config lives in
     // one place.
     liffId: text('liff_id'),
+    /**
+     * Where to tell the shop that a customer just cancelled.
+     *
+     * Not derivable from the owner's login: a LINE user id is scoped to the
+     * provider that issued it, and a shop creates its Messaging API channel
+     * under its own provider while staff sign in through ours. The two ids for
+     * the same human are different, so the owner links their own OA on purpose
+     * by sending the code below to it.
+     */
+    ownerLineUserId: text('owner_line_user_id'),
+    /** Short one-time code the owner sends to the OA to claim notifications. */
+    ownerLinkCode: text('owner_link_code'),
     // wizard progress, tracked independently so a shop can resume mid-step
     stepOaCreated: boolean('step_oa_created').notNull().default(false),
     stepApiEnabled: boolean('step_api_enabled').notNull().default(false),

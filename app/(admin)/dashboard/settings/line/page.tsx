@@ -11,6 +11,7 @@ import {
   testConnection,
   webhookUrlFor,
 } from '@/lib/line/wizard';
+import { ownerLinkState, regenerateOwnerLink } from '@/lib/line/owner-link';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,7 @@ export default async function LineConnectPage({
   const webhookUrl = state.webhookUrl ?? webhookUrlFor(session.tenantSlug);
   const liffEndpoint = liffEndpointFor(session.tenantSlug);
   const liffUrl = state.liffId ? liffUrlFor(state.liffId) : null;
+  const ownerLink = await ownerLinkState(session.tenantId);
 
   async function step(name: 'stepOaCreated' | 'stepApiEnabled') {
     'use server';
@@ -71,6 +73,13 @@ export default async function LineConnectPage({
     const active = await requireSession('manager');
     const result = await testConnection(active.tenantId);
     redirect(result.ok ? '/dashboard/settings/line?ok=1' : '/dashboard/settings/line?error=test');
+  }
+
+  async function newOwnerCode() {
+    'use server';
+    const active = await requireSession('owner');
+    await regenerateOwnerLink(active.tenantId);
+    redirect('/dashboard/settings/line');
   }
 
   return (
@@ -198,12 +207,52 @@ export default async function LineConnectPage({
         )}
       </Step>
 
+      {/* The owner's own phone. Their staff login is a LINE identity too, but
+          one issued by our provider — the shop's OA cannot address it. So the
+          owner proves which chat is theirs by sending a code to it. */}
+      {state.isVerified ? (
+        <Step n={6} title="ให้ร้านรู้ทันเมื่อลูกค้าจองหรือยกเลิก" done={ownerLink.linked}>
+          {ownerLink.linked ? (
+            <>
+              <p className="text-teal-700 dark:text-teal-400">
+                เชื่อมกับ LINE ของเจ้าของร้านแล้ว
+              </p>
+              <p>
+                เมื่อลูกค้าจองคิวเองหรือกดยกเลิกคิว ระบบจะส่งข้อความเข้า LINE เครื่องนั้นให้อัตโนมัติ
+              </p>
+              <form action={newOwnerCode}>
+                <button
+                  type="submit"
+                  className="w-fit rounded-lg border border-slate-200 px-3 py-1.5 text-xs dark:border-slate-700"
+                >
+                  เปลี่ยนไปใช้เครื่องอื่น
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <p>
+                เปิดแชท LINE ของร้าน (แอด OA ของร้านเป็นเพื่อนก่อน)
+                แล้วพิมพ์รหัสนี้ส่งเข้าไปจากเครื่องที่อยากให้แจ้งเตือน
+              </p>
+              <code className="block w-fit rounded-lg bg-slate-100 px-4 py-2 font-mono text-lg tracking-widest dark:bg-slate-900">
+                {ownerLink.code ?? '—'}
+              </code>
+              <p className="text-slate-500">
+                ส่งได้ครั้งเดียว หลังจากนั้นรหัสจะหมดอายุทันที
+                — คนอื่นที่เห็นรหัสทีหลังจะแย่งการแจ้งเตือนไปไม่ได้
+              </p>
+            </>
+          )}
+        </Step>
+      ) : null}
+
       {/* The last mile. Everything above is plumbing the shop cannot see the
           point of until a customer can actually reach the booking page, and a
           rich menu is how they reach it — a button that sits under the chat
           permanently rather than a keyword nobody knows to type. */}
       {state.liffId ? (
-        <Step n={6} title="ใส่ปุ่มจองคิวใน Rich menu" done={false}>
+        <Step n={7} title="ใส่ปุ่มจองคิวใน Rich menu" done={false}>
           <p className="mb-2 text-slate-500">
             ปุ่มนี้จะค้างอยู่ใต้ห้องแชทตลอด ลูกค้าจึงกดจองได้โดยไม่ต้องจำว่าต้องพิมพ์อะไร
           </p>

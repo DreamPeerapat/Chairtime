@@ -55,6 +55,8 @@ export interface BookingNotificationContext {
   startsAt: DateTime;
   /** used to drop reminders that would fire in the past */
   now: DateTime;
+  /** true when the customer booked it themselves — a shop does not alert itself */
+  notifyShop?: boolean;
 }
 
 /**
@@ -69,6 +71,19 @@ export async function enqueueBookingConfirmation(
   tx: TenantTx,
   ctx: BookingNotificationContext,
 ): Promise<void> {
+  // Queued before the early return: a booking with no customer record still
+  // happened, and the shop wants to know about it.
+  if (ctx.notifyShop) {
+    await enqueue(tx, {
+      tenantId: ctx.tenantId,
+      customerId: ctx.customerId,
+      template: 'booking_created_shop',
+      scheduledAt: ctx.now,
+      payload: { bookingId: ctx.bookingId },
+      dedupeKey: dedupeKey('booking_created_shop', 'booking', ctx.bookingId),
+    });
+  }
+
   if (!ctx.customerId) return; // walk-in with no customer record: nobody to notify
 
   await enqueue(tx, {
@@ -114,6 +129,34 @@ export async function cancelBookingNotifications(
         sql`${schema.notificationQueue.payload} ->> 'bookingId' = ${bookingId}`,
       ),
     );
+}
+
+/**
+ * Is this message still sitting in the queue, unsent?
+ *
+ * Used by the cancel path to tell "the shop has been told about this booking"
+ * from "the alert is still waiting" — cancelling retracts the pending one, and
+ * an alert about the cancellation of a booking the owner never heard of reads
+ * as a bug.
+ */
+export async function isStillPending(
+  tx: TenantTx,
+  tenantId: string,
+  bookingId: string,
+  template: NotificationTemplate,
+): Promise<boolean> {
+  const rows = await tx
+    .select({ id: schema.notificationQueue.id })
+    .from(schema.notificationQueue)
+    .where(
+      and(
+        eq(schema.notificationQueue.tenantId, tenantId),
+        eq(schema.notificationQueue.template, template),
+        eq(schema.notificationQueue.status, 'pending'),
+        sql`${schema.notificationQueue.payload} ->> 'bookingId' = ${bookingId}`,
+      ),
+    );
+  return rows.length > 0;
 }
 
 export interface DueNotification {

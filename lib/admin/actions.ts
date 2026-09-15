@@ -17,6 +17,7 @@ import { requireSession } from '@/lib/auth';
 import { toPlainDate, toTstzRange } from '@/lib/time';
 import { findSlots, loadAvailabilityContext } from '@/lib/availability';
 import { cancelBookingInTx } from '@/lib/booking/cancel';
+import { drainSoon } from '@/lib/notifications/drain';
 import { createBookingInTx, toSatang, fromSatang } from '@/lib/booking/create';
 import { resolveCustomer, mergeCustomers } from '@/lib/customer/upsert';
 import { cancelBookingNotifications, enqueueBookingConfirmation } from '@/lib/notifications/queue';
@@ -67,6 +68,7 @@ export async function setBookingStatus(input: unknown): Promise<ActionResult> {
           tenantId: session.tenantId,
           bookingId,
           bypassCutoff: true, // shop staff are not bound by the customer cutoff
+          actor: 'staff', // the shop did this; no point alerting it about itself
           reason: 'ยกเลิกโดยร้าน',
           now,
         });
@@ -153,6 +155,10 @@ export async function setBookingStatus(input: unknown): Promise<ActionResult> {
     return fail(error instanceof Error ? error.message : 'เปลี่ยนสถานะไม่สำเร็จ');
   }
 
+  // A cancellation from here queues the customer's notice. Left to the daily
+  // cron, a customer told "ยกเลิกแล้ว" on the phone would get the LINE message
+  // the next morning.
+  drainSoon(session.tenantId);
   revalidatePath('/dashboard');
   return ok;
 }

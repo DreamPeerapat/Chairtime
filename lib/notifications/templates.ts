@@ -2,6 +2,11 @@
 export const NOTIFICATION_TEMPLATES = [
   'booking_confirmed',
   'booking_cancelled',
+  // Aimed at the shop, not the customer — see lib/line/owner-link.ts. A
+  // customer moving an appointment is a cancel plus a new booking, so the shop
+  // needs both halves or a reschedule reads as a walk-out.
+  'booking_created_shop',
+  'booking_cancelled_shop',
   'reminder_24h',
   'reminder_2h',
   'points_earned',

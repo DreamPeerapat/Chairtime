@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cancelBooking } from '@/lib/booking';
 import { BookingPolicyError } from '@/lib/booking/errors';
 import { cancelBookingSchema } from '@/lib/booking/schemas';
+import { drainSoon } from '@/lib/notifications/drain';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,9 @@ export async function DELETE(
       bookingId,
       reason: parsed.data.reason ?? null,
     });
+    // The customer's own confirmation and the shop's alert are both queued by
+    // now; send them before the shop's next empty chair, not at tomorrow's cron.
+    drainSoon(parsed.data.tenantId);
     return NextResponse.json({ status: 'cancelled' });
   } catch (error) {
     if (error instanceof BookingPolicyError) {
