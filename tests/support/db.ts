@@ -232,3 +232,30 @@ export const SQLSTATE = {
   exclusionViolation: '23P01', // resource_no_overlap
   insufficientPrivilege: '42501', // an RLS policy refusing a write
 } as const;
+
+/**
+ * A customer who exists only as a LINE identity.
+ *
+ * Production no longer makes these on its own — the follow handler used to,
+ * and that is what split one person across two rows. The webhook tests still
+ * need the shape, so the fixture lives here rather than in lib/.
+ */
+export async function seedLineCustomer(
+  tenantId: string,
+  lineUserId: string,
+  name = 'ลูกค้า LINE',
+): Promise<string> {
+  return withTenant(tenantId, async (tx) => {
+    const [existing] = await tx
+      .select({ id: schema.customer.id })
+      .from(schema.customer)
+      .where(eq(schema.customer.lineUserId, lineUserId));
+    if (existing) return existing.id;
+
+    const [created] = await tx
+      .insert(schema.customer)
+      .values({ tenantId, lineUserId, name })
+      .returning({ id: schema.customer.id });
+    return created!.id;
+  });
+}

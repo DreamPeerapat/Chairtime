@@ -40,9 +40,12 @@ export async function POST(request: Request) {
   // simply yields no id — the booking still goes through on the phone number,
   // because a customer standing in the shop's LIFF page should not lose their
   // appointment over an expired token.
-  const lineUserId = input.lineAccessToken
-    ? ((await fetchLineProfile(input.lineAccessToken))?.userId ?? null)
-    : null;
+  // The display name comes from the same call. Taking it from LINE rather
+  // than from the form means a customer who booked through LIFF without
+  // typing anything is still a name the shop recognises, instead of a row
+  // reading "ลูกค้า LINE" that nobody can match to a face.
+  const profile = input.lineAccessToken ? await fetchLineProfile(input.lineAccessToken) : null;
+  const lineUserId = profile?.userId ?? null;
 
   try {
     // Customer lookup and booking share one transaction: a booking that fails
@@ -52,7 +55,7 @@ export async function POST(request: Request) {
         input.customerId ??
         (await resolveCustomer(tx, {
           tenantId: input.tenantId,
-          name: input.customerName,
+          name: input.customerName ?? profile?.displayName ?? null,
           phone: input.customerPhone,
           lineUserId,
         }));

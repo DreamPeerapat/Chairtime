@@ -58,9 +58,19 @@ export async function handleEvent(
   const lineUserId = event.source?.userId;
 
   if (event.type === 'follow' && event.replyToken) {
-    // A new follower: link them to a customer record so later bookings and
-    // reminders can find them.
-    if (lineUserId) await ensureCustomer(tx, ctx.tenantId, lineUserId);
+    // Deliberately creates nothing.
+    //
+    // This used to insert a customer row named "ลูกค้า LINE" carrying a LINE
+    // id and nothing else, on the theory that later bookings would find it.
+    // What it actually did was split one person in two: somebody who had
+    // booked by phone already had a row, adding the OA gave them a second,
+    // and their next booking matched the LINE row — where the phone could not
+    // be written, because the *other* row holds it and the column is unique
+    // per shop. The shop was left with a named customer who had never booked
+    // and an anonymous one with every appointment.
+    //
+    // A booking creates the row it needs, with a name and a phone attached.
+    // Following is not yet being a customer.
     return { replyToken: event.replyToken, messages: [helpMessage(ctx.shopName, bookingUrl(ctx))] };
   }
 
@@ -185,28 +195,6 @@ function bookingUrl(ctx: WebhookContext): string | null {
   if (ctx.liffId) return `https://liff.line.me/${ctx.liffId}`;
   const base = process.env.NEXT_PUBLIC_APP_URL;
   return base ? `${base.replace(/\/$/, '')}/${ctx.tenantSlug}` : null;
-}
-
-/** A follower with no customer row yet gets one, so bookings can attach to it. */
-export async function ensureCustomer(
-  tx: TenantTx,
-  tenantId: string,
-  lineUserId: string,
-  displayName = 'ลูกค้า LINE',
-): Promise<string> {
-  const [existing] = await tx
-    .select({ id: schema.customer.id })
-    .from(schema.customer)
-    .where(
-      and(eq(schema.customer.tenantId, tenantId), eq(schema.customer.lineUserId, lineUserId)),
-    );
-  if (existing) return existing.id;
-
-  const [created] = await tx
-    .insert(schema.customer)
-    .values({ tenantId, lineUserId, name: displayName })
-    .returning({ id: schema.customer.id });
-  return created!.id;
 }
 
 async function loadUpcomingBookings(

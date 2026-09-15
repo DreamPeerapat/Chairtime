@@ -15,9 +15,9 @@ import { getAvailability } from '@/lib/availability';
 import { connectLineChannel } from '@/lib/line/connect';
 import { loadLineCredentials } from '@/lib/line/client';
 import { signBody, verifySignature } from '@/lib/line/signature';
-import { handleEvent, ensureCustomer, type WebhookContext } from '@/lib/line/webhook';
+import { handleEvent, type WebhookContext } from '@/lib/line/webhook';
 import type { LineWebhookEvent } from '@/lib/line/types';
-import { createSimpleShop, resetDatabase } from '../support/db';
+import { createSimpleShop, resetDatabase, seedLineCustomer } from '../support/db';
 
 const ZONE = 'Asia/Bangkok';
 const TOKEN = 'test-channel-access-token';
@@ -107,9 +107,7 @@ describe('stored credentials', () => {
 describe('inbound messages', () => {
   it('answers "คิวของฉัน" with the next booking', async () => {
     const lineUserId = 'U_with_booking';
-    const customerId = await withTenant(shop.tenantId, (tx) =>
-      ensureCustomer(tx, shop.tenantId, lineUserId, 'คุณลูกค้า'),
-    );
+    const customerId = await seedLineCustomer(shop.tenantId, lineUserId, 'คุณลูกค้า');
 
     const date = DateTime.now().setZone(ZONE).plus({ days: 3 }).toISODate()!;
     const slots = await getAvailability({
@@ -137,9 +135,7 @@ describe('inbound messages', () => {
     // new booking, which is the opposite of what a customer asking to see
     // their appointment wants.
     const lineUserId = 'U_manage_link';
-    const customerId = await withTenant(shop.tenantId, (tx) =>
-      ensureCustomer(tx, shop.tenantId, lineUserId, 'คุณลูกค้า'),
-    );
+    const customerId = await seedLineCustomer(shop.tenantId, lineUserId, 'คุณลูกค้า');
     const date = DateTime.now().setZone(ZONE).plus({ days: 4 }).toISODate()!;
     const slots = await getAvailability({
       tenantId: shop.tenantId,
@@ -163,7 +159,7 @@ describe('inbound messages', () => {
 
   it('says so politely when there is nothing booked', async () => {
     const lineUserId = 'U_no_booking';
-    await withTenant(shop.tenantId, (tx) => ensureCustomer(tx, shop.tenantId, lineUserId));
+    await seedLineCustomer(shop.tenantId, lineUserId);
 
     const handled = await withTenant(shop.tenantId, (tx) =>
       handleEvent(tx, ctx, textEvent('คิวของฉัน', lineUserId)),
@@ -172,9 +168,7 @@ describe('inbound messages', () => {
   });
 
   it('does not show one customer bookings to another', async () => {
-    const mine = await withTenant(shop.tenantId, (tx) =>
-      ensureCustomer(tx, shop.tenantId, 'U_mine', 'เจ้าของคิว'),
-    );
+    const mine = await seedLineCustomer(shop.tenantId, 'U_mine', 'เจ้าของคิว');
     const date = DateTime.now().setZone(ZONE).plus({ days: 4 }).toISODate()!;
     const slots = await getAvailability({
       tenantId: shop.tenantId,
@@ -188,7 +182,7 @@ describe('inbound messages', () => {
       serviceIds: [shop.serviceId],
     });
 
-    await withTenant(shop.tenantId, (tx) => ensureCustomer(tx, shop.tenantId, 'U_stranger'));
+    await seedLineCustomer(shop.tenantId, 'U_stranger');
     const handled = await withTenant(shop.tenantId, (tx) =>
       handleEvent(tx, ctx, textEvent('คิวของฉัน', 'U_stranger')),
     );
@@ -217,7 +211,7 @@ describe('inbound messages', () => {
     // advertise a feature nobody can use. The reply itself, for the day the
     // flag flips, is covered in line-webhook-loyalty.test.ts.
     const lineUserId = 'U_points_hidden';
-    await withTenant(shop.tenantId, (tx) => ensureCustomer(tx, shop.tenantId, lineUserId));
+    await seedLineCustomer(shop.tenantId, lineUserId);
 
     const handled = await withTenant(shop.tenantId, (tx) =>
       handleEvent(tx, ctx, textEvent('แต้มของฉัน', lineUserId)),
@@ -243,7 +237,11 @@ describe('inbound messages', () => {
     expect(JSON.stringify(handled?.messages)).toContain('คิวของฉัน');
   });
 
-  it('creates a customer record when someone follows the account', async () => {
+  it('does not create a customer record when someone follows the account', async () => {
+    // Following is not booking. The row this used to insert carried a LINE id
+    // and nothing else, and it is what split a returning customer across two
+    // records — the phone one they booked with, and the anonymous LINE one
+    // that then collected every appointment.
     const follow: LineWebhookEvent = {
       type: 'follow',
       replyToken: 'reply-follow',
@@ -251,35 +249,16 @@ describe('inbound messages', () => {
       source: { type: 'user', userId: 'U_new_follower' },
     };
 
-    await withTenant(shop.tenantId, (tx) => handleEvent(tx, ctx, follow));
-
-    const [customer] = await withTenant(shop.tenantId, (tx) =>
-      tx
-        .select({ id: schema.customer.id })
-        .from(schema.customer)
-        .where(eq(schema.customer.lineUserId, 'U_new_follower')),
-    );
-    expect(customer).toBeDefined();
-  });
-
-  it('does not create a duplicate when the same person follows twice', async () => {
-    const follow: LineWebhookEvent = {
-      type: 'follow',
-      replyToken: 'reply-follow',
-      timestamp: Date.now(),
-      source: { type: 'user', userId: 'U_repeat' },
-    };
-
-    await withTenant(shop.tenantId, (tx) => handleEvent(tx, ctx, follow));
-    await withTenant(shop.tenantId, (tx) => handleEvent(tx, ctx, follow));
+    const handled = await withTenant(shop.tenantId, (tx) => handleEvent(tx, ctx, follow));
+    expect(JSON.stringify(handled?.messages)).toContain('จองคิว');
 
     const rows = await withTenant(shop.tenantId, (tx) =>
       tx
         .select({ id: schema.customer.id })
         .from(schema.customer)
-        .where(eq(schema.customer.lineUserId, 'U_repeat')),
+        .where(eq(schema.customer.lineUserId, 'U_new_follower')),
     );
-    expect(rows).toHaveLength(1);
+    expect(rows).toHaveLength(0);
   });
 
   it('ignores events it has no answer for', async () => {

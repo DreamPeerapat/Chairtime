@@ -92,6 +92,51 @@ describe('resolveCustomer', () => {
     expect(lineRow.phone).toBeNull();
   });
 
+  it('keeps a returning customer as one record now that following creates none', async () => {
+    // The shape production actually hit: booked by phone on the web, added the
+    // OA the next day, then booked through LIFF. The follow event no longer
+    // writes a row, so the second booking lands on the record that already
+    // exists — with the name the shop knows and the phone it can ring.
+    const first = await withTenant(shop.tenantId, (tx) =>
+      resolveCustomer(tx, { tenantId: shop.tenantId, name: 'คุณดรีม', phone: PHONE }),
+    );
+
+    const second = await withTenant(shop.tenantId, (tx) =>
+      resolveCustomer(tx, {
+        tenantId: shop.tenantId,
+        name: 'ดรีม (LINE)',
+        phone: PHONE,
+        lineUserId: LINE_ID,
+      }),
+    );
+
+    expect(second).toBe(first);
+
+    const rows = await withTenant(shop.tenantId, (tx) =>
+      tx.select().from(schema.customer).where(eq(schema.customer.phone, PHONE)),
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.lineUserId).toBe(LINE_ID);
+    expect(rows[0]!.name).toBe('คุณดรีม'); // a real name is not overwritten
+  });
+
+  it('names a placeholder row as soon as a real name arrives', async () => {
+    // Rows reading "ลูกค้า LINE" are still in production from when the follow
+    // handler made them. The next booking has to be able to name them.
+    const placeholder = await withTenant(shop.tenantId, (tx) =>
+      resolveCustomer(tx, { tenantId: shop.tenantId, name: 'ลูกค้า LINE', lineUserId: LINE_ID }),
+    );
+
+    await withTenant(shop.tenantId, (tx) =>
+      resolveCustomer(tx, { tenantId: shop.tenantId, name: 'คุณดรีม', lineUserId: LINE_ID }),
+    );
+
+    const [row] = await withTenant(shop.tenantId, (tx) =>
+      tx.select().from(schema.customer).where(eq(schema.customer.id, placeholder!)),
+    );
+    expect(row!.name).toBe('คุณดรีม');
+  });
+
   it('still creates one record when the person is new', async () => {
     const id = await withTenant(shop.tenantId, (tx) =>
       resolveCustomer(tx, {

@@ -10,6 +10,15 @@ import { and, eq, isNull, or } from 'drizzle-orm';
 import { schema } from '@/lib/db/client';
 import type { TenantTx } from '@/lib/db/tenant';
 
+/**
+ * Names that stand in for "we do not know yet".
+ *
+ * A row carrying one of these is not really named, so the first real name to
+ * come along replaces it. "ลูกค้า LINE" is on the list because the follow
+ * handler used to write it, and those rows are still in production.
+ */
+const PLACEHOLDER_NAMES = new Set(['ลูกค้า', 'ลูกค้า LINE']);
+
 export interface ResolveCustomerInput {
   tenantId: string;
   name?: string | null;
@@ -81,7 +90,7 @@ export async function resolveCustomer(
     const patch: Partial<typeof schema.customer.$inferInsert> = {};
     if (phone && !match.phone && !phoneTaken) patch.phone = phone;
     if (lineUserId && !match.lineUserId && !lineTaken) patch.lineUserId = lineUserId;
-    if (match.name === 'ลูกค้า' && name !== 'ลูกค้า') patch.name = name;
+    if (PLACEHOLDER_NAMES.has(match.name) && !PLACEHOLDER_NAMES.has(name)) patch.name = name;
 
     if (Object.keys(patch).length > 0) {
       await tx.update(schema.customer).set(patch).where(eq(schema.customer.id, match.id));

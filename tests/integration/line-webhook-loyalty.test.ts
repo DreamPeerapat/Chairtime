@@ -17,9 +17,9 @@ import { eq } from 'drizzle-orm';
 import { schema, sqlClient } from '@/lib/db/client';
 import { withTenant } from '@/lib/db/tenant';
 import { connectLineChannel } from '@/lib/line/connect';
-import { handleEvent, ensureCustomer, type WebhookContext } from '@/lib/line/webhook';
+import { handleEvent, type WebhookContext } from '@/lib/line/webhook';
 import type { LineWebhookEvent } from '@/lib/line/types';
-import { createSimpleShop, resetDatabase } from '../support/db';
+import { createSimpleShop, resetDatabase, seedLineCustomer } from '../support/db';
 
 const ZONE = 'Asia/Bangkok';
 
@@ -67,9 +67,7 @@ function textEvent(text: string, userId = 'U_line_user'): LineWebhookEvent {
 describe('"แต้มของฉัน" once loyalty is live', () => {
   it('answers with the point balance', async () => {
     const lineUserId = 'U_points_check';
-    const customerId = await withTenant(shop.tenantId, (tx) =>
-      ensureCustomer(tx, shop.tenantId, lineUserId, 'คุณลูกค้าแต้ม'),
-    );
+    const customerId = await seedLineCustomer(shop.tenantId, lineUserId, 'คุณลูกค้าแต้ม');
     await withTenant(shop.tenantId, (tx) =>
       tx.update(schema.customer).set({ pointBalance: 42 }).where(eq(schema.customer.id, customerId)),
     );
@@ -82,7 +80,7 @@ describe('"แต้มของฉัน" once loyalty is live', () => {
 
   it('says zero points plainly for a customer who has never earned any', async () => {
     const lineUserId = 'U_no_points';
-    await withTenant(shop.tenantId, (tx) => ensureCustomer(tx, shop.tenantId, lineUserId));
+    await seedLineCustomer(shop.tenantId, lineUserId);
 
     const handled = await withTenant(shop.tenantId, (tx) =>
       handleEvent(tx, ctx, textEvent('แต้มของฉัน', lineUserId)),
