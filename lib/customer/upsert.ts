@@ -60,10 +60,27 @@ export async function resolveCustomer(
     existing.find((c) => phone && c.phone === phone);
 
   if (match) {
-    // Backfill whichever identifier this booking supplied and the record lacks.
+    // Backfill whichever identifier this booking supplied and the record lacks
+    // — but only where no *other* record in this shop already holds it.
+    //
+    // Both identifiers are unique per tenant, and one person routinely ends up
+    // with two rows: they booked by phone once, then added the shop's LINE OA,
+    // which creates a second row from the follow event. The next booking
+    // carries both identifiers, matches both rows, and the backfill collided
+    // with the unique index — a 23505 that surfaced to the customer as
+    // "จองไม่สำเร็จ" with the booking never made.
+    //
+    // Skipping the contested field lets the booking through. The two records
+    // stay separate on purpose: merging them moves point balances, and a
+    // shared family phone number would fold two real people into one. They
+    // show up in findDuplicateCandidates for the shop to merge deliberately.
+    const otherHolders = existing.filter((c) => c.id !== match.id);
+    const phoneTaken = otherHolders.some((c) => c.phone === phone);
+    const lineTaken = otherHolders.some((c) => c.lineUserId === lineUserId);
+
     const patch: Partial<typeof schema.customer.$inferInsert> = {};
-    if (phone && !match.phone) patch.phone = phone;
-    if (lineUserId && !match.lineUserId) patch.lineUserId = lineUserId;
+    if (phone && !match.phone && !phoneTaken) patch.phone = phone;
+    if (lineUserId && !match.lineUserId && !lineTaken) patch.lineUserId = lineUserId;
     if (match.name === 'ลูกค้า' && name !== 'ลูกค้า') patch.name = name;
 
     if (Object.keys(patch).length > 0) {
