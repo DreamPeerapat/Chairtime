@@ -21,6 +21,7 @@ import type { AvailableSlot } from '@/lib/availability/types';
 import { enqueueBookingConfirmation } from '@/lib/notifications/queue';
 import { generateBookingCode } from './code';
 import { BookingPolicyError, SlotTakenError, SlotUnavailableError, isExclusionViolation } from './errors';
+import { acceptsBookings } from '@/lib/billing/access';
 
 export interface CreateBookingInput {
   tenantId: string;
@@ -56,6 +57,12 @@ export async function createBookingInTx(
   input: CreateBookingInput,
 ): Promise<CreatedBooking> {
   if (input.serviceIds.length === 0) throw new BookingPolicyError('ต้องเลือกบริการอย่างน้อย 1 อย่าง');
+
+  // Every booking in the product comes through here — the public API, the
+  // LIFF page, the walk-in form — which is why the subscription gate sits at
+  // this line rather than at each of them. A shop past its period keeps its
+  // calendar and can finish today's work; what it loses is new bookings.
+  await assertShopAcceptsBookings(tx, input.tenantId, input.source ?? 'online');
 
   const ctx = await loadAvailabilityContext(
     tx,
@@ -107,6 +114,34 @@ async function tenantZone(tx: TenantTx, tenantId: string): Promise<string> {
   const zone = [...rows][0]?.timezone;
   if (!zone) throw new Error(`unknown tenant: ${tenantId}`);
   return zone;
+}
+
+/**
+ * Refuse the booking when the shop's subscription has lapsed.
+ *
+ * The two audiences need different words. A customer must not be told that
+ * the shop has not paid its bill — that is between us and the shop — so they
+ * get a reason they can act on: ring the shop. Staff, who can fix it, are
+ * told exactly what is wrong and where to go.
+ */
+async function assertShopAcceptsBookings(
+  tx: TenantTx,
+  tenantId: string,
+  source: NonNullable<CreateBookingInput['source']>,
+): Promise<void> {
+  const rows = await tx.execute<{ status: string }>(
+    sql`SELECT status FROM tenant WHERE id = ${tenantId}`,
+  );
+  const status = [...rows][0]?.status;
+  if (!status) throw new Error(`unknown tenant: ${tenantId}`);
+  if (acceptsBookings(status)) return;
+
+  throw new BookingPolicyError(
+    source === 'online'
+      ? 'ขณะนี้ร้านปิดรับจองออนไลน์ชั่วคราว กรุณาติดต่อร้านโดยตรงค่ะ'
+      : 'แพ็กเกจของร้านหมดอายุแล้ว จึงรับจองใหม่ไม่ได้ — ต่ออายุได้ที่หน้า ตั้งค่า > แพ็กเกจ',
+    'subscription_inactive',
+  );
 }
 
 async function insertBooking(

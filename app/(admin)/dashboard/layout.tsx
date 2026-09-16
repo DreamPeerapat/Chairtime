@@ -5,16 +5,24 @@ import { eq } from 'drizzle-orm';
 import { SESSION_COOKIE, requireSession } from '@/lib/auth';
 import { db, schema } from '@/lib/db/client';
 import { DashboardNav } from '@/components/admin/dashboard-nav';
+import { BillingBanner } from '@/components/admin/billing-banner';
+import { loadBillingState } from '@/lib/billing/access';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession('staff');
 
   // The header used to print the URL slug at the person who works here all
   // day. `tenant` sits outside RLS, so this is a plain indexed lookup.
-  const [tenant] = await db
-    .select({ name: schema.tenant.name })
-    .from(schema.tenant)
-    .where(eq(schema.tenant.id, session.tenantId));
+  const [[tenant], billing] = await Promise.all([
+    db
+      .select({ name: schema.tenant.name })
+      .from(schema.tenant)
+      .where(eq(schema.tenant.id, session.tenantId)),
+    // The status the trial-expiry cron writes every night. Read here rather
+    // than from the session cookie, which carries whatever was true at login
+    // and would let a shop suspended at 01:00 keep working until it logs out.
+    loadBillingState(session.tenantId),
+  ]);
 
   async function logout() {
     'use server';
@@ -55,6 +63,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
 
         <DashboardNav />
+        {billing ? <BillingBanner state={billing} /> : null}
       </header>
 
       {/* Keyed on nothing in particular — the animation replays on every server

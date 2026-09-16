@@ -19,9 +19,15 @@ export class SlotUnavailableError extends Error {
 }
 
 export class BookingPolicyError extends Error {
-  readonly code = 'POLICY';
-  constructor(message: string) {
+  /**
+   * Defaults to the generic 'POLICY'. A caller passes something narrower when
+   * the client can act on knowing which rule it was — the booking page shows
+   * a lapsed subscription differently from a cutoff that has passed.
+   */
+  readonly code: string;
+  constructor(message: string, code = 'POLICY') {
     super(message);
+    this.code = code;
     this.name = 'BookingPolicyError';
   }
 }

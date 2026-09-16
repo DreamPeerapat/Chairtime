@@ -60,7 +60,11 @@ export async function createSimpleShop(options: {
 
   const [tenantRow] = await db
     .insert(schema.tenant)
-    .values({ slug: options.slug, name: options.slug, businessType: 'hair' })
+    // Explicitly active: `status` defaults to 'pending_payment', and since
+    // the subscription gate went into createBookingInTx a shop that has not
+    // paid cannot take bookings — which is the point, but it is not what
+    // these fixtures are about.
+    .values({ slug: options.slug, name: options.slug, businessType: 'hair', status: 'active' })
     .returning({ id: schema.tenant.id });
   const tenantId = tenantRow!.id;
 
