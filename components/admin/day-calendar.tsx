@@ -51,9 +51,15 @@ export function DayCalendar({
   const staff = useMemo(() => calendar.resources.filter((r) => r.isHuman), [calendar.resources]);
   const colorOf = useMemo(() => buildColorMap(staff), [staff]);
 
+  // A cancelled booking is free time, and drawing it as a grey block makes the
+  // day look fuller than it is — staff read the calendar to answer "can I fit
+  // someone in at three". The row is not lost: it is in the summary page,
+  // where a cancellation is worth counting rather than worth stepping around.
+  const live = calendar.bookings.filter((b) => b.status !== 'cancelled');
+
   const visible = staffFilter
-    ? calendar.bookings.filter((b) => b.staffResourceId === staffFilter)
-    : calendar.bookings;
+    ? live.filter((b) => b.staffResourceId === staffFilter)
+    : live;
 
   const events: EventInput[] = visible.map((booking) => ({
     id: booking.id,

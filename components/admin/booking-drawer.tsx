@@ -4,6 +4,7 @@
  * The panel that opens when staff tap a booking. Status changes live here
  * because they are the second most frequent action after looking at the day.
  */
+import Image from 'next/image';
 import { LOYALTY_ENABLED } from '@/lib/features';
 import { MODAL_TITLE_ID, Modal } from '@/components/ui/modal';
 import { useState, useTransition } from 'react';
@@ -13,13 +14,29 @@ import type { CalendarBooking } from '@/lib/admin/queries';
 import { setBookingStatus } from '@/lib/admin/actions';
 import { formatBaht, statusLabel, thaiTimeRange } from '@/components/booking/format';
 
+/**
+ * What staff can do to a booking that is still live.
+ *
+ * "กำลังทำ" is gone. It was a button somebody had to remember to press while
+ * holding scissors, it changed nothing the shop could see, and forgetting it
+ * made the calendar wrong — the only states worth a tap are the ones that end
+ * the appointment.
+ */
 const TRANSITIONS: Array<{ status: string; label: string; tone: string }> = [
   { status: 'confirmed', label: 'ยืนยันแล้ว', tone: 'bg-teal-700 text-white' },
-  { status: 'in_progress', label: 'กำลังทำ', tone: 'bg-blue-600 text-white' },
   { status: 'completed', label: 'เสร็จแล้ว', tone: 'bg-slate-700 text-white' },
   { status: 'no_show', label: 'ไม่มา', tone: 'bg-red-600 text-white' },
   { status: 'cancelled', label: 'ยกเลิก', tone: 'border border-red-300 text-red-700' },
 ];
+
+/**
+ * A booking that has already ended offers nothing to press.
+ *
+ * Cancelled is the one that mattered: the row was still showing every button,
+ * so "ยืนยันแล้ว" on a cancelled booking would put it back on the calendar
+ * without re-checking that the time is still free.
+ */
+const FINISHED = ['cancelled', 'completed', 'no_show'];
 
 export function BookingDrawer({
   booking,
@@ -78,6 +95,30 @@ export function BookingDrawer({
           <Row label="ช่องทาง" value={sourceLabel(booking.source)} />
         </dl>
 
+        {booking.referenceImages.length > 0 ? (
+          <div className="mt-3">
+            <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+              รูปตัวอย่างจากลูกค้า
+            </p>
+            <div className="ct-scroll-x flex gap-2 overflow-x-auto">
+              {booking.referenceImages.map((image) => (
+                // Opens full size in a new tab rather than a lightbox in here:
+                // a stylist holds this open next to the customer's head, and
+                // the phone's own viewer zooms better than anything we build.
+                <a
+                  key={image.pathname}
+                  href={image.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800"
+                >
+                  <Image src={image.url} alt="" fill sizes="80px" className="object-cover" />
+                </a>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {booking.customerNote ? (
           <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
             {booking.customerNote}
@@ -90,7 +131,7 @@ export function BookingDrawer({
           </p>
         ) : null}
 
-        {LOYALTY_ENABLED && booking.status !== 'completed' ? (
+        {LOYALTY_ENABLED && !FINISHED.includes(booking.status) ? (
           <label className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
             ใช้แต้มลูกค้า (ถ้ามี ใส่ก่อนกด &quot;เสร็จแล้ว&quot;)
             <input
@@ -105,6 +146,11 @@ export function BookingDrawer({
           </label>
         ) : null}
 
+        {FINISHED.includes(booking.status) ? (
+          <p className="mt-4 rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            รายการนี้จบแล้ว — ดูย้อนหลังได้ที่หน้าสรุป
+          </p>
+        ) : (
         <div className="mt-4 flex flex-wrap gap-2">
           {TRANSITIONS.filter((t) => t.status !== booking.status).map((transition) => (
             <button
@@ -118,6 +164,7 @@ export function BookingDrawer({
             </button>
           ))}
         </div>
+        )}
 
         <button
           type="button"
