@@ -68,6 +68,7 @@ export async function POST(request: Request) {
         preferredResourceId: input.resourceId,
         source: input.source,
         customerNote: input.customerNote ?? null,
+        referenceImages: input.referenceImages ?? [],
       });
     });
 

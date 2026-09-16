@@ -35,6 +35,28 @@ export function staffPhotoPrefix(tenantId: string): string {
   return `staff/${tenantId}/`;
 }
 
+/**
+ * Where the photos a customer attaches to a booking go.
+ *
+ * Its own folder because the trust level is different: the gallery and the
+ * avatars are uploaded by signed-in staff, while these arrive from whoever
+ * has the shop's booking link. Keeping them apart means the shop's own
+ * pictures cannot be crowded out, and a clean-up can target one prefix.
+ */
+export function referencePrefix(tenantId: string): string {
+  return `reference/${tenantId}/`;
+}
+
+/**
+ * Three is what a customer needs to show a haircut from the front, the back
+ * and the side. It is also the cap on what one anonymous booking can push
+ * into the shop's blob store.
+ */
+export const MAX_REFERENCE_IMAGES = 3;
+
+/** Smaller than a staff upload: a reference is looked at, not printed. */
+export const MAX_REFERENCE_BYTES = 4 * 1024 * 1024;
+
 const optionalUuid = z
   .union([z.literal(''), z.string().uuid()])
   .optional()

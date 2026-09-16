@@ -7,6 +7,7 @@ import type { ServiceListItem, StaffListItem } from '@/lib/booking/queries';
 import type { Slot } from './booking-flow';
 import { formatBaht, formatDuration, splitBaht, thaiDateFull, thaiTimeRange } from './format';
 import { useLiffIdentity } from './use-liff-identity';
+import { ReferenceUploader, type ReferenceImage } from './reference-uploader';
 
 export function ConfirmStep({
   tenantId,
@@ -35,6 +36,7 @@ export function ConfirmStep({
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [note, setNote] = useState('');
+  const [references, setReferences] = useState<ReferenceImage[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +61,7 @@ export function ConfirmStep({
           // The token, not an id: the server exchanges it with LINE.
           lineAccessToken: liff.status === 'ready' ? liff.accessToken : undefined,
           customerNote: note.trim() || null,
+          referenceImages: references,
         }),
       });
 
@@ -144,6 +147,13 @@ export function ConfirmStep({
             placeholder="08xxxxxxxx"
           />
         </Field>
+        <ReferenceUploader
+          tenantId={tenantId}
+          tenantSlug={tenantSlug}
+          images={references}
+          onChange={setReferences}
+        />
+
         <Field label="หมายเหตุถึงร้าน">
           <textarea
             value={note}

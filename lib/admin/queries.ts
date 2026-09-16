@@ -23,6 +23,8 @@ export interface CalendarBooking {
   customerName: string;
   customerPhone: string | null;
   customerNote: string | null;
+  /** what the customer attached to show what they want */
+  referenceImages: Array<{ url: string; pathname: string }>;
   services: string[];
   staffResourceId: string | null;
   staffName: string | null;
@@ -78,6 +80,7 @@ export async function loadDayCalendar(
         endsAt: schema.booking.endsAt,
         total: schema.booking.total,
         customerNote: schema.booking.customerNote,
+        referenceImages: schema.booking.referenceImages,
         customerId: schema.customer.id,
         customerName: schema.customer.name,
         customerPhone: schema.customer.phone,
@@ -157,6 +160,7 @@ export async function loadDayCalendar(
           customerName: row.customerName ?? 'ลูกค้า walk-in',
           customerPhone: row.customerPhone,
           customerNote: row.customerNote,
+          referenceImages: row.referenceImages ?? [],
           services: myItems.map((i) => i.serviceName),
           staffResourceId: human?.resourceId ?? null,
           staffName: human?.resourceName ?? null,

@@ -373,6 +373,19 @@ export const booking = pgTable(
     pointsEarned: integer('points_earned').notNull().default(0),
     pointsSpent: integer('points_spent').notNull().default(0),
     customerNote: text('customer_note'),
+    /**
+     * Photos the customer attached to show what they want — the haircut, the
+     * nail art. Stored as [{ url, pathname }]: the pathname is what deleting
+     * from the blob store needs, and recovering it by parsing the URL breaks
+     * the day the provider changes its URL shape.
+     *
+     * On the booking rather than in a table of their own: they are read only
+     * with the booking they belong to, and they go when it does.
+     */
+    referenceImages: jsonb('reference_images')
+      .$type<Array<{ url: string; pathname: string }>>()
+      .notNull()
+      .default([]),
     internalNote: text('internal_note'),
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
     cancelReason: text('cancel_reason'),

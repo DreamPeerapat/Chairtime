@@ -87,6 +87,7 @@ describe('summariseDay', () => {
     customerName: 'ลูกค้า',
     customerPhone: null,
     customerNote: null,
+    referenceImages: [],
     services: ['ตัดผม'],
     staffResourceId: null,
     staffName: null,

@@ -32,6 +32,8 @@ export interface CreateBookingInput {
   preferredResourceId?: string | undefined;
   source?: 'online' | 'walk_in' | 'phone' | 'admin';
   customerNote?: string | null;
+  /** photos the customer attached to show what they want */
+  referenceImages?: Array<{ url: string; pathname: string }>;
   priorityBookingDays?: number;
   /** staff-facing callers waive the lead-time and horizon rules */
   ignorePolicyWindow?: boolean;
@@ -172,6 +174,7 @@ async function insertBooking(
       subtotal: fromSatang(subtotal),
       total: fromSatang(subtotal),
       customerNote: input.customerNote ?? null,
+      referenceImages: input.referenceImages ?? [],
     })
     .returning({ id: schema.booking.id, code: schema.booking.code });
 
