@@ -6,6 +6,8 @@ import { db, schema } from '@/lib/db/client';
 import { withTenant } from '@/lib/db/tenant';
 import { SHOP_TEMPLATES } from '@/lib/admin/templates';
 import { SettingsView } from '@/components/admin/settings-view';
+import { loadBillingState, type BillingState } from '@/lib/billing/access';
+import { thaiDateFull } from '@/components/booking/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +27,8 @@ export default async function SettingsPage() {
     })
     .from(schema.tenant)
     .where(eq(schema.tenant.id, session.tenantId));
+
+  const billing = await loadBillingState(session.tenantId);
 
   const [policy, serviceCount, lineChannel] = await Promise.all([
     withTenant(session.tenantId, (tx) =>
@@ -85,6 +89,7 @@ export default async function SettingsPage() {
       }))}
       lineConnected={lineChannel.length > 0 && (lineChannel[0]?.isVerified ?? false)}
       liffId={lineChannel[0]?.liffId ?? null}
+      billing={billingCard(billing)}
     >
       {LOYALTY_ENABLED ? (
         <Link
@@ -96,4 +101,30 @@ export default async function SettingsPage() {
       ) : null}
     </SettingsView>
   );
+}
+
+/**
+ * One line of plan and one of when it runs out.
+ *
+ * Kept on the settings page rather than only behind the banner, because a
+ * shop that is nowhere near expiry still asks "what am I paying for?" and the
+ * banner is deliberately invisible until it matters.
+ */
+function billingCard(state: BillingState | null) {
+  if (!state) return null;
+
+  const lapsed = state.status !== 'active';
+  const label = state.planName ?? 'ยังไม่ได้เลือกแพ็กเกจ';
+
+  if (!state.periodEnd) {
+    return { label, detail: lapsed ? 'หมดอายุแล้ว' : 'ใช้งานอยู่', lapsed };
+  }
+
+  const when = thaiDateFull(state.periodEnd);
+  const detail = lapsed
+    ? `หมดอายุเมื่อ ${when} — รับจองคิวใหม่ไม่ได้`
+    : `${state.onTrial ? 'ทดลองใช้ถึง' : 'ใช้ได้ถึง'} ${when}` +
+      (state.daysLeft !== null ? ` (อีก ${state.daysLeft} วัน)` : '');
+
+  return { label, detail, lapsed };
 }

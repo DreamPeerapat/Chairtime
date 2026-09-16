@@ -106,6 +106,16 @@ export const tenant = pgTable(
     // cancelled       = closed by the owner
     status: text('status').notNull().default('pending_payment'),
     trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
+    /**
+     * Paid through this instant. Separate from `trial_ends_at` rather than
+     * reusing it, so "the free month ran out" and "they paid and it lapsed
+     * again" stay distinguishable — they need different words on screen and a
+     * migration that overwrote one with the other could not be undone.
+     *
+     * Everything that asks "when does the current period end" goes through
+     * periodEndOf() in lib/billing/access.ts, which coalesces the two.
+     */
+    paidUntil: timestamp('paid_until', { withTimezone: true }),
     onboardedAt: timestamp('onboarded_at', { withTimezone: true }), // NULL = onboarding wizard not done
     createdAt: createdAt(),
   },
@@ -893,5 +903,54 @@ export const portfolioItem = pgTable(
   (t) => [
     index('portfolio_item_tenant_id_display_order_index').on(t.tenantId, t.displayOrder),
     index('portfolio_item_resource_id_index').on(t.resourceId),
+  ],
+);
+
+/**
+ * What a shop has paid us, and for which stretch of time.
+ *
+ * Deliberately a log rather than a balance: `tenant.paid_until` is the state,
+ * and this is the history behind it. Iron rule #5's reasoning applies — the
+ * platform does not hold anyone's money, it records a transfer that happened
+ * in a bank, so a row here is a claim with evidence attached, not a payment
+ * we processed.
+ *
+ * `status` is what separates the two: the period is extended the moment the
+ * shop says it has transferred (they have real customers waiting and cannot
+ * be locked out over a reconciliation delay), and the row stays
+ * `pending_review` until it has been matched against the bank statement.
+ * Nothing automated verifies the slip yet — SlipOK is Phase 8.
+ */
+export const tenantPayment = pgTable(
+  'tenant_payment',
+  {
+    id: id(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenant.id, { onDelete: 'cascade' }),
+    /** the plan being paid for, kept even if the shop later changes plan */
+    planId: uuid('plan_id').references(() => subscriptionPlan.id, { onDelete: 'set null' }),
+    amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
+    method: text('method').notNull().default('bank_transfer'),
+    /** when the shop says the transfer left their account */
+    paidAt: timestamp('paid_at', { withTimezone: true }).notNull(),
+    /** the slip, in the same blob store as the portfolio photos */
+    slipUrl: text('slip_url'),
+    periodStart: timestamp('period_start', { withTimezone: true }).notNull(),
+    periodEnd: timestamp('period_end', { withTimezone: true }).notNull(),
+    // pending_review = extended already, not yet matched to the bank
+    // verified      = seen on the statement
+    // rejected      = no such transfer; the period is not clawed back here
+    status: text('status').notNull().default('pending_review'),
+    note: text('note'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('tenant_payment_tenant_id_created_at_index').on(t.tenantId, t.createdAt),
+    check(
+      'tenant_payment_status_check',
+      sql`${t.status} in ('pending_review','verified','rejected')`,
+    ),
+    check('tenant_payment_period_check', sql`${t.periodEnd} > ${t.periodStart}`),
   ],
 );

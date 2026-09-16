@@ -36,6 +36,8 @@ interface Props {
   }>;
   lineConnected: boolean;
   liffId: string | null;
+  /** null when the loader could not resolve one — the card is then hidden */
+  billing: { label: string; detail: string; lapsed: boolean } | null;
   children?: React.ReactNode;
 }
 
@@ -76,6 +78,28 @@ export function SettingsView(props: Props) {
           longitude={props.tenant.longitude}
         />
       </section>
+
+      {props.billing ? (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">แพ็กเกจ</h2>
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm ${
+              props.billing.lapsed
+                ? 'border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/40'
+                : 'border-slate-200 dark:border-slate-800'
+            }`}
+          >
+            <p className="font-medium">{props.billing.label}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{props.billing.detail}</p>
+            <Link
+              href="/dashboard/billing"
+              className="mt-3 inline-block rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium dark:border-slate-700"
+            >
+              ดูแพ็กเกจและต่ออายุ
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">ลิงก์จองของร้าน</h2>
