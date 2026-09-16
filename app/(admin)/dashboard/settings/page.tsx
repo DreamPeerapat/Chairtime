@@ -20,6 +20,8 @@ export default async function SettingsPage() {
       timezone: schema.tenant.timezone,
       phone: schema.tenant.phone,
       address: schema.tenant.address,
+      latitude: schema.tenant.latitude,
+      longitude: schema.tenant.longitude,
     })
     .from(schema.tenant)
     .where(eq(schema.tenant.id, session.tenantId));
@@ -59,6 +61,8 @@ export default async function SettingsPage() {
         timezone: tenant?.timezone ?? 'Asia/Bangkok',
         phone: tenant?.phone ?? null,
         address: tenant?.address ?? null,
+        latitude: tenant?.latitude ?? null,
+        longitude: tenant?.longitude ?? null,
       }}
       policy={
         policy[0]

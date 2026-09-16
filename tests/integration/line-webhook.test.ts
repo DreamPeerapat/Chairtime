@@ -50,6 +50,8 @@ beforeEach(async () => {
     timezone: ZONE,
     phone: '02-000-0000',
     address: 'ถนนทดสอบ',
+    latitude: null,
+    longitude: null,
     liffId: '1234567890-abcdefgh',
   };
 });
@@ -197,6 +199,41 @@ describe('inbound messages', () => {
     const body = JSON.stringify(handled?.messages);
     expect(body).toContain('02-000-0000');
     expect(body).toContain('ถนนทดสอบ');
+  });
+
+  it('sends no map card when the shop has not pinned itself', async () => {
+    const handled = await withTenant(shop.tenantId, (tx) =>
+      handleEvent(tx, ctx, textEvent('ติดต่อ')),
+    );
+    expect(handled!.messages).toHaveLength(1);
+    expect(handled!.messages.some((m) => m.type === 'location')).toBe(false);
+  });
+
+  it('adds a map card once the shop has a pin', async () => {
+    // Tapping it opens navigation, which a line of address text cannot do.
+    const pinned = { ...ctx, latitude: 13.7466, longitude: 100.5347 };
+    const handled = await withTenant(shop.tenantId, (tx) =>
+      handleEvent(tx, pinned, textEvent('ติดต่อ')),
+    );
+
+    const location = handled!.messages.find((m) => m.type === 'location');
+    expect(location).toEqual({
+      type: 'location',
+      title: pinned.shopName,
+      address: 'ถนนทดสอบ',
+      latitude: 13.7466,
+      longitude: 100.5347,
+    });
+    // The phone number still comes with it — a map is no use at a locked door.
+    expect(JSON.stringify(handled!.messages)).toContain('02-000-0000');
+  });
+
+  it('answers "แผนที่" the same way', async () => {
+    const pinned = { ...ctx, latitude: 13.7466, longitude: 100.5347 };
+    const handled = await withTenant(shop.tenantId, (tx) =>
+      handleEvent(tx, pinned, textEvent('แผนที่')),
+    );
+    expect(handled!.messages.some((m) => m.type === 'location')).toBe(true);
   });
 
   it('offers the LIFF link when asked to book', async () => {

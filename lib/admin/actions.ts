@@ -29,6 +29,7 @@ import { pointRuleFormSchema, rewardFormSchema } from '@/lib/loyalty/validation'
 import { useRewardCode } from '@/lib/loyalty/rewards';
 import { RewardCodeAlreadyUsedError, RewardCodeExpiredError, RewardCodeNotFoundError } from '@/lib/loyalty/errors';
 import { validateHourRows } from './hours';
+import { resolveMapLocation, type MapLocation } from '@/lib/geo/map-link';
 
 export interface ActionResult {
   ok: boolean;
@@ -471,6 +472,8 @@ const resourceSchema = z.object({
   resourceTypeId: z.uuid(),
   name: z.string().trim().min(1).max(120),
   bio: z.string().trim().max(300).nullish(),
+  // The blob URL the form uploaded to, or null to go back to the initial.
+  photoUrl: z.union([z.literal(''), z.url()]).nullish(),
   isBookable: z.boolean().default(true),
   isActive: z.boolean().default(true),
   serviceIds: z.array(z.uuid()).default([]),
@@ -492,6 +495,7 @@ export async function saveResource(input: unknown): Promise<ActionResult> {
         .set({
           name: data.name,
           bio: data.bio ?? null,
+          photoUrl: data.photoUrl || null,
           isBookable: data.isBookable,
           isActive: data.isActive,
         })
@@ -506,6 +510,7 @@ export async function saveResource(input: unknown): Promise<ActionResult> {
           resourceTypeId: data.resourceTypeId,
           name: data.name,
           bio: data.bio ?? null,
+          photoUrl: data.photoUrl || null,
           isBookable: data.isBookable,
           isActive: data.isActive,
         })
@@ -538,6 +543,8 @@ const shopProfileSchema = z.object({
   name: z.string().trim().min(1, 'กรุณาใส่ชื่อร้าน').max(120),
   phone: z.string().trim().max(30).nullish(),
   address: z.string().trim().max(300).nullish(),
+  /** a Google Maps link, or a "lat, lng" pair — parsed below, not stored raw */
+  mapLink: z.string().trim().max(2000).nullish(),
 });
 
 /**
@@ -554,12 +561,29 @@ export async function saveShopProfile(input: unknown): Promise<ActionResult> {
     return fail(parsed.error.issues[0]?.message ?? 'ข้อมูลไม่ถูกต้อง');
   }
 
-  const { name, phone, address } = parsed.data;
+  const { name, phone, address, mapLink } = parsed.data;
+
+  // Resolved before the transaction: expanding a short link is a request to
+  // Google, and holding a database transaction open across it would pin a
+  // connection for the round trip.
+  let location: MapLocation | null = null;
+  if (mapLink) {
+    location = await resolveMapLocation(mapLink);
+    if (!location) {
+      return fail('อ่านพิกัดจากลิงก์ไม่ได้ — วางลิงก์ Google Maps ของร้าน หรือพิมพ์ 13.7563, 100.5018');
+    }
+  }
 
   await withTenant(session.tenantId, (tx) =>
     tx
       .update(schema.tenant)
-      .set({ name, phone: phone || null, address: address || null })
+      .set({
+        name,
+        phone: phone || null,
+        address: address || null,
+        latitude: location ? String(location.latitude) : null,
+        longitude: location ? String(location.longitude) : null,
+      })
       .where(eq(schema.tenant.id, session.tenantId)),
   );
 

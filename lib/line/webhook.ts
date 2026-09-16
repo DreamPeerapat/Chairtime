@@ -15,6 +15,7 @@ import type { TenantTx } from '@/lib/db/tenant';
 import {
   contactMessage,
   helpMessage,
+  shopLocationMessage,
   myBookingsMessage,
   myPointsMessage,
   type BookingMessageData,
@@ -32,6 +33,9 @@ export interface WebhookContext {
   timezone: string;
   phone: string | null;
   address: string | null;
+  /** the shop's pin, when it has pasted a map link — see lib/geo/map-link.ts */
+  latitude: number | null;
+  longitude: number | null;
   liffId: string | null;
 }
 
@@ -176,11 +180,21 @@ export async function handleEvent(
     };
   }
 
-  if (matches(text, ['ติดต่อ', 'เบอร์', 'ที่อยู่', 'contact'])) {
-    return {
-      replyToken: event.replyToken,
-      messages: [contactMessage(ctx.shopName, ctx.phone, ctx.address)],
-    };
+  if (matches(text, ['ติดต่อ', 'เบอร์', 'ที่อยู่', 'contact', 'แผนที่', 'map'])) {
+    const messages: LineMessage[] = [contactMessage(ctx.shopName, ctx.phone, ctx.address)];
+    // A map card only if the shop has a pin. Everything else about the reply
+    // stays the same, so a shop that never set one loses nothing.
+    if (ctx.latitude !== null && ctx.longitude !== null) {
+      messages.push(
+        shopLocationMessage({
+          shopName: ctx.shopName,
+          address: ctx.address,
+          latitude: ctx.latitude,
+          longitude: ctx.longitude,
+        }),
+      );
+    }
+    return { replyToken: event.replyToken, messages };
   }
 
   return { replyToken: event.replyToken, messages: [helpMessage(ctx.shopName, bookingUrl(ctx))] };

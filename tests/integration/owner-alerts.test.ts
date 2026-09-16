@@ -45,6 +45,8 @@ function ctx() {
     timezone: ZONE,
     phone: null,
     address: null,
+    latitude: null,
+    longitude: null,
     liffId: null,
   };
 }

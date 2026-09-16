@@ -57,6 +57,13 @@
       "when": 1789463091076,
       "tag": "0007_owner_notify",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789526292575,
+      "tag": "0008_steady_stick",
+      "breakpoints": true
     }
   ]
 }

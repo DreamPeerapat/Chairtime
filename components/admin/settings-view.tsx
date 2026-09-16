@@ -16,6 +16,8 @@ interface Props {
     timezone: string;
     phone: string | null;
     address: string | null;
+    latitude: string | null;
+    longitude: string | null;
   };
   policy: {
     slotGranularityMin: number;
@@ -70,6 +72,8 @@ export function SettingsView(props: Props) {
           name={props.tenant.name}
           phone={props.tenant.phone}
           address={props.tenant.address}
+          latitude={props.tenant.latitude}
+          longitude={props.tenant.longitude}
         />
       </section>
 

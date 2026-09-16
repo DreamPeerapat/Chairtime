@@ -50,6 +50,8 @@ beforeEach(async () => {
     timezone: ZONE,
     phone: '02-000-0000',
     address: 'ถนนทดสอบ',
+    latitude: null,
+    longitude: null,
     liffId: '1234567890-abcdefgh',
   };
 });

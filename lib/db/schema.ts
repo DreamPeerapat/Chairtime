@@ -91,6 +91,14 @@ export const tenant = pgTable(
     currency: char('currency', { length: 3 }).notNull().default('THB'),
     phone: text('phone'),
     address: text('address'),
+    /**
+     * The pin, so the OA can answer "ติดต่อ" with a LINE location message the
+     * customer taps to navigate. Parsed out of the Google Maps link the shop
+     * pastes — see lib/geo/map-link.ts. numeric, not float: written down and
+     * read back, never summed.
+     */
+    latitude: numeric('latitude', { precision: 10, scale: 7 }),
+    longitude: numeric('longitude', { precision: 10, scale: 7 }),
     planId: uuid('plan_id').references(() => subscriptionPlan.id),
     // pending_payment = chose a paid plan but has not paid yet (not usable)
     // active          = usable (trial, or paid)

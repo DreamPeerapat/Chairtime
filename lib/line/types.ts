@@ -17,7 +17,20 @@ export interface LineFlexMessage {
   contents: FlexBubble;
 }
 
-export type LineMessage = LineTextMessage | LineFlexMessage;
+/**
+ * A map card in the chat. Tapping it opens navigation in the phone's map app,
+ * which a line of address text cannot do.
+ */
+export interface LineLocationMessage {
+  type: 'location';
+  /** shown in bold on the card — the shop's name */
+  title: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+}
+
+export type LineMessage = LineTextMessage | LineFlexMessage | LineLocationMessage;
 
 export interface FlexBubble {
   type: 'bubble';

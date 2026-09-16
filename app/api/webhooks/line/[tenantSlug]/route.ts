@@ -33,6 +33,8 @@ export async function POST(
       timezone: schema.tenant.timezone,
       phone: schema.tenant.phone,
       address: schema.tenant.address,
+      latitude: schema.tenant.latitude,
+      longitude: schema.tenant.longitude,
       status: schema.tenant.status,
     })
     .from(schema.tenant)
@@ -71,6 +73,10 @@ export async function POST(
     timezone: tenantRow.timezone,
     phone: tenantRow.phone,
     address: tenantRow.address,
+    // numeric comes back from the driver as a string, and the LINE API wants
+    // a number — converting at the boundary keeps the handler honest.
+    latitude: tenantRow.latitude === null ? null : Number(tenantRow.latitude),
+    longitude: tenantRow.longitude === null ? null : Number(tenantRow.longitude),
     liffId: credentials.liffId,
   };
 

@@ -11,7 +11,13 @@
 import { LOYALTY_ENABLED } from '@/lib/features';
 import type { DateTime } from 'luxon';
 import { thaiDateShort, thaiTimeRange } from '@/lib/time/thai';
-import type { FlexBubble, FlexComponent, LineFlexMessage, LineTextMessage } from './types';
+import type {
+  FlexBubble,
+  FlexComponent,
+  LineFlexMessage,
+  LineLocationMessage,
+  LineTextMessage,
+} from './types';
 
 const BRAND = '#0f766e';
 const MUTED = '#64748b';
@@ -254,6 +260,31 @@ export function contactMessage(shopName: string, phone: string | null, address: 
   if (phone) lines.push(`โทร ${phone}`);
   if (address) lines.push(address);
   return { type: 'text', text: lines.join('\n') };
+}
+
+/**
+ * The shop on a map, as a card the customer taps for directions.
+ *
+ * Sent alongside the contact text rather than instead of it: the phone number
+ * is what somebody standing at a locked door needs, the map is what somebody
+ * still at home needs.
+ *
+ * LINE rejects a location message with an empty address, so a shop that has a
+ * pin but never typed an address falls back to its own name.
+ */
+export function shopLocationMessage(data: {
+  shopName: string;
+  address: string | null;
+  latitude: number;
+  longitude: number;
+}): LineLocationMessage {
+  return {
+    type: 'location',
+    title: data.shopName,
+    address: data.address?.trim() || data.shopName,
+    latitude: data.latitude,
+    longitude: data.longitude,
+  };
 }
 
 /** docs/logic.md §5 "points_earned" — "หลังจบงาน บอกแต้มคงเหลือด้วย". */
