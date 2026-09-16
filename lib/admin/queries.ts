@@ -304,6 +304,7 @@ export async function listResourcesForAdmin(tenantId: string) {
         id: schema.resource.id,
         name: schema.resource.name,
         bio: schema.resource.bio,
+        photoUrl: schema.resource.photoUrl,
         isBookable: schema.resource.isBookable,
         isActive: schema.resource.isActive,
         displayOrder: schema.resource.displayOrder,

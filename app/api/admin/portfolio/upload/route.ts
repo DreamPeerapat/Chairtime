@@ -15,7 +15,12 @@
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { NextResponse } from 'next/server';
 import { sessionForApi } from '@/lib/auth';
-import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES, portfolioPrefix } from '@/lib/portfolio/validation';
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_IMAGE_BYTES,
+  portfolioPrefix,
+  staffPhotoPrefix,
+} from '@/lib/portfolio/validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +43,11 @@ export async function POST(request: Request): Promise<NextResponse> {
         // another's folder is to refuse a token for a path that is not this
         // shop's, which is what this does. Checking it here rather than
         // trusting the client is the whole point of the route existing.
-        if (!pathname.startsWith(portfolioPrefix(auth.session.tenantId))) {
+        const allowed = [
+          portfolioPrefix(auth.session.tenantId),
+          staffPhotoPrefix(auth.session.tenantId),
+        ];
+        if (!allowed.some((prefix) => pathname.startsWith(prefix))) {
           throw new Error('pathname outside this tenant');
         }
 

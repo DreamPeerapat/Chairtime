@@ -24,6 +24,17 @@ export function portfolioPrefix(tenantId: string): string {
   return `portfolio/${tenantId}/`;
 }
 
+/**
+ * Where a stylist's own photo lives.
+ *
+ * A separate folder from the gallery: an avatar is replaced whenever the shop
+ * uploads a new one, while a portfolio photo is kept, and listing one folder
+ * must not turn up the other.
+ */
+export function staffPhotoPrefix(tenantId: string): string {
+  return `staff/${tenantId}/`;
+}
+
 const optionalUuid = z
   .union([z.literal(''), z.string().uuid()])
   .optional()

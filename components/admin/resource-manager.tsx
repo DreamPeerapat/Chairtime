@@ -14,6 +14,7 @@ import { DateTime } from 'luxon';
 import { cn } from '@/lib/utils';
 import { createTimeOff, deleteTimeOff, saveHours, saveResource } from '@/lib/admin/actions';
 import { thaiDayMonth } from '@/components/booking/format';
+import { AvatarPicker } from './avatar-picker';
 import { HoursTab } from './hours-tab';
 import {
   ErrorText,
@@ -29,6 +30,7 @@ export interface AdminResource {
   id: string;
   name: string;
   bio: string | null;
+  photoUrl: string | null;
   isBookable: boolean;
   isActive: boolean;
   typeId: string;
@@ -41,6 +43,8 @@ export interface AdminResource {
 
 interface Props {
   timezone: string;
+  /** the blob folder a staff photo may be uploaded into */
+  tenantId: string;
   resources: AdminResource[];
   resourceTypes: Array<{ id: string; code: string; name: string; isHuman: boolean }>;
   services: Array<{ id: string; name: string }>;
@@ -88,7 +92,7 @@ export function ResourceManager(props: Props) {
   );
 }
 
-function PeopleTab({ resources, resourceTypes, services }: Props) {
+function PeopleTab({ tenantId, resources, resourceTypes, services }: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState<AdminResource | 'new' | null>(null);
 
@@ -108,6 +112,7 @@ function PeopleTab({ resources, resourceTypes, services }: Props) {
 
       {editing ? (
         <ResourceForm
+          tenantId={tenantId}
           resource={editing === 'new' ? null : editing}
           resourceTypes={resourceTypes}
           services={services}
@@ -188,12 +193,14 @@ function Group({
 }
 
 function ResourceForm({
+  tenantId,
   resource,
   resourceTypes,
   services,
   onClose,
   onSaved,
 }: {
+  tenantId: string;
   resource: AdminResource | null;
   resourceTypes: Props['resourceTypes'];
   services: Array<{ id: string; name: string }>;
@@ -204,6 +211,10 @@ function ResourceForm({
   const [error, setError] = useState<string | null>(null);
   const [typeId, setTypeId] = useState(resource?.typeId ?? resourceTypes[0]?.id ?? '');
   const [selectedServices, setSelectedServices] = useState<string[]>(resource?.serviceIds ?? []);
+  // Held in state rather than a form field: the file is uploaded the moment
+  // it is picked, and only the URL it returns travels with the form.
+  const [photoUrl, setPhotoUrl] = useState<string | null>(resource?.photoUrl ?? null);
+  const [name, setName] = useState(resource?.name ?? '');
 
   const isHuman = resourceTypes.find((t) => t.id === typeId)?.isHuman ?? false;
 
@@ -215,6 +226,7 @@ function ResourceForm({
         resourceTypeId: typeId,
         name: formData.get('name'),
         bio: formData.get('bio') || null,
+        photoUrl: isHuman ? photoUrl : null,
         isBookable: formData.get('isBookable') === 'on',
         isActive: formData.get('isActive') === 'on',
         serviceIds: isHuman ? selectedServices : [],
@@ -247,8 +259,18 @@ function ResourceForm({
 
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-medium text-slate-600 dark:text-slate-400">ชื่อ</span>
-          <input name="name" required defaultValue={resource?.name ?? ''} className={inputClass} />
+          <input
+            name="name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={inputClass}
+          />
         </label>
+
+        {isHuman ? (
+          <AvatarPicker tenantId={tenantId} name={name} value={photoUrl} onChange={setPhotoUrl} />
+        ) : null}
 
         {isHuman ? (
           <label className="flex flex-col gap-1.5">

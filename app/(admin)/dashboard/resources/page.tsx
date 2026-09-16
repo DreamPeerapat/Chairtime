@@ -43,6 +43,7 @@ export default async function ResourcesPage() {
   return (
     <ResourceManager
       timezone={timezone}
+      tenantId={session.tenantId}
       resources={resources}
       resourceTypes={types}
       services={services.map((s) => ({ id: s.id, name: s.name }))}
