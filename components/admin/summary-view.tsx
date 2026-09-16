@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { DateTime } from 'luxon';
 import { cn } from '@/lib/utils';
-import type { ServiceSales, StaffSales, StatsRange } from '@/lib/admin/stats';
+import { RevenueChart } from './revenue-chart';
+import type { Bucket, ServiceSales, StaffSales, StatsRange } from '@/lib/admin/stats';
 
 export interface SummaryStats {
   periodLabel: string;
@@ -12,7 +12,7 @@ export interface SummaryStats {
   averageTicket: string;
   services: ServiceSales[];
   staff: StaffSales[];
-  daily: Array<{ date: string; revenue: string }>;
+  buckets: Bucket[];
 }
 
 const RANGE_LABELS: Array<{ value: StatsRange; label: string }> = [
@@ -30,17 +30,19 @@ const RANGE_LABELS: Array<{ value: StatsRange; label: string }> = [
  */
 export function SummaryView({
   range,
-  back,
   timezone,
+  previousAt,
+  nextAt,
   stats,
 }: {
   range: StatsRange;
-  back: number;
   timezone: string;
+  previousAt: string;
+  /** null while looking at the current period — there is nothing ahead of it */
+  nextAt: string | null;
   stats: SummaryStats;
 }) {
   const topService = stats.services[0];
-  const peak = Math.max(...stats.daily.map((d) => Number(d.revenue)), 0);
 
   return (
     <div className="flex flex-col gap-5">
@@ -66,16 +68,16 @@ export function SummaryView({
 
         <div className="flex items-center gap-2 text-sm">
           <Link
-            href={`/dashboard/summary?range=${range}&back=${back + 1}`}
+            href={`/dashboard/summary?range=${range}&at=${previousAt}`}
             aria-label="ช่วงก่อนหน้า"
             className="ct-press rounded-lg border border-slate-200 px-2.5 py-1.5 dark:border-slate-800"
           >
             ‹
           </Link>
           <span className="min-w-40 text-center font-medium">{stats.periodLabel}</span>
-          {back > 0 ? (
+          {nextAt ? (
             <Link
-              href={`/dashboard/summary?range=${range}&back=${back - 1}`}
+              href={`/dashboard/summary?range=${range}&at=${nextAt}`}
               aria-label="ช่วงถัดไป"
               className="ct-press rounded-lg border border-slate-200 px-2.5 py-1.5 dark:border-slate-800"
             >
@@ -153,33 +155,7 @@ export function SummaryView({
             </section>
           ) : null}
 
-          {stats.daily.length > 1 ? (
-            <section className="flex flex-col gap-2">
-              <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">รายวัน</h2>
-              <ul className="ct-scroll-x flex items-end gap-1.5 overflow-x-auto rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800">
-                {stats.daily.map((day) => {
-                  const value = Number(day.revenue);
-                  // Percentage of the best day, floored so a day with takings
-                  // never draws as nothing at all.
-                  const height = peak > 0 ? Math.max(8, Math.round((value / peak) * 96)) : 8;
-                  const when = DateTime.fromISO(day.date, { zone: timezone });
-                  return (
-                    <li key={day.date} className="flex w-9 shrink-0 flex-col items-center gap-1">
-                      <span
-                        aria-hidden
-                        style={{ height }}
-                        className="w-full rounded-t bg-teal-600/80 dark:bg-teal-500/80"
-                      />
-                      <span className="text-[10px] text-slate-500">{when.day}</span>
-                      <span className="sr-only">
-                        {day.date}: {formatBaht(day.revenue)}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ) : null}
+          <RevenueChart range={range} buckets={stats.buckets} />
         </>
       )}
     </div>

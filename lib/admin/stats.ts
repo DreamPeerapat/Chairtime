@@ -28,7 +28,14 @@ const THAI_MONTHS = [
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
 ];
 
-/** The window a range name means, anchored on `now` in the shop's zone. */
+/**
+ * The window a range name means, around the given day in the shop's zone.
+ *
+ * Anchored on a date rather than counted back from today, so a period can be
+ * named in a URL: drilling from a month into one of its weeks is a link to
+ * that week's own date, and the same link still means the same week next
+ * month.
+ */
 export function periodFor(range: StatsRange, now: DateTime, offset = 0): Period {
   if (range === 'week') {
     // Luxon weeks start on Monday, which is what a Thai shop's week does too.
@@ -67,6 +74,17 @@ export interface StaffSales {
   revenue: string;
 }
 
+/** One column of the chart, and where clicking it goes. */
+export interface Bucket {
+  /** the day this bucket starts on, which is also the drill-down anchor */
+  key: string;
+  label: string;
+  revenue: string;
+  bookings: number;
+  /** the narrower range to open, or null when there is nothing narrower */
+  drillTo: StatsRange | null;
+}
+
 export interface PeriodStats {
   period: Period;
   /** completed bookings — the ones that turned into money */
@@ -78,24 +96,26 @@ export interface PeriodStats {
   averageTicket: string;
   services: ServiceSales[];
   staff: StaffSales[];
-  /** completed revenue per day, for the little bar strip */
-  daily: Array<{ date: string; revenue: string }>;
+  /** completed revenue per day */
+  daily: Array<{ date: string; revenue: string; bookings: number }>;
+  /** the chart: days in a week, weeks in a month, months in a year */
+  buckets: Bucket[];
 }
 
 export async function loadPeriodStats(
   tenantId: string,
   range: StatsRange,
   timezone: string,
-  now: DateTime = DateTime.now(),
-  offset = 0,
+  anchor: DateTime = DateTime.now(),
 ): Promise<PeriodStats> {
-  const period = periodFor(range, now.setZone(timezone), offset);
-  return withTenant(tenantId, (tx) => gather(tx, tenantId, period, timezone));
+  const period = periodFor(range, anchor.setZone(timezone));
+  return withTenant(tenantId, (tx) => gather(tx, tenantId, range, period, timezone));
 }
 
 async function gather(
   tx: TenantTx,
   tenantId: string,
+  range: StatsRange,
   period: Period,
   timezone: string,
 ): Promise<PeriodStats> {
@@ -183,10 +203,13 @@ async function gather(
     byStaff.set(row.staffName, entry);
   }
 
-  const daily = new Map<string, number>();
+  const daily = new Map<string, { satang: number; bookings: number }>();
   for (const b of completed) {
     const day = DateTime.fromJSDate(b.startsAt).setZone(timezone).toISODate()!;
-    daily.set(day, (daily.get(day) ?? 0) + toSatang(b.total));
+    const entry = daily.get(day) ?? { satang: 0, bookings: 0 };
+    entry.satang += toSatang(b.total);
+    entry.bookings += 1;
+    daily.set(day, entry);
   }
 
   return {
@@ -208,8 +231,72 @@ async function gather(
       .sort((a, b) => Number(b.revenue) - Number(a.revenue)),
     daily: [...daily.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, satang]) => ({ date, revenue: fromSatang(satang) })),
+      .map(([date, v]) => ({ date, revenue: fromSatang(v.satang), bookings: v.bookings })),
+    buckets: bucketise(range, period, daily, timezone),
   };
+}
+
+/**
+ * The columns of the chart.
+ *
+ * Built from the period rather than from the data, so an empty Tuesday is a
+ * gap in the row instead of a missing bar — a chart that silently drops quiet
+ * days makes a bad week look like a short one.
+ */
+function bucketise(
+  range: StatsRange,
+  period: Period,
+  daily: Map<string, { satang: number; bookings: number }>,
+  timezone: string,
+): Bucket[] {
+  const step = range === 'week' ? 'day' : range === 'month' ? 'week' : 'month';
+  const buckets: Bucket[] = [];
+
+  let cursor = step === 'week' ? maxOf(period.start.startOf('week'), period.start) : period.start;
+
+  while (cursor < period.end) {
+    // A week overlapping the end of a month is cut at the month boundary, so
+    // its takings are not counted twice across two months.
+    const next = minOf(cursor.plus({ [`${step}s`]: 1 }).startOf(step), period.end);
+
+    let satang = 0;
+    let bookings = 0;
+    for (let day = cursor; day < next; day = day.plus({ days: 1 })) {
+      const entry = daily.get(day.toISODate()!);
+      if (!entry) continue;
+      satang += entry.satang;
+      bookings += entry.bookings;
+    }
+
+    buckets.push({
+      key: cursor.toISODate()!,
+      label: labelFor(step, cursor, next),
+      revenue: fromSatang(satang),
+      bookings,
+      drillTo: step === 'day' ? null : step === 'week' ? 'week' : 'month',
+    });
+
+    cursor = next;
+  }
+
+  return buckets.map((b) => ({ ...b, key: DateTime.fromISO(b.key, { zone: timezone }).toISODate()! }));
+}
+
+const THAI_WEEKDAYS = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'];
+
+function labelFor(step: 'day' | 'week' | 'month', start: DateTime, end: DateTime): string {
+  if (step === 'day') return `${THAI_WEEKDAYS[start.weekday - 1]} ${start.day}`;
+  if (step === 'month') return THAI_MONTHS[start.month - 1]!.slice(0, 3);
+  const last = end.minus({ days: 1 });
+  return start.month === last.month ? `${start.day}–${last.day}` : `${start.day}–${last.day} ${THAI_MONTHS[last.month - 1]!.slice(0, 3)}`;
+}
+
+function minOf(a: DateTime, b: DateTime): DateTime {
+  return a < b ? a : b;
+}
+
+function maxOf(a: DateTime, b: DateTime): DateTime {
+  return a > b ? a : b;
 }
 
 /** numeric(10,2) string to integer satang — never a float. */

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { DateTime } from 'luxon';
 import { requireSession } from '@/lib/auth';
 import { db, schema } from '@/lib/db/client';
-import { loadPeriodStats, type StatsRange } from '@/lib/admin/stats';
+import { loadPeriodStats, periodFor, type StatsRange } from '@/lib/admin/stats';
 import { SummaryView } from '@/components/admin/summary-view';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +12,7 @@ const RANGES: StatsRange[] = ['week', 'month', 'year'];
 export default async function SummaryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string; back?: string }>;
+  searchParams: Promise<{ range?: string; at?: string }>;
 }) {
   // 'manager', not 'owner': the person who runs the floor needs to know which
   // service sells, and it is the billing page that is the owner's alone.
@@ -23,29 +23,34 @@ export default async function SummaryPage({
     ? (params.range as StatsRange)
     : 'month';
 
-  // How many periods back, clamped: the query is cheap but an unbounded number
-  // from the URL is still a number from the URL.
-  const back = Math.min(Math.max(Number(params.back ?? 0) || 0, 0), 60);
-
   const [tenant] = await db
     .select({ timezone: schema.tenant.timezone })
     .from(schema.tenant)
     .where(eq(schema.tenant.id, session.tenantId));
 
   const timezone = tenant?.timezone ?? 'Asia/Bangkok';
-  const stats = await loadPeriodStats(
-    session.tenantId,
-    range,
-    timezone,
-    DateTime.now(),
-    -back,
-  );
+
+  // The period is named by a date rather than by "N periods back", so a link
+  // to one week still means that week tomorrow — which is what makes drilling
+  // from a month into one of its weeks a plain link.
+  const anchor =
+    params.at && /^\d{4}-\d{2}-\d{2}$/.test(params.at)
+      ? DateTime.fromISO(params.at, { zone: timezone })
+      : DateTime.now().setZone(timezone);
+
+  const valid = anchor.isValid ? anchor : DateTime.now().setZone(timezone);
+  const stats = await loadPeriodStats(session.tenantId, range, timezone, valid);
+
+  const previous = periodFor(range, stats.period.start.minus({ days: 1 }));
+  const next = periodFor(range, stats.period.end);
+  const isCurrent = stats.period.end > DateTime.now().setZone(timezone);
 
   return (
     <SummaryView
       range={range}
-      back={back}
       timezone={timezone}
+      previousAt={previous.start.toISODate()!}
+      nextAt={isCurrent ? null : next.start.toISODate()!}
       stats={{
         periodLabel: stats.period.label,
         completed: stats.completed,
@@ -55,7 +60,7 @@ export default async function SummaryPage({
         averageTicket: stats.averageTicket,
         services: stats.services,
         staff: stats.staff,
-        daily: stats.daily,
+        buckets: stats.buckets,
       }}
     />
   );

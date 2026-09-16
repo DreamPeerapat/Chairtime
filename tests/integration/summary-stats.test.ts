@@ -99,11 +99,43 @@ describe('revenue', () => {
       shop.tenantId,
       'month',
       ZONE,
-      DateTime.now().setZone(ZONE),
-      1,
+      DateTime.now().setZone(ZONE).plus({ months: 1 }),
     );
     expect(nextMonth.completed).toBe(0);
     expect(nextMonth.revenue).toBe('0.00');
+  });
+});
+
+describe('the chart', () => {
+  it('gives a week seven columns, empty days included', async () => {
+    // A chart that drops quiet days makes a bad week look like a short one.
+    const stats = await loadPeriodStats(shop.tenantId, 'week', ZONE, DateTime.now().setZone(ZONE));
+    expect(stats.buckets).toHaveLength(7);
+    expect(stats.buckets.every((b) => b.drillTo === null)).toBe(true);
+  });
+
+  it('splits a month into weeks that each open that week', async () => {
+    const stats = await loadPeriodStats(shop.tenantId, 'month', ZONE, DateTime.now().setZone(ZONE));
+    expect(stats.buckets.length).toBeGreaterThanOrEqual(4);
+    expect(stats.buckets.length).toBeLessThanOrEqual(6);
+    expect(stats.buckets.every((b) => b.drillTo === 'week')).toBe(true);
+  });
+
+  it('gives a year twelve months', async () => {
+    const stats = await loadPeriodStats(shop.tenantId, 'year', ZONE, DateTime.now().setZone(ZONE));
+    expect(stats.buckets).toHaveLength(12);
+    expect(stats.buckets.every((b) => b.drillTo === 'month')).toBe(true);
+  });
+
+  it('never counts a booking in two buckets, even across a month boundary', async () => {
+    await bookOn(1, 'completed');
+    await bookOn(2, 'completed');
+
+    const stats = await loadPeriodStats(shop.tenantId, 'month', ZONE, DateTime.now().setZone(ZONE));
+    const charted = stats.buckets.reduce((sum, b) => sum + Number(b.revenue), 0);
+    // The last week of a month is cut at the month boundary; if it were not,
+    // the bars would add up to more than the month did.
+    expect(charted).toBeCloseTo(Number(stats.revenue), 2);
   });
 });
 
