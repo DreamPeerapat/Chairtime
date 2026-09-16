@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LOYALTY_ENABLED } from '@/lib/features';
+import type { StaffRole } from '@/lib/auth/session';
 
 const ALL_NAV = [
   { href: '/dashboard', label: 'ปฏิทิน' },
@@ -13,11 +14,25 @@ const ALL_NAV = [
   { href: '/dashboard/portfolio', label: 'ผลงาน' },
   { href: '/dashboard/rewards/redeem', label: 'รางวัล', loyalty: true },
   { href: '/dashboard/settings', label: 'ตั้งค่า' },
+  // The owner's own subscription. It lived behind the settings page and the
+  // expiry banner, which meant that with a fortnight still to run there was
+  // no way to reach it at all — a shop looking for "what am I paying, and
+  // until when" could not find the page that answers it.
+  { href: '/dashboard/billing', label: 'แพ็กเกจ', ownerOnly: true },
 ] as const;
 
 // The pages themselves 404 while loyalty is hidden; dropping the tab is so
 // nobody is offered a door that does not open.
 export const NAV = ALL_NAV.filter((item) => LOYALTY_ENABLED || !('loyalty' in item));
+
+/**
+ * Billing asks for 'owner', and a manager who clicks it is bounced straight
+ * back with ?error=forbidden. Same reason the loyalty tab is filtered rather
+ * than merely disabled: do not offer a door that does not open.
+ */
+function visibleTo(role: StaffRole) {
+  return NAV.filter((item) => !('ownerOnly' in item) || role === 'owner');
+}
 
 /**
  * The back-office tab bar.
@@ -26,13 +41,14 @@ export const NAV = ALL_NAV.filter((item) => LOYALTY_ENABLED || !('loyalty' in it
  * nothing marked the current page, so on a phone — where the strip scrolls and
  * only three tabs are visible — there was no way to tell where you were.
  */
-export function DashboardNav() {
+export function DashboardNav({ role }: { role: StaffRole }) {
   const pathname = usePathname();
+  const items = visibleTo(role);
 
   return (
     <nav className="ct-scroll-x mx-auto max-w-6xl overflow-x-auto px-4">
       <ul className="flex gap-1 pb-2">
-        {NAV.map((item) => {
+        {items.map((item) => {
           // '/dashboard' is a prefix of every other tab, so it only wins on an
           // exact match; the rest own their whole subtree.
           const active =

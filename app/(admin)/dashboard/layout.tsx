@@ -62,7 +62,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </form>
         </div>
 
-        <DashboardNav />
+        <DashboardNav role={session.role} />
         {billing ? <BillingBanner state={billing} /> : null}
       </header>
 
