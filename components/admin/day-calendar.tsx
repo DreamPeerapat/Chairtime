@@ -11,7 +11,7 @@
  * Dragging an event calls rescheduleBooking, which re-plans on the server and
  * still faces the EXCLUDE constraint — the drop is a request, not a decision.
  */
-import { useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -47,6 +47,24 @@ export function DayCalendar({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const calendarRef = useRef<FullCalendar | null>(null);
+
+  /**
+   * Move the grid when the day changes.
+   *
+   * `initialDate` is read once, at mount, and never again — which is why
+   * stepping to tomorrow left the grid sitting on today. The new day's events
+   * did arrive as props, but they fell outside the range being drawn, so the
+   * calendar looked empty until a full page reload remounted the component
+   * with a fresh `initialDate`. That reload was the workaround staff had
+   * found; this is the fix.
+   */
+  useEffect(() => {
+    const api = calendarRef.current?.getApi();
+    if (!api) return;
+    if (DateTime.fromJSDate(api.getDate()).toISODate() !== calendar.date) {
+      api.gotoDate(calendar.date);
+    }
+  }, [calendar.date]);
 
   const staff = useMemo(() => calendar.resources.filter((r) => r.isHuman), [calendar.resources]);
   const colorOf = useMemo(() => buildColorMap(staff), [staff]);
