@@ -8,6 +8,7 @@ import type { StaffRole } from '@/lib/auth/session';
 
 const ALL_NAV = [
   { href: '/dashboard', label: 'ปฏิทิน' },
+  { href: '/dashboard/summary', label: 'สรุปยอด' },
   { href: '/dashboard/customers', label: 'ลูกค้า' },
   { href: '/dashboard/services', label: 'บริการ' },
   { href: '/dashboard/resources', label: 'ช่างและที่นั่ง' },
