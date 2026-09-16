@@ -23,8 +23,8 @@ import {
 import { getPointsSummaryByLineUserId } from '@/lib/loyalty/summary';
 import { LOYALTY_ENABLED } from '@/lib/features';
 import type { LineMessage, LineWebhookEvent } from './types';
-import { galleryUrl, manageBookingUrl, pointsUrl } from './links';
-import { claimOwnerLink } from './owner-link';
+import { dashboardLoginUrl, galleryUrl, manageBookingUrl, pointsUrl } from './links';
+import { claimOwnerLink, isShopOwner } from './owner-link';
 
 export interface WebhookContext {
   tenantId: string;
@@ -98,6 +98,32 @@ export async function handleEvent(
             type: 'text',
             text: `เชื่อมบัญชีเจ้าของร้านเรียบร้อยแล้วค่ะ\nต่อไปนี้ถ้าลูกค้าจองคิวใหม่หรือยกเลิกคิวเอง ระบบจะแจ้งมาที่ LINE นี้`,
           },
+        ],
+      };
+    }
+  }
+
+  // The owner's own way in. Checked before the customer keywords and answered
+  // only for the account that claimed this shop's alerts — a salon owner
+  // without a laptop opens the dashboard from the phone in their apron, and
+  // anyone else typing the same word gets the ordinary help text.
+  if (lineUserId && matches(text, ['หลังร้าน', 'จัดการร้าน', 'เข้าระบบ', 'admin', 'dashboard'])) {
+    if (await isShopOwner(tx, ctx.tenantId, lineUserId)) {
+      const url = dashboardLoginUrl();
+      return {
+        replyToken: event.replyToken,
+        messages: [
+          url
+            ? {
+                type: 'text',
+                text: 'กดปุ่มด้านล่างเพื่อเข้าหลังบ้านร้านค่ะ',
+                quickReply: {
+                  items: [
+                    { type: 'action', action: { type: 'uri', label: 'เข้าหลังบ้าน', uri: url } },
+                  ],
+                },
+              }
+            : { type: 'text', text: 'ขณะนี้ยังเปิดหลังบ้านทางนี้ไม่ได้ค่ะ' },
         ],
       };
     }

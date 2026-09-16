@@ -111,6 +111,15 @@ export async function regenerateOwnerLink(tenantId: string): Promise<void> {
   await withTenant(tenantId, (tx) => resetOwnerLink(tx, tenantId));
 }
 
+/** Is this the phone that claimed the shop's alerts? */
+export async function isShopOwner(
+  tx: TenantTx,
+  tenantId: string,
+  lineUserId: string,
+): Promise<boolean> {
+  return (await ownerLineUserId(tx, tenantId)) === lineUserId;
+}
+
 /** Who to push shop-facing alerts to, if anybody has claimed them. */
 export async function ownerLineUserId(tx: TenantTx, tenantId: string): Promise<string | null> {
   const [row] = await tx

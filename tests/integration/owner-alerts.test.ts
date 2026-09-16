@@ -140,6 +140,57 @@ describe('claiming the alerts', () => {
   });
 });
 
+describe('the way into the dashboard from LINE', () => {
+  it('sends a login link to the phone that claimed the shop', async () => {
+    await linkOwner();
+
+    const handled = await withTenant(shop.tenantId, (tx) =>
+      handleEvent(tx, ctx(), {
+        type: 'message',
+        timestamp: Date.now(),
+        replyToken: 'reply-owner',
+        source: { type: 'user', userId: OWNER },
+        message: { type: 'text', id: 'msg-3', text: 'หลังร้าน' },
+      }),
+    );
+
+    expect(JSON.stringify(handled!.messages)).toContain('เข้าหลังบ้าน');
+  });
+
+  it('gives a customer typing the same word the ordinary help text', async () => {
+    // The word is not a secret, so the guard has to be who sent it.
+    await linkOwner();
+
+    const handled = await withTenant(shop.tenantId, (tx) =>
+      handleEvent(tx, ctx(), {
+        type: 'message',
+        timestamp: Date.now(),
+        replyToken: 'reply-customer',
+        source: { type: 'user', userId: 'U_curious_customer' },
+        message: { type: 'text', id: 'msg-4', text: 'หลังร้าน' },
+      }),
+    );
+
+    const body = JSON.stringify(handled!.messages);
+    expect(body).not.toContain('เข้าหลังบ้าน');
+    expect(body).toContain('จองคิว');
+  });
+
+  it('says nothing special before anybody has claimed the shop', async () => {
+    const handled = await withTenant(shop.tenantId, (tx) =>
+      handleEvent(tx, ctx(), {
+        type: 'message',
+        timestamp: Date.now(),
+        replyToken: 'reply-unclaimed',
+        source: { type: 'user', userId: OWNER },
+        message: { type: 'text', id: 'msg-5', text: 'หลังร้าน' },
+      }),
+    );
+
+    expect(JSON.stringify(handled!.messages)).not.toContain('เข้าหลังบ้าน');
+  });
+});
+
 describe('what reaches the shop', () => {
   it('queues a new-booking alert for a booking the customer made', async () => {
     const booking = await bookSomething('online');

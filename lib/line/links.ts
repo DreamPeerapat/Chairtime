@@ -34,3 +34,16 @@ export function pointsUrl(tenantSlug: string): string | null {
   const base = appBase();
   return base ? `${base}/${tenantSlug}/points` : null;
 }
+
+/**
+ * The back office.
+ *
+ * Only ever sent to the LINE account that claimed the shop's alerts, never
+ * to a customer: a salon owner without a laptop reaches the dashboard from
+ * the phone in their apron, and typing a domain into LINE's browser by hand
+ * is where that journey usually ends.
+ */
+export function dashboardLoginUrl(): string | null {
+  const base = appBase();
+  return base ? `${base}/login` : null;
+}
