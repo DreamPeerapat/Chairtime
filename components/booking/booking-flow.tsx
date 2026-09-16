@@ -45,7 +45,7 @@ const STEPS = ['บริการ', 'ช่าง', 'เวลา', 'ยืน�
 export function BookingFlow(props: BookingFlowProps) {
   const [step, setStep] = useState(0);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
-  const [staffId, setStaffId] = useState<string | null>(null);
+  const [pickedStaffId, setStaffId] = useState<string | null>(null);
   const [date, setDate] = useState(() => DateTime.now().setZone(props.timezone).toISODate()!);
   const [slots, setSlots] = useState<Slot[]>([]);
   /** The shop has no staff/seats or no hours — no day will ever have a slot. */
@@ -68,7 +68,38 @@ export function BookingFlow(props: BookingFlowProps) {
   // With staff selection turned off, the shop assigns whoever is free.
   const staffStepEnabled = props.allowCustomerPickStaff && props.staff.length > 0;
 
-  const eligibleStaff = useMemo(() => props.staff, [props.staff]);
+  /**
+   * Only the stylists who can do everything in the basket.
+   *
+   * This used to return the whole list — the name said "eligible" and the body
+   * said otherwise. A customer who picked a colour and then a stylist who only
+   * cuts reached the time step, found no times at all, and had nothing to tell
+   * them why. One person handles the whole visit, so the test is that they
+   * hold every skill, not any of them.
+   */
+  const eligibleStaff = useMemo(
+    () =>
+      selectedServiceIds.length === 0
+        ? props.staff
+        : props.staff.filter((person) =>
+            selectedServiceIds.every((id) => person.serviceIds.includes(id)),
+          ),
+    [props.staff, selectedServiceIds],
+  );
+
+  /**
+   * The chosen stylist stops being able to do the job when the basket changes
+   * under them — picking a stylist, going back, and adding a service.
+   *
+   * Derived rather than corrected in an effect: writing state during an effect
+   * costs a second render pass and, worse, leaves one render in which the
+   * time step asks for a stylist who cannot serve the basket. Reading through
+   * this constant means the invalid combination never exists.
+   */
+  const staffId =
+    pickedStaffId && eligibleStaff.some((person) => person.id === pickedStaffId)
+      ? pickedStaffId
+      : null;
 
   const loadSlots = useCallback(
     async (forDate: string) => {
@@ -175,6 +206,7 @@ export function BookingFlow(props: BookingFlowProps) {
         {step === 1 ? (
           <StaffStep
             staff={eligibleStaff}
+            hiddenCount={props.staff.length - eligibleStaff.length}
             portfolio={props.portfolio}
             selected={staffId}
             onChange={(next) => {

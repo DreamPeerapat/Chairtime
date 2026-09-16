@@ -145,9 +145,24 @@ export interface StaffListItem {
   name: string;
   bio: string | null;
   photoUrl: string | null;
+  /**
+   * Every service this person is trained on.
+   *
+   * Sent to the browser because the customer picks services *after* the page
+   * has loaded, so the server cannot know which stylists to leave out. Without
+   * it the staff step offered everybody, and picking somebody who does not do
+   * the chosen service led to a time step with no times and no explanation.
+   */
+  serviceIds: string[];
 }
 
-/** Staff a customer may request, optionally narrowed to those who can do the work. */
+/**
+ * Staff a customer may request.
+ *
+ * `serviceIds` narrows the list server-side; leaving it empty returns everyone
+ * with their own skills attached, which is what the booking flow needs — it
+ * filters in the browser as the basket changes.
+ */
 export async function listBookableStaff(
   tenantId: string,
   serviceIds: string[] = [],
@@ -173,7 +188,7 @@ export async function listBookableStaff(
       )
       .orderBy(asc(schema.resource.displayOrder));
 
-    if (serviceIds.length === 0 || rows.length === 0) return rows.map(strip);
+    if (rows.length === 0) return [];
 
     const skills = await tx
       .select({
@@ -181,16 +196,22 @@ export async function listBookableStaff(
         serviceId: schema.resourceServiceSkill.serviceId,
       })
       .from(schema.resourceServiceSkill)
-      .where(inArray(schema.resourceServiceSkill.serviceId, serviceIds));
+      .where(
+        inArray(
+          schema.resourceServiceSkill.resourceId,
+          rows.map((r) => r.id),
+        ),
+      );
+
+    const withSkills = rows.map((row) => ({
+      ...strip(row),
+      serviceIds: skills.filter((s) => s.resourceId === row.id).map((s) => s.serviceId),
+    }));
+
+    if (serviceIds.length === 0) return withSkills;
 
     // One person handles the whole visit, so they need every service in the basket.
-    return rows
-      .filter((r) =>
-        serviceIds.every((sid) =>
-          skills.some((s) => s.resourceId === r.id && s.serviceId === sid),
-        ),
-      )
-      .map(strip);
+    return withSkills.filter((r) => serviceIds.every((sid) => r.serviceIds.includes(sid)));
   });
 }
 
@@ -199,7 +220,7 @@ function strip(row: {
   name: string;
   bio: string | null;
   photoUrl: string | null;
-}): StaffListItem {
+}): Omit<StaffListItem, 'serviceIds'> {
   return { id: row.id, name: row.name, bio: row.bio, photoUrl: row.photoUrl };
 }
 
