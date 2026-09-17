@@ -4,16 +4,62 @@
   --font-sans: 'IBM Plex Sans Thai', ui-sans-serif, system-ui, sans-serif;
 }
 
+/*
+ * The palette, named by job rather than by colour.
+ *
+ * Every screen in here had its own copy of `border-slate-200
+ * dark:border-slate-800`, which is three decisions repeated in forty files:
+ * what a border looks like, that dark mode exists, and which shade each gets.
+ * Named tokens make it one decision in one place — and the dark variants below
+ * are why a page can stop restating them.
+ *
+ * Teal is the brand, and the same teal the LINE messages use (lib/line/
+ * messages.ts). If it changes it changes in both, or a shop sees two products.
+ */
 :root {
   --background: #ffffff;
   --foreground: #0f172a;
+
+  /* raised against the page: cards, panels, the nav bar */
+  --surface: #ffffff;
+  /* recessed: code blocks, quiet rows, the strip behind a section */
+  --surface-muted: #f8fafc;
+  --border: #e2e8f0;
+  --muted: #64748b;
+
+  --brand: #0f766e;
+  --brand-strong: #115e59;
+  --brand-soft: #f0fdfa;
+  --brand-contrast: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0b1220;
     --foreground: #e2e8f0;
+
+    --surface: #0f1729;
+    --surface-muted: #131c30;
+    --border: #1e293b;
+    --muted: #94a3b8;
+
+    --brand: #14b8a6;
+    --brand-strong: #0d9488;
+    --brand-soft: #042f2e;
+    --brand-contrast: #04211f;
   }
+}
+
+/* So Tailwind utilities can reach them: bg-surface, border-line, text-muted. */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-line: var(--border);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-contrast: var(--brand-contrast);
 }
 
 body {

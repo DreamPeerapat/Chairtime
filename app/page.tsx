@@ -1,40 +1,49 @@
-import Link from 'next/link';
+import type { Metadata } from 'next';
+import { Faq } from '@/components/marketing/faq';
+import { Features } from '@/components/marketing/features';
+import { Hero } from '@/components/marketing/hero';
+import { Pricing } from '@/components/marketing/pricing';
+import { SiteFooter } from '@/components/marketing/site-footer';
+import { SiteNav } from '@/components/marketing/site-nav';
+import { Steps } from '@/components/marketing/steps';
 
 /**
  * The front door.
  *
- * It used to be a title and one line of description, with no way in at all —
- * a shop owner who typed the domain into a laptop had nowhere to click, and
- * /login was a URL they had to be told. The two things anyone arriving here
- * wants are to sign in or to start a shop.
+ * It was a title, one line of description and two buttons — which told a shop
+ * owner who had heard the name nothing about whether this was for them. The
+ * page now answers, in order, the questions they arrive with: what it does,
+ * what they get, how long it takes to start, what it costs, and the six things
+ * they would otherwise have to ask before signing up.
+ *
+ * A server component with one interactive island (the pricing switch), so the
+ * whole page is in the HTML for anyone reading it without JavaScript — and for
+ * the search engines a shop finds us through.
  */
+export const metadata: Metadata = {
+  title: 'Chairtime — ให้ลูกค้าจองคิวเองผ่าน LINE',
+  description:
+    'ระบบจองคิวสำหรับร้านผม ร้านเล็บ ร้านนวด สปา และคลินิก ลูกค้าจองเองผ่าน LINE ได้ 24 ชั่วโมง กันคิวชนอัตโนมัติ เตือนก่อนถึงคิว เก็บประวัติลูกค้าและสะสมแต้ม ทดลองฟรี 15 วัน',
+  openGraph: {
+    title: 'Chairtime — ให้ลูกค้าจองคิวเองผ่าน LINE',
+    description:
+      'ลูกค้าเลือกบริการ ช่าง และเวลาว่างเองได้ตลอด 24 ชั่วโมง ระบบกันคิวชนให้อัตโนมัติ ทดลองฟรี 15 วัน',
+    type: 'website',
+  },
+};
+
 export default function Home() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-6 p-8">
-      <div>
-        <h1 className="text-3xl font-semibold">Chairtime</h1>
-        <p className="mt-1 text-slate-500">ระบบจองคิวและสะสมแต้มสำหรับร้านบริการ</p>
-      </div>
-
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Link
-          href="/login"
-          className="ct-press rounded-xl bg-teal-700 px-6 py-3 text-center text-sm font-medium text-white hover:bg-teal-600"
-        >
-          เข้าสู่ระบบสำหรับร้าน
-        </Link>
-        <Link
-          href="/auth/start?provider=line"
-          className="ct-press rounded-xl border border-slate-200 px-6 py-3 text-center text-sm font-medium hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
-        >
-          สมัครใช้งานฟรี
-        </Link>
-      </div>
-
-      <p className="text-xs text-slate-500">
-        เจ้าของร้านที่ไม่สะดวกใช้คอมพิวเตอร์ พิมพ์ <span className="font-medium">หลังร้าน</span>{' '}
-        ในแชท LINE ของร้าน ระบบจะส่งลิงก์เข้าหลังบ้านให้
-      </p>
-    </main>
+    <>
+      <SiteNav />
+      <main>
+        <Hero />
+        <Features />
+        <Steps />
+        <Pricing />
+        <Faq />
+      </main>
+      <SiteFooter />
+    </>
   );
 }
