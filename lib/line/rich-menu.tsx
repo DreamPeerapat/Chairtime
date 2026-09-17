@@ -91,6 +91,91 @@ export const RICH_MENU_STRINGS = [
   ...BOTTOM_CELLS.flatMap((c) => [c.label, c.hint]),
 ];
 
+/**
+ * The owner's own menu — four tap areas, one per screen they open daily.
+ *
+ * Deliberately nothing like the customer menu: it is dark, so a glance at the
+ * chat list tells the owner which menu they are looking at, and every label
+ * names a page rather than a keyword, because these are links, not messages
+ * the webhook has to answer.
+ *
+ * Every label here clears `rendersInSatori` too — "คิววันนี้" and "ตั้งค่า"
+ * were the first drafts and both lose their tone mark, so they are not used.
+ */
+const OWNER_CELLS = [
+  { label: 'ตารางคิว', hint: 'คิวประจำวัน', path: '/dashboard' },
+  { label: 'สรุปยอด', hint: 'รายได้และบริการ', path: '/dashboard/summary' },
+  { label: 'ลูกค้า', hint: 'ค้นหาและประวัติ', path: '/dashboard/customers' },
+  { label: 'จัดการร้าน', hint: 'บริการ ช่าง เวลา', path: '/dashboard/settings' },
+] as const;
+
+export const OWNER_MENU_CELLS = OWNER_CELLS;
+
+/** Exported for the unit test, same as RICH_MENU_STRINGS. */
+export const OWNER_MENU_STRINGS = [
+  'หลังร้าน',
+  ...OWNER_CELLS.flatMap((c) => [c.label, c.hint]),
+];
+
+export async function ownerRichMenuImage(shopName: string) {
+  const fonts = await loadFonts();
+  const half = RICH_MENU_SIZE.width / 2;
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: RICH_MENU_SIZE.width,
+          height: RICH_MENU_SIZE.height,
+          display: 'flex',
+          flexDirection: 'column',
+          background: INK,
+          fontFamily: 'Plex',
+        }}
+      >
+        <div style={{ height: 180, display: 'flex', alignItems: 'center', paddingLeft: 64 }}>
+          <div style={{ display: 'flex', fontSize: 52, fontWeight: 600, color: '#5eead4' }}>
+            หลังร้าน
+          </div>
+          <div style={{ display: 'flex', fontSize: 44, fontWeight: 400, color: '#94a3b8', marginLeft: 24 }}>
+            {shopName}
+          </div>
+        </div>
+
+        {[0, 1].map((row) => (
+          <div key={row} style={{ height: 753, display: 'flex' }}>
+            {OWNER_CELLS.slice(row * 2, row * 2 + 2).map((cell, column) => (
+              <div
+                key={cell.label}
+                style={{
+                  width: half,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderLeft: column === 0 ? 'none' : '4px solid #1e293b',
+                  borderTop: row === 0 ? 'none' : '4px solid #1e293b',
+                }}
+              >
+                <div style={{ display: 'flex', fontSize: 130, fontWeight: 600, color: '#ffffff' }}>
+                  {cell.label}
+                </div>
+                <div style={{ display: 'flex', fontSize: 48, fontWeight: 400, color: '#94a3b8', marginTop: 24 }}>
+                  {cell.hint}
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    ),
+    {
+      ...RICH_MENU_SIZE,
+      fonts: fonts.map((f) => ({ name: f.name, data: f.data, weight: f.weight, style: 'normal' as const })),
+    },
+  );
+}
+
 export async function richMenuImage(shopName: string) {
   const fonts = await loadFonts();
 

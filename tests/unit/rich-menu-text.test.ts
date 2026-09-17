@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RICH_MENU_STRINGS, rendersInSatori } from '@/lib/line/rich-menu';
+import { OWNER_MENU_STRINGS, RICH_MENU_STRINGS, rendersInSatori } from '@/lib/line/rich-menu';
 
 /**
  * The image renderer drops a tone mark that lands on top of an above-vowel,
@@ -33,5 +33,18 @@ describe('rendersInSatori', () => {
     for (const text of RICH_MENU_STRINGS) {
       expect(rendersInSatori(text), `"${text}" จะเรนเดอร์ผิด`).toBe(true);
     }
+  });
+
+  it('passes every string the owner menu draws', () => {
+    for (const text of OWNER_MENU_STRINGS) {
+      expect(rendersInSatori(text), `"${text}" จะเรนเดอร์ผิด`).toBe(true);
+    }
+  });
+
+  it('rejects the labels that read best but render wrong', () => {
+    // Kept as a record of why the owner menu says ตารางคิว and จัดการร้าน
+    // rather than the two obvious words.
+    expect(rendersInSatori('คิววันนี้')).toBe(false);
+    expect(rendersInSatori('ตั้งค่า')).toBe(false);
   });
 });

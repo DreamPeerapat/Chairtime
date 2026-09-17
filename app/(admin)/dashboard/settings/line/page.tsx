@@ -12,6 +12,7 @@ import {
   webhookUrlFor,
 } from '@/lib/line/wizard';
 import { ownerLinkState, regenerateOwnerLink } from '@/lib/line/owner-link';
+import { installOwnerMenu, ownerMenuState, removeOwnerMenu } from '@/lib/line/owner-menu';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,7 @@ export default async function LineConnectPage({
   const liffEndpoint = liffEndpointFor(session.tenantSlug);
   const liffUrl = state.liffId ? liffUrlFor(state.liffId) : null;
   const ownerLink = await ownerLinkState(session.tenantId);
+  const ownerMenu = await ownerMenuState(session.tenantId);
 
   async function step(name: 'stepOaCreated' | 'stepApiEnabled') {
     'use server';
@@ -82,11 +84,34 @@ export default async function LineConnectPage({
     redirect('/dashboard/settings/line');
   }
 
+  async function buildOwnerMenu() {
+    'use server';
+    const active = await requireSession('owner');
+    const result = await installOwnerMenu(active.tenantId);
+    redirect(`/dashboard/settings/line?${result.ok ? 'ok=menu' : 'error=menu'}`);
+  }
+
+  async function dropOwnerMenu() {
+    'use server';
+    const active = await requireSession('owner');
+    await removeOwnerMenu(active.tenantId);
+    redirect('/dashboard/settings/line');
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-lg font-semibold">เชื่อมต่อ LINE Official Account</h1>
 
-      {ok ? <Banner tone="ok">ทดสอบสำเร็จ! ระบบเชื่อมต่อ LINE OA ของร้านแล้ว</Banner> : null}
+      {ok === 'menu' ? (
+        <Banner tone="ok">สร้างเมนูเจ้าของร้านแล้ว เปิดแชท LINE ของร้านดูได้เลย</Banner>
+      ) : ok ? (
+        <Banner tone="ok">ทดสอบสำเร็จ! ระบบเชื่อมต่อ LINE OA ของร้านแล้ว</Banner>
+      ) : null}
+      {error === 'menu' ? (
+        <Banner tone="error">
+          สร้างเมนูไม่สำเร็จ — ตรวจว่าเชื่อม LINE OA และผูกบัญชีเจ้าของร้านครบแล้ว
+        </Banner>
+      ) : null}
       {error === 'invalid' ? <Banner tone="error">กรุณากรอก Token และ Secret ให้ครบ</Banner> : null}
       {error === 'test' ? <Banner tone="error">{state.lastError ?? 'ทดสอบเชื่อมต่อไม่สำเร็จ'}</Banner> : null}
       {error === 'liff' ? (
@@ -228,6 +253,46 @@ export default async function LineConnectPage({
                   เปลี่ยนไปใช้เครื่องอื่น
                 </button>
               </form>
+
+              {/* Only the owner's own chat gets this menu, so a customer is
+                  never offered a back-office button that refuses them. */}
+              <div className="mt-2 border-t border-slate-200 pt-3 dark:border-slate-800">
+                <p className="font-medium text-slate-700 dark:text-slate-200">
+                  เมนูลัดในแชท LINE ของคุณ
+                </p>
+                <p className="mt-0.5">
+                  ใส่ปุ่ม ตารางคิว · สรุปยอด · ลูกค้า · จัดการร้าน ไว้ใต้ห้องแชท
+                  — เห็นเฉพาะเครื่องที่ผูกไว้ ลูกค้ายังเห็นเมนูจองคิวเหมือนเดิม
+                </p>
+
+                {ownerMenu.installed ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="text-teal-700 dark:text-teal-400">ติดตั้งแล้ว</span>
+                    <form action={buildOwnerMenu}>
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs dark:border-slate-700"
+                      >
+                        สร้างใหม่
+                      </button>
+                    </form>
+                    <form action={dropOwnerMenu}>
+                      <button type="submit" className="px-1 text-xs text-slate-500 underline">
+                        เอาออก
+                      </button>
+                    </form>
+                  </div>
+                ) : (
+                  <form action={buildOwnerMenu} className="mt-2">
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-medium text-white"
+                    >
+                      สร้างเมนูเจ้าของร้าน
+                    </button>
+                  </form>
+                )}
+              </div>
             </>
           ) : (
             <>

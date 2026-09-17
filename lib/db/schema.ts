@@ -768,6 +768,14 @@ export const tenantLineOa = pgTable(
      * by sending the code below to it.
      */
     ownerLineUserId: text('owner_line_user_id'),
+    /**
+     * The per-user rich menu attached to the owner's own chat.
+     *
+     * Kept so a rebuild can delete the one it replaces: LINE caps how many
+     * rich menus a channel may hold, and leaving the old one behind every
+     * time the shop renames itself would eventually fill that up.
+     */
+    ownerRichMenuId: text('owner_rich_menu_id'),
     /** Short one-time code the owner sends to the OA to claim notifications. */
     ownerLinkCode: text('owner_link_code'),
     // wizard progress, tracked independently so a shop can resume mid-step
