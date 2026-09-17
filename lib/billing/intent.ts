@@ -145,7 +145,7 @@ export async function intentByReference(
  * at an expired code sees that it is expired even if nothing else has run.
  * Only ever moves `pending` — a paid intent whose row is read late is paid.
  */
-export async function expireStale(tenantId: string, now = DateTime.now()): Promise<void> {
+export async function expireStale(tenantId: string, now: DateTime = DateTime.now()): Promise<void> {
   await withTenant(tenantId, (tx) =>
     tx
       .update(schema.paymentIntent)
