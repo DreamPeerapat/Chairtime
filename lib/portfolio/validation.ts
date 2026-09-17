@@ -48,6 +48,17 @@ export function referencePrefix(tenantId: string): string {
 }
 
 /**
+ * Where a shop's payment slips go.
+ *
+ * Its own folder because the retention is different: a gallery photo is the
+ * shop's shopfront and a slip is an accounting record, and one day somebody
+ * will want to clear out one without touching the other.
+ */
+export function slipPrefix(tenantId: string): string {
+  return `slip/${tenantId}/`;
+}
+
+/**
  * Three is what a customer needs to show a haircut from the front, the back
  * and the side. It is also the cap on what one anonymous booking can push
  * into the shop's blob store.

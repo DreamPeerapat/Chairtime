@@ -19,6 +19,7 @@ import {
   ALLOWED_IMAGE_TYPES,
   MAX_IMAGE_BYTES,
   portfolioPrefix,
+  slipPrefix,
   staffPhotoPrefix,
 } from '@/lib/portfolio/validation';
 
@@ -46,6 +47,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         const allowed = [
           portfolioPrefix(auth.session.tenantId),
           staffPhotoPrefix(auth.session.tenantId),
+          slipPrefix(auth.session.tenantId),
         ];
         if (!allowed.some((prefix) => pathname.startsWith(prefix))) {
           throw new Error('pathname outside this tenant');
