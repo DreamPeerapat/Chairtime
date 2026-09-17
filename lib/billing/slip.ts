@@ -16,6 +16,7 @@
  * arriving `verified`.
  */
 import type { DateTime } from 'luxon';
+import { PLATFORM_PAYEE } from './platform';
 
 export type SlipCheck =
   /** the service confirmed a transfer matching what the shop claimed */
@@ -109,6 +110,17 @@ export async function checkSlip(
     if (code !== null && OUR_PROBLEM.has(code)) {
       return { outcome: 'unchecked', reason: message ?? `บริการตรวจสลิปตอบกลับ ${code}` };
     }
+
+    // 1014 is "paid into an account that is not the one registered to this
+    // branch", and the service decides that against a number typed into its
+    // own settings. A PromptPay transfer names the payee by phone, so a
+    // branch registered by bank account can refuse a slip that paid us
+    // perfectly well. The slip itself comes back with the refusal, so the
+    // question is answerable here: if the payee on it is ours, it is ours.
+    if (code === WRONG_RECEIVER && payload?.data && whosePayee(payload.data.receiver) === 'ours') {
+      return settle(payload.data, input);
+    }
+
     if (code !== null) {
       return { outcome: 'rejected', reason: message ?? `ตรวจสลิปไม่ผ่าน (${code})` };
     }
@@ -119,7 +131,20 @@ export async function checkSlip(
     return { outcome: 'rejected', reason: payload?.message ?? 'อ่านสลิปไม่ได้' };
   }
 
-  const paid = Number(payload.data.amount);
+  // Checked here as well as there: whoever the service was told to expect, a
+  // slip that names somebody else is not evidence that we were paid. Only a
+  // positive reading of another payee refuses — where the bank printed nothing
+  // legible, the service's own check (which `log` turned on) is what stands.
+  if (whosePayee(payload.data.receiver) === 'someone else') {
+    return { outcome: 'rejected', reason: 'สลิปนี้โอนเข้าบัญชีอื่น ไม่ใช่บัญชีของระบบ' };
+  }
+
+  return settle(payload.data, input);
+}
+
+/** The amount is the last thing left to disagree about. */
+function settle(data: NonNullable<SlipOkResponse['data']>, input: SlipCheckInput): SlipCheck {
+  const paid = Number(data.amount);
   const expected = Number(input.expectedAmount);
 
   // Satang, not baht, and compared as integers: a float comparison on money
@@ -133,10 +158,65 @@ export async function checkSlip(
 
   return {
     outcome: 'verified',
-    transferredAt: payload.data.transTimestamp ?? input.claimedAt.toISO()!,
+    transferredAt: data.transTimestamp ?? input.claimedAt.toISO()!,
     amount: paid.toFixed(2),
-    reference: payload.data.transRef ?? null,
+    reference: data.transRef ?? null,
   };
+}
+
+/** "บัญชีผู้รับไม่ตรงกับบัญชีหลักของร้าน" — see the note where it is handled. */
+const WRONG_RECEIVER = 1014;
+
+/**
+ * Who does this slip say was paid?
+ *
+ * Three answers, not two, and the third is the one that matters. Banks mask
+ * what they print — `090xxx9156`, `xxx-x-x8909-6` — and some print a payee
+ * nothing can be read from at all. Treating that as "not us" would refuse
+ * honest payments; treating it as "us" would accept anything. So it is
+ * `unknown`, and the caller decides what an unknown is worth in context.
+ *
+ * Both of our forms count as ours: the QR pays a PromptPay id registered to
+ * the account printed beside it, and which of the two a slip shows is the
+ * sending bank's choice, not ours.
+ */
+type Payee = 'ours' | 'someone else' | 'unknown';
+
+function whosePayee(receiver: SlipOkReceiver | undefined): Payee {
+  const ours = [PLATFORM_PAYEE.promptPayId, PLATFORM_PAYEE.accountNumber].map(digitsOf);
+
+  const legible = [receiver?.proxy?.value, receiver?.account?.value].filter(
+    (value): value is string => typeof value === 'string' && /[0-9]/.test(value),
+  );
+  if (legible.length === 0) return 'unknown';
+
+  const mine = legible.some((value) => ours.some((id) => maskedMatches(value, id)));
+  return mine ? 'ours' : 'someone else';
+}
+
+function digitsOf(value: string): string {
+  return value.replace(/\D/g, '');
+}
+
+/**
+ * Compare a masked value against one of ours.
+ *
+ * Only the digits and the mask characters survive the strip, so the dashes a
+ * bank adds for readability cannot make two identical accounts look different.
+ * A masked value with no visible digits at all matches nothing — it would
+ * otherwise match everything.
+ */
+function maskedMatches(masked: string, mine: string): boolean {
+  const pattern = masked.replace(/[^0-9xX*]/g, '');
+  if (pattern.length !== mine.length) return false;
+  if (!/[0-9]/.test(pattern)) return false;
+
+  for (let i = 0; i < pattern.length; i += 1) {
+    const character = pattern[i]!;
+    if (character === 'x' || character === 'X' || character === '*') continue;
+    if (character !== mine[i]) return false;
+  }
+  return true;
 }
 
 /**
@@ -155,6 +235,12 @@ export async function checkSlip(
  */
 const OUR_PROBLEM = new Set([1001, 1002, 1003, 1004, 1009, 1010]);
 
+/** Masked as the bank printed it: `090xxx9156`, `xxx-x-x8909-6`. */
+interface SlipOkReceiver {
+  proxy?: { type?: string | null; value?: string | null };
+  account?: { type?: string | null; value?: string | null };
+}
+
 /** Only the fields this code reads; the service returns a good deal more. */
 interface SlipOkResponse {
   success?: boolean;
@@ -165,5 +251,6 @@ interface SlipOkResponse {
     amount?: number | string;
     transRef?: string;
     transTimestamp?: string;
+    receiver?: SlipOkReceiver;
   };
 }
