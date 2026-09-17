@@ -53,6 +53,9 @@ export interface PaymentIntentRow {
   paidAt: Date | null;
   slipUrl: string | null;
   tenantPaymentId: string | null;
+  /** the document งานเข้า issued for this request, if the shop asked for one */
+  invoiceNumber: string | null;
+  invoiceUrl: string | null;
   createdAt: Date;
 }
 
@@ -73,6 +76,8 @@ const COLUMNS = {
   paidAt: schema.paymentIntent.paidAt,
   slipUrl: schema.paymentIntent.slipUrl,
   tenantPaymentId: schema.paymentIntent.tenantPaymentId,
+  invoiceNumber: schema.paymentIntent.invoiceNumber,
+  invoiceUrl: schema.paymentIntent.invoiceUrl,
   createdAt: schema.paymentIntent.createdAt,
 };
 

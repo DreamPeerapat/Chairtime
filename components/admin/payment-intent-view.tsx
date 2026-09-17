@@ -21,6 +21,8 @@ export interface PaymentIntentForView {
   gatewayRef2: string | null;
   receiptUrl: string | null;
   receiptNumber: string | null;
+  invoiceUrl: string | null;
+  invoiceNumber: string | null;
 }
 
 /**
@@ -36,15 +38,20 @@ export function PaymentIntentView({
   intent,
   payee,
   slipChecking,
+  invoicing,
   error,
   onConfirm,
+  onRequestInvoice,
 }: {
   tenantId: string;
   intent: PaymentIntentForView;
   payee: { bank: string; accountNumber: string; accountName: string };
   slipChecking: boolean;
+  /** whether documents can be issued at all — งานเข้า may not be configured */
+  invoicing: boolean;
   error: string | null;
   onConfirm: (formData: FormData) => Promise<void>;
+  onRequestInvoice: (formData: FormData) => Promise<void>;
 }) {
   const paid = intent.status === 'paid';
   const open = intent.status === 'pending';
@@ -99,6 +106,45 @@ export function PaymentIntentView({
               onSubmit={onConfirm}
             />
           </section>
+
+          {/*
+            For the shop that cannot pay until somebody approves the spend. The
+            invoice is a document about this exact request, so it is offered
+            here rather than on the plan picker — and asking for one leaves the
+            QR and its clock alone.
+          */}
+          {invoicing ? (
+            <section className="rounded-2xl border border-line px-4 py-4 text-sm">
+              {intent.invoiceUrl ? (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-muted">ใบแจ้งหนี้ {intent.invoiceNumber}</span>
+                  <a
+                    href={intent.invoiceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ct-press rounded-lg border border-line px-4 py-2 font-medium"
+                  >
+                    เปิดใบแจ้งหนี้ (PDF)
+                  </a>
+                </div>
+              ) : (
+                <form action={onRequestInvoice} className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="text-muted">ต้องใช้เอกสารไปตั้งเบิกก่อนจ่าย?</span>
+                    <button
+                      type="submit"
+                      className="ct-press rounded-lg border border-line px-4 py-2 font-medium"
+                    >
+                      ขอใบแจ้งหนี้
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted">
+                    ออกในนามที่กรอกไว้ในหน้าแพ็กเกจ และส่งเข้าอีเมลให้ด้วย
+                  </p>
+                </form>
+              )}
+            </section>
+          ) : null}
         </>
       ) : (
         <ClosedPanel status={intent.status} />

@@ -18,6 +18,7 @@ import { withTenant, type TenantTx } from '@/lib/db/tenant';
 import { enqueue } from '@/lib/notifications/queue';
 import { dedupeKey } from '@/lib/notifications/templates';
 import { buddhistYear, thaiDayMonth } from '@/lib/time/thai';
+import { billingPartyFor } from './party';
 import { formatBaht } from './amount';
 
 function endpoint(): string | null {
@@ -224,25 +225,10 @@ async function paymentDetails(
       .where(eq(schema.tenantPayment.id, paymentId));
     if (!payment) return null;
 
-    const [shop] = await tx
-      .select({
-        name: schema.tenant.name,
-        address: schema.tenant.address,
-        taxId: schema.tenant.taxId,
-        billingName: schema.tenant.billingName,
-        billingAddress: schema.tenant.billingAddress,
-        billingEmail: schema.tenant.billingEmail,
-        timezone: schema.tenant.timezone,
-      })
-      .from(schema.tenant)
-      .where(eq(schema.tenant.id, tenantId));
-    if (!shop) return null;
-
-    // The billing identity wins where it was filled in: a salon trading as
-    // "The Hair" may be invoiced as a company, and its accountant cannot file
-    // a document made out to the shopfront.
-    const email = shop.billingEmail ?? (await ownerEmail(tx, tenantId));
-
+    // Shared with the invoice, so the two documents cannot disagree about who
+    // the shop is — one addressed to a company and one to its shopfront, for
+    // the same payment, is exactly the confusion this avoids.
+    const party = await billingPartyFor(tenantId);
     const months = monthsBetween(payment.periodStart, payment.periodEnd);
 
     return {
@@ -253,36 +239,13 @@ async function paymentDetails(
       periodEnd: payment.periodEnd,
       note: payment.note,
       planName: payment.planName,
-      shopName: shop.billingName ?? shop.name,
-      address: shop.billingAddress ?? shop.address,
-      taxId: shop.taxId,
-      email,
-      timezone: shop.timezone,
+      shopName: party.name,
+      address: party.address,
+      taxId: party.taxId,
+      email: party.email,
+      timezone: party.timezone,
     };
   });
-}
-
-/**
- * Where the receipt goes when the shop has not named a billing address.
- *
- * The owner, not any member of staff: a receipt is a financial document and
- * the stylist who joined last week has no business receiving it.
- */
-async function ownerEmail(tx: TenantTx, tenantId: string): Promise<string | null> {
-  const rows = await tx
-    .select({ email: schema.staffUser.primaryEmail })
-    .from(schema.staffTenant)
-    .innerJoin(schema.staffUser, eq(schema.staffUser.id, schema.staffTenant.staffId))
-    .where(
-      and(
-        eq(schema.staffTenant.tenantId, tenantId),
-        eq(schema.staffTenant.role, 'owner'),
-        eq(schema.staffTenant.isActive, true),
-      ),
-    )
-    .limit(1);
-
-  return rows[0]?.email ?? null;
 }
 
 /** Whole months, which is the only length a period is ever sold in. */

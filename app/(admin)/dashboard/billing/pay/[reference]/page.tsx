@@ -5,6 +5,7 @@ import { requireSession } from '@/lib/auth';
 import { confirmIntent, expireStale, intentByReference } from '@/lib/billing/intent';
 import { PLATFORM_PAYEE } from '@/lib/billing/platform';
 import { planName } from '@/lib/billing/access';
+import { InvoiceError, invoicesEnabled, issueInvoiceFor } from '@/lib/billing/invoice';
 import { paymentReceipt } from '@/lib/billing/receipt';
 import { checkSlip, slipCheckingEnabled } from '@/lib/billing/slip';
 import { PaymentIntentView } from '@/components/admin/payment-intent-view';
@@ -108,6 +109,24 @@ export default async function PayPage({
     redirect(`/dashboard/billing/pay/${reference}`);
   }
 
+  async function requestInvoice() {
+    'use server';
+    const active = await requireSession('owner');
+
+    try {
+      await issueInvoiceFor(active.tenantId, reference);
+    } catch (err) {
+      if (err instanceof InvoiceError) {
+        redirect(
+          `/dashboard/billing/pay/${reference}?error=invoice&reason=${encodeURIComponent(err.message)}`,
+        );
+      }
+      throw err;
+    }
+
+    redirect(`/dashboard/billing/pay/${reference}`);
+  }
+
   return (
     <PaymentIntentView
       tenantId={session.tenantId}
@@ -124,11 +143,15 @@ export default async function PayPage({
         gatewayRef2: intent.gatewayRef2,
         receiptUrl: receipt?.url ?? null,
         receiptNumber: receipt?.number ?? null,
+        invoiceUrl: intent.invoiceUrl,
+        invoiceNumber: intent.invoiceNumber,
       }}
       payee={PLATFORM_PAYEE}
       slipChecking={slipCheckingEnabled()}
+      invoicing={invoicesEnabled()}
       error={noticeFor(error, reason)}
       onConfirm={confirm}
+      onRequestInvoice={requestInvoice}
     />
   );
 }
@@ -140,5 +163,6 @@ function noticeFor(error?: string, reason?: string): string | null {
   }
   if (error === 'slip_invalid') return 'ไฟล์สลิปไม่ถูกต้อง แนบใหม่อีกครั้ง';
   if (error === 'expired') return 'หมดเวลาชำระเงินของรายการนี้แล้ว สร้างรายการใหม่ได้ทันที';
+  if (error === 'invoice') return reason?.slice(0, 200) ?? 'ออกใบแจ้งหนี้ไม่สำเร็จ';
   return 'ทำรายการไม่สำเร็จ ลองใหม่อีกครั้ง';
 }
