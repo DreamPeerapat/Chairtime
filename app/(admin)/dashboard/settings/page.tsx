@@ -28,7 +28,9 @@ export default async function SettingsPage() {
     .from(schema.tenant)
     .where(eq(schema.tenant.id, session.tenantId));
 
-  const billing = await loadBillingState(session.tenantId);
+  // Hidden from an operator inside somebody else's shop, for the same reason
+  // the page itself refuses them.
+  const billing = session.impersonating ? null : await loadBillingState(session.tenantId);
 
   const [policy, serviceCount, lineChannel] = await Promise.all([
     withTenant(session.tenantId, (tx) =>

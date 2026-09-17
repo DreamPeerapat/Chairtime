@@ -6,7 +6,10 @@ import { SESSION_COOKIE, requireSession } from '@/lib/auth';
 import { db, schema } from '@/lib/db/client';
 import { DashboardNav } from '@/components/admin/dashboard-nav';
 import { BillingBanner } from '@/components/admin/billing-banner';
+import { ImpersonationBanner } from '@/components/admin/impersonation-banner';
 import { loadBillingState } from '@/lib/billing/access';
+import { isPlatformAdmin } from '@/lib/admin/platform';
+import { leaveShop } from '@/lib/admin/impersonate';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession('staff');
@@ -21,8 +24,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     // The status the trial-expiry cron writes every night. Read here rather
     // than from the session cookie, which carries whatever was true at login
     // and would let a shop suspended at 01:00 keep working until it logs out.
-    loadBillingState(session.tenantId),
+    // An operator inside somebody else's shop is not shown that shop's
+    // subscription — see the note on the billing page.
+    session.impersonating ? Promise.resolve(null) : loadBillingState(session.tenantId),
   ]);
+
+  async function stopImpersonating() {
+    'use server';
+    const active = await requireSession('staff');
+    const landed = await leaveShop(active.staffUserId);
+    redirect(landed === 'own' ? '/admin' : '/login');
+  }
 
   async function logout() {
     'use server';
@@ -62,7 +74,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </form>
         </div>
 
-        <DashboardNav role={session.role} />
+        <DashboardNav
+          role={session.role}
+          platformAdmin={isPlatformAdmin(session.staffUserId) && !session.impersonating}
+          impersonating={session.impersonating ?? false}
+        />
+        {session.impersonating ? (
+          <ImpersonationBanner shopName={tenant?.name ?? session.tenantSlug} onLeave={stopImpersonating} />
+        ) : null}
         {billing ? <BillingBanner state={billing} /> : null}
       </header>
 

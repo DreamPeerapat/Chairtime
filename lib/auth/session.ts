@@ -28,6 +28,14 @@ export interface SessionPayload {
   resourceId: string | null;
   /** tenant.onboarded_at IS NOT NULL — iron rule #7: false means the dashboard stays locked. */
   onboarded: boolean;
+  /**
+   * A platform operator looking at somebody else's shop.
+   *
+   * Set only by the admin screens, and it never widens anything: it narrows.
+   * The shop's package page refuses it, and the dashboard says out loud whose
+   * shop is on screen, so an operator cannot mistake it for their own.
+   */
+  impersonating?: boolean;
   expiresAt: number; // epoch seconds
 }
 

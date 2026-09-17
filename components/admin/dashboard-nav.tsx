@@ -22,6 +22,9 @@ const ALL_NAV = [
   { href: '/dashboard/billing', label: 'แพ็กเกจ', ownerOnly: true },
 ] as const;
 
+/** The operator's own tab, outside /dashboard entirely. */
+const ADMIN_TAB = { href: '/admin', label: 'แอดมินระบบ' } as const;
+
 // The pages themselves 404 while loyalty is hidden; dropping the tab is so
 // nobody is offered a door that does not open.
 export const NAV = ALL_NAV.filter((item) => LOYALTY_ENABLED || !('loyalty' in item));
@@ -31,8 +34,18 @@ export const NAV = ALL_NAV.filter((item) => LOYALTY_ENABLED || !('loyalty' in it
  * back with ?error=forbidden. Same reason the loyalty tab is filtered rather
  * than merely disabled: do not offer a door that does not open.
  */
-function visibleTo(role: StaffRole) {
-  return NAV.filter((item) => !('ownerOnly' in item) || role === 'owner');
+function visibleTo(role: StaffRole, platformAdmin: boolean, impersonating: boolean) {
+  const items: Array<{ href: string; label: string }> = NAV.filter((item) => {
+    if (!('ownerOnly' in item)) return true;
+    // The package page belongs to the shop, not to an operator standing in
+    // it: the page itself bounces them, and a tab that bounces is the same
+    // door-that-does-not-open this filter exists to avoid.
+    if (impersonating) return false;
+    return role === 'owner';
+  });
+  // Appended rather than mixed in: it belongs to the person, not to the shop,
+  // and it is the one tab that leaves this shop's data behind.
+  return platformAdmin ? [...items, ADMIN_TAB] : items;
 }
 
 /**
@@ -42,9 +55,17 @@ function visibleTo(role: StaffRole) {
  * nothing marked the current page, so on a phone — where the strip scrolls and
  * only three tabs are visible — there was no way to tell where you were.
  */
-export function DashboardNav({ role }: { role: StaffRole }) {
+export function DashboardNav({
+  role,
+  platformAdmin = false,
+  impersonating = false,
+}: {
+  role: StaffRole;
+  platformAdmin?: boolean;
+  impersonating?: boolean;
+}) {
   const pathname = usePathname();
-  const items = visibleTo(role);
+  const items = visibleTo(role, platformAdmin, impersonating);
 
   return (
     <nav className="ct-scroll-x mx-auto max-w-6xl overflow-x-auto px-4">

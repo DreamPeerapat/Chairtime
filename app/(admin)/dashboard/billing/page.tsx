@@ -33,6 +33,12 @@ export default async function BillingPage({
   searchParams: Promise<{ error?: string; ok?: string }>;
 }) {
   const session = await requireSession('owner');
+
+  // What the shop pays us is between us and the shop. An operator who has
+  // stepped into this dashboard to fix a service list has no business reading
+  // it, so the page is closed to them rather than merely read-only.
+  if (session.impersonating) redirect('/admin');
+
   const { error, ok } = await searchParams;
 
   const [billing, payments, plans] = await Promise.all([
