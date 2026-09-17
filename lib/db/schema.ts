@@ -99,6 +99,14 @@ export const tenant = pgTable(
      */
     latitude: numeric('latitude', { precision: 10, scale: 7 }),
     longitude: numeric('longitude', { precision: 10, scale: 7 }),
+    /**
+     * What goes on the shop's receipt, which is not the same as what goes on
+     * its booking page. A salon trading under one name may be invoiced as a
+     * company with a tax id, and the accountant needs that number or the
+     * document is no use to them. Both optional: most shops are one person.
+     */
+    taxId: text('tax_id'),
+    billingEmail: text('billing_email'),
     planId: uuid('plan_id').references(() => subscriptionPlan.id),
     // pending_payment = chose a paid plan but has not paid yet (not usable)
     // active          = usable (trial, or paid)
@@ -964,6 +972,15 @@ export const tenantPayment = pgTable(
     // rejected      = no such transfer; the period is not clawed back here
     status: text('status').notNull().default('pending_review'),
     note: text('note'),
+    /**
+     * The receipt งานเข้า issued for this payment. Kept here as a copy of what
+     * that system holds, because the shop asks us for its receipt and the
+     * answer must not depend on another service being up. Null means no
+     * receipt yet — which is every row written before receipts existed.
+     */
+    receiptNumber: text('receipt_number'),
+    receiptUrl: text('receipt_url'),
+    receiptIssuedAt: timestamp('receipt_issued_at', { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [
@@ -973,5 +990,67 @@ export const tenantPayment = pgTable(
       sql`${t.status} in ('pending_review','verified','rejected')`,
     ),
     check('tenant_payment_period_check', sql`${t.periodEnd} > ${t.periodStart}`),
+  ],
+);
+
+/**
+ * One attempt to pay, from the moment a shop asks for a QR.
+ *
+ * `tenant_payment` records money that arrived. This records money that was
+ * asked for, which is a different thing and needs its own row: a QR carries a
+ * fixed amount, and the amount has to be decided, shown, and still be the same
+ * number when the transfer turns up minutes later. Without a row there is
+ * nothing to match a payment against — only a shop's word about what it chose.
+ *
+ * It expires. A PromptPay QR with an amount is meant to be paid once, and a
+ * code left open on a screen from yesterday is how the wrong sum gets sent; a
+ * shop that misses the window asks for a new one, which costs nothing.
+ *
+ * `reference` is ours, not a bank's. When a payment gateway is connected its
+ * own references land in `gateway_ref1`/`gateway_ref2` beside it — until then
+ * this is what the shop quotes and what the receipt is issued against.
+ */
+export const paymentIntent = pgTable(
+  'payment_intent',
+  {
+    id: id(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenant.id, { onDelete: 'cascade' }),
+    /** short, human-quotable, unique across every shop — CT-000123 */
+    reference: text('reference').notNull().unique(),
+    planId: uuid('plan_id').references(() => subscriptionPlan.id, { onDelete: 'set null' }),
+    months: integer('months').notNull().default(1),
+    /** what the QR asks for, in baht — the fee below is already inside it */
+    amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
+    /** the gateway's cut, when there is one; zero for a plain PromptPay transfer */
+    feeAmount: numeric('fee_amount', { precision: 10, scale: 2 }).notNull().default('0'),
+    /** the EMVCo payload the QR draws, kept so the same code is shown on reload */
+    qrPayload: text('qr_payload'),
+    /** which channel produced it: promptpay = our own QR, or a gateway's name */
+    provider: text('provider').notNull().default('promptpay'),
+    gatewayRef1: text('gateway_ref1'),
+    gatewayRef2: text('gateway_ref2'),
+    gatewayChargeId: text('gateway_charge_id'),
+    // pending   = waiting for money
+    // paid      = confirmed, and tenant_payment_id points at what it became
+    // expired   = the window closed with nothing received
+    // cancelled = the shop walked away
+    status: text('status').notNull().default('pending'),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+    slipUrl: text('slip_url'),
+    tenantPaymentId: uuid('tenant_payment_id').references(() => tenantPayment.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('payment_intent_tenant_id_created_at_index').on(t.tenantId, t.createdAt),
+    index('payment_intent_status_expires_at_index').on(t.status, t.expiresAt),
+    check(
+      'payment_intent_status_check',
+      sql`${t.status} in ('pending','paid','expired','cancelled')`,
+    ),
   ],
 );

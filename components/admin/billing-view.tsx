@@ -7,6 +7,8 @@ import { RenewalForm } from './renewal-form';
 
 export interface BillingPaymentRow {
   id: string;
+  receiptNumber: string | null;
+  receiptUrl: string | null;
   amount: string;
   paidAt: string;
   periodStart: string;
@@ -20,11 +22,10 @@ const ZONE = 'Asia/Bangkok';
  * What the shop is on, until when, and how to keep it.
  *
  * A server component around one interactive island: the status, the account
- * details and the receipts are read, and only the renewal form has to follow
- * what the shop is choosing — the QR beside it carries the amount.
+ * details and the receipts are read, and only the plan picker has to follow
+ * what the shop is choosing. Paying happens on the page it opens.
  */
 export function BillingView({
-  tenantId,
   state,
   payments,
   plans,
@@ -34,7 +35,6 @@ export function BillingView({
   slipChecking,
   onSubmit,
 }: {
-  tenantId: string;
   state: BillingState;
   payments: BillingPaymentRow[];
   plans: PurchasablePlan[];
@@ -47,7 +47,6 @@ export function BillingView({
   onSubmit: (formData: FormData) => Promise<void>;
 }) {
   const lapsed = state.status !== 'active';
-  const today = DateTime.now().setZone(ZONE).toISODate()!;
   // The plan to default to: the one the shop is already on if it is a paid
   // one, otherwise the cheapest — a trial shop is choosing, not renewing.
   const defaultPlan = plans.find((p) => p.code === state.planCode) ?? plans[0];
@@ -115,21 +114,21 @@ export function BillingView({
 
         <ol className="flex flex-col gap-1 rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-800">
           <li className="text-xs text-slate-500">
-            1. เลือกแพ็กเกจด้านล่าง แล้วสแกน QR พร้อมเพย์ หรือโอนมาที่บัญชีนี้
+            1. เลือกแพ็กเกจแล้วกดสร้าง QR — หน้าถัดไปจะมี QR พร้อมยอด หรือจะโอนเข้าบัญชีนี้ก็ได้
           </li>
           <li className="my-1 rounded-lg bg-slate-100 px-3 py-2 dark:bg-slate-900">
             <p className="font-medium">{payee.bank}</p>
             <p className="font-mono text-base tracking-wide">{payee.accountNumber}</p>
             <p className="text-xs text-slate-500">{payee.accountName}</p>
           </li>
-          <li className="text-xs text-slate-500">2. แนบสลิป กรอกวันที่โอน แล้วกดแจ้ง</li>
+          <li className="text-xs text-slate-500">
+            2. โอนตามยอดใน QR แล้วแนบสลิปกดยืนยัน ใบเสร็จจะส่งเข้าอีเมลและ LINE ของร้าน
+          </li>
         </ol>
 
         <RenewalForm
-          tenantId={tenantId}
           plans={plans}
           defaultPlanId={defaultPlan?.id ?? ''}
-          today={today}
           maxMonths={MAX_MONTHS}
           slipChecking={slipChecking}
           onSubmit={onSubmit}
@@ -155,6 +154,16 @@ export function BillingView({
                     โอน {thaiDateFull(DateTime.fromISO(p.paidAt).setZone(ZONE))} · ครอบคลุมถึง{' '}
                     {thaiDateFull(DateTime.fromISO(p.periodEnd).setZone(ZONE))}
                   </p>
+                  {p.receiptUrl ? (
+                    <a
+                      href={p.receiptUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-teal-700 underline dark:text-teal-300"
+                    >
+                      ใบเสร็จ {p.receiptNumber ?? ''} (PDF)
+                    </a>
+                  ) : null}
                 </div>
                 <PaymentChip status={p.status} />
               </li>

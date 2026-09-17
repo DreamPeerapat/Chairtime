@@ -7,6 +7,9 @@ export const NOTIFICATION_TEMPLATES = [
   // needs both halves or a reschedule reads as a walk-out.
   'booking_created_shop',
   'booking_cancelled_shop',
+  // Also aimed at the shop: its own subscription payment went through, and the
+  // receipt งานเข้า issued for it travels as a link because LINE carries no files.
+  'receipt_issued',
   'reminder_24h',
   'reminder_2h',
   'points_earned',
@@ -36,7 +39,7 @@ export const REMINDER_OFFSETS: Partial<Record<NotificationTemplate, { minutesBef
  */
 export function dedupeKey(
   template: NotificationTemplate,
-  entity: 'booking' | 'customer' | 'lot',
+  entity: 'booking' | 'customer' | 'lot' | 'payment',
   entityId: string,
   discriminator?: string,
 ): string {

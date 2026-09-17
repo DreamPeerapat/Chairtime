@@ -30,6 +30,8 @@ export interface RecordPaymentInput {
   /** the plan being bought — set when a trial shop picks its first paid one */
   planId?: string | null;
   slipUrl?: string | null;
+  /** how the money moved; a QR payment is not a plain bank transfer */
+  method?: 'bank_transfer' | 'promptpay';
   /**
    * `verified` only when a slip verification service confirmed the transfer.
    * Everything else is `pending_review`, which is a claim awaiting a human.
@@ -40,6 +42,8 @@ export interface RecordPaymentInput {
 }
 
 export interface RecordedPayment {
+  /** the row just written — what a receipt is issued against */
+  paymentId: string;
   periodStart: DateTime;
   periodEnd: DateTime;
 }
@@ -87,18 +91,23 @@ export async function recordPaymentInTx(
 
   const planId = input.planId ?? row.planId;
 
-  await tx.insert(schema.tenantPayment).values({
-    tenantId: input.tenantId,
-    planId,
-    amount: input.amount,
-    method: 'bank_transfer',
-    paidAt: input.paidAt.toJSDate(),
-    slipUrl: input.slipUrl ?? null,
-    periodStart: periodStart.toJSDate(),
-    periodEnd: periodEnd.toJSDate(),
-    status: input.status ?? 'pending_review',
-    note: input.note ?? null,
-  });
+  const [payment] = await tx
+    .insert(schema.tenantPayment)
+    .values({
+      tenantId: input.tenantId,
+      planId,
+      amount: input.amount,
+      method: input.method ?? 'bank_transfer',
+      paidAt: input.paidAt.toJSDate(),
+      slipUrl: input.slipUrl ?? null,
+      periodStart: periodStart.toJSDate(),
+      periodEnd: periodEnd.toJSDate(),
+      status: input.status ?? 'pending_review',
+      note: input.note ?? null,
+    })
+    .returning({ id: schema.tenantPayment.id });
+
+  if (!payment) throw new BillingError('บันทึกการชำระเงินไม่สำเร็จ');
 
   // trial_ends_at is deliberately left where it is: it is the record of when
   // the free month ended, and paid_until is what everything reads from now on.
@@ -107,11 +116,13 @@ export async function recordPaymentInTx(
     .set({ paidUntil: periodEnd.toJSDate(), status: 'active', planId })
     .where(eq(schema.tenant.id, input.tenantId));
 
-  return { periodStart, periodEnd };
+  return { paymentId: payment.id, periodStart, periodEnd };
 }
 
 export interface PaymentRow {
   id: string;
+  receiptNumber: string | null;
+  receiptUrl: string | null;
   amount: string;
   paidAt: Date;
   periodStart: Date;
@@ -126,6 +137,8 @@ export async function listPayments(tenantId: string, limit = 24): Promise<Paymen
     tx
       .select({
         id: schema.tenantPayment.id,
+        receiptNumber: schema.tenantPayment.receiptNumber,
+        receiptUrl: schema.tenantPayment.receiptUrl,
         amount: schema.tenantPayment.amount,
         paidAt: schema.tenantPayment.paidAt,
         periodStart: schema.tenantPayment.periodStart,

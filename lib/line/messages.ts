@@ -171,6 +171,77 @@ export function bookingCreatedForShopMessage(
   };
 }
 
+export interface ReceiptMessageData {
+  shopName: string;
+  receiptNumber: string;
+  receiptUrl: string;
+  /** baht, numeric(10,2) as stored */
+  amount: string;
+  /** what the shop bought this period through, already zoned */
+  periodEnd: DateTime;
+}
+
+/**
+ * Sent to the shop when its own payment goes through.
+ *
+ * LINE cannot carry a file, so the receipt travels as a button to a link that
+ * opens the PDF. That is also why it is worth sending at all: the email lands
+ * in an inbox nobody opens on a shop floor, and this lands in the chat the
+ * owner already has pinned.
+ */
+export function receiptIssuedMessage(data: ReceiptMessageData): LineFlexMessage {
+  return {
+    type: 'flex',
+    altText: `ใบเสร็จ ${data.receiptNumber} — ชำระแล้ว ${data.amount} บาท`,
+    contents: {
+      type: 'bubble',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        paddingAll: '16px',
+        backgroundColor: BRAND,
+        contents: [
+          { type: 'text', text: 'ได้รับชำระเงินแล้ว', color: '#ffffff', weight: 'bold', size: 'lg' },
+          { type: 'text', text: data.shopName, color: '#e2e8f0', size: 'sm', margin: 'xs' },
+        ],
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'md',
+        paddingAll: '16px',
+        contents: ([
+          ['ยอดชำระ', `${data.amount} บาท`],
+          ['ใช้ได้ถึง', formatThaiDate(data.periodEnd)],
+          ['เลขที่ใบเสร็จ', data.receiptNumber],
+        ] as [string, string][]).map(([label, value]) => ({
+          type: 'box' as const,
+          layout: 'baseline' as const,
+          spacing: 'sm' as const,
+          contents: [
+            { type: 'text' as const, text: label, color: MUTED, size: 'sm', flex: 2 },
+            { type: 'text' as const, text: value, wrap: true, size: 'sm', flex: 5 },
+          ],
+        })),
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        paddingAll: '16px',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            height: 'sm',
+            color: BRAND,
+            action: { type: 'uri', label: 'เปิดใบเสร็จ (PDF)', uri: data.receiptUrl },
+          },
+        ],
+      },
+    },
+  };
+}
+
 /**
  * Sent to the shop, not the customer: somebody just cancelled their own
  * booking. Without it the shop finds out by noticing a gap in the calendar,

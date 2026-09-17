@@ -12,6 +12,7 @@
  */
 import { NextResponse } from 'next/server';
 import { sessionForApi } from '@/lib/auth';
+import { intentByReference } from '@/lib/billing/intent';
 import { PLATFORM_PAYEE } from '@/lib/billing/platform';
 import { promptPayFor } from '@/lib/billing/promptpay';
 import { qrSvg } from '@/lib/billing/qr';
@@ -27,7 +28,21 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'ไม่มีสิทธิ์' }, { status: auth.status });
   }
 
-  const amount = new URL(request.url).searchParams.get('amount');
+  const query = new URL(request.url).searchParams;
+  const reference = query.get('reference');
+
+  // A reference wins over an amount: the payload stored on the intent is the
+  // one the shop was shown, and a code that changes under a phone mid-scan is
+  // how the wrong sum gets sent.
+  if (reference) {
+    const intent = await intentByReference(auth.session.tenantId, reference);
+    if (!intent?.qrPayload) {
+      return NextResponse.json({ error: 'ไม่พบรายการนี้' }, { status: 404 });
+    }
+    return svg(intent.qrPayload);
+  }
+
+  const amount = query.get('amount');
   // No amount is a legitimate request: a QR the shop types the sum into.
   if (amount !== null && !AMOUNT.test(amount)) {
     return NextResponse.json({ error: 'ยอดเงินไม่ถูกต้อง' }, { status: 400 });
@@ -38,10 +53,14 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'ยังไม่ได้ตั้งค่าพร้อมเพย์' }, { status: 503 });
   }
 
+  return svg(payload);
+}
+
+function svg(payload: string): NextResponse {
   return new NextResponse(qrSvg(payload, { width: 320 }), {
     headers: {
       'content-type': 'image/svg+xml; charset=utf-8',
-      // Same amount, same picture, forever — but it is one shop's bill, so it
+      // Same payload, same picture, forever — but it is one shop's bill, so it
       // is cached in their browser and nowhere shared.
       'cache-control': 'private, max-age=3600',
     },

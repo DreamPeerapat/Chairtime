@@ -18,6 +18,7 @@ import {
   bookingCreatedForShopMessage,
   pointsEarnedMessage,
   pointsExpiringMessage,
+  receiptIssuedMessage,
   reminder24hMessage,
   reminder2hMessage,
   tierAtRiskMessage,
@@ -130,6 +131,8 @@ async function render(
     return renderCustomerMessage(tx, tenantId, item);
   }
 
+  if (item.template === 'receipt_issued') return renderReceiptMessage(tx, tenantId, item);
+
   const bookingId = typeof item.payload.bookingId === 'string' ? item.payload.bookingId : null;
   if (!bookingId) return null;
 
@@ -173,6 +176,44 @@ async function render(
 
 /** Addressed to the owner who claimed alerts, not to the booking's customer. */
 const SHOP_FACING_TEMPLATES = new Set(['booking_created_shop', 'booking_cancelled_shop']);
+
+/**
+ * The shop's own receipt, which belongs to no booking and no customer.
+ *
+ * Everything it needs was written into the payload when the payment was
+ * confirmed, because the receipt lives in another system and this worker must
+ * not have to reach it to send a message.
+ */
+async function renderReceiptMessage(
+  tx: TenantTx,
+  tenantId: string,
+  item: DueNotification,
+): Promise<Rendered | null> {
+  const owner = await ownerLineUserId(tx, tenantId);
+  if (!owner) return null;
+
+  const { receiptNumber, receiptUrl, amount, periodEnd } = item.payload as Record<string, unknown>;
+  if (typeof receiptNumber !== 'string' || typeof receiptUrl !== 'string') return null;
+
+  const [tenantRow] = await tx
+    .select({ shopName: schema.tenant.name, timezone: schema.tenant.timezone })
+    .from(schema.tenant)
+    .where(eq(schema.tenant.id, tenantId));
+  if (!tenantRow) return null;
+
+  return {
+    lineUserId: owner,
+    message: receiptIssuedMessage({
+      shopName: tenantRow.shopName,
+      receiptNumber,
+      receiptUrl,
+      amount: typeof amount === 'string' ? amount : '-',
+      periodEnd: DateTime.fromISO(typeof periodEnd === 'string' ? periodEnd : '', {
+        zone: tenantRow.timezone,
+      }),
+    }),
+  };
+}
 
 const CUSTOMER_KEYED_TEMPLATES = new Set([
   'points_earned',

@@ -154,6 +154,15 @@ export async function purchasablePlans(): Promise<PurchasablePlan[]> {
     .map((r) => ({ ...r, priceMonthly: r.priceMonthly! }));
 }
 
+/** What to call a plan on a payment page. Not tenant data, so no RLS needed. */
+export async function planName(planId: string): Promise<string | null> {
+  const [row] = await db
+    .select({ name: schema.subscriptionPlan.name })
+    .from(schema.subscriptionPlan)
+    .where(eq(schema.subscriptionPlan.id, planId));
+  return row?.name ?? null;
+}
+
 /** The status alone, for the booking chokepoint — no joins, no formatting. */
 export async function tenantStatusOf(tenantId: string): Promise<string | null> {
   const [row] = await db
