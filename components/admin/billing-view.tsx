@@ -1,7 +1,9 @@
 import { DateTime } from 'luxon';
 import type { BillingState, PurchasablePlan } from '@/lib/billing/access';
+import { formatBaht } from '@/lib/billing/amount';
 import { MAX_MONTHS } from '@/lib/billing/renew';
 import { thaiDateFull } from '@/components/booking/format';
+import { RenewalForm } from './renewal-form';
 
 export interface BillingPaymentRow {
   id: string;
@@ -13,29 +15,35 @@ export interface BillingPaymentRow {
 }
 
 const ZONE = 'Asia/Bangkok';
-const field =
-  'rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900';
 
 /**
  * What the shop is on, until when, and how to keep it.
  *
- * A server component with a server action passed in: nothing here needs to be
- * interactive, and a form that posts is one less client bundle on a page the
- * shop opens once a month.
+ * A server component around one interactive island: the status, the account
+ * details and the receipts are read, and only the renewal form has to follow
+ * what the shop is choosing — the QR beside it carries the amount.
  */
 export function BillingView({
+  tenantId,
   state,
   payments,
   plans,
   payee,
   notice,
+  slipReason,
+  slipChecking,
   onSubmit,
 }: {
+  tenantId: string;
   state: BillingState;
   payments: BillingPaymentRow[];
   plans: PurchasablePlan[];
   payee: { bank: string; accountNumber: string; accountName: string };
-  notice: 'ok' | 'invalid' | 'rejected' | null;
+  notice: 'ok' | 'invalid' | 'rejected' | 'slip' | null;
+  /** why the slip was refused, in the words the checking service used */
+  slipReason?: string | null;
+  /** whether an attached slip is checked against the bank */
+  slipChecking: boolean;
   onSubmit: (formData: FormData) => Promise<void>;
 }) {
   const lapsed = state.status !== 'active';
@@ -55,6 +63,11 @@ export function BillingView({
       ) : null}
       {notice === 'invalid' ? <Banner tone="error">กรอกข้อมูลไม่ครบหรือไม่ถูกต้อง</Banner> : null}
       {notice === 'rejected' ? <Banner tone="error">บันทึกไม่สำเร็จ ตรวจยอดและวันที่อีกครั้ง</Banner> : null}
+      {notice === 'slip' ? (
+        <Banner tone="error">
+          ตรวจสลิปไม่ผ่าน ยังไม่ได้ต่ออายุให้ — {slipReason ?? 'ไม่พบรายการโอนนี้'}
+        </Banner>
+      ) : null}
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">สถานะตอนนี้</h2>
@@ -101,77 +114,26 @@ export function BillingView({
         <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">วิธีต่ออายุ</h2>
 
         <ol className="flex flex-col gap-1 rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-800">
-          <li className="text-xs text-slate-500">1. โอนเงินมาที่บัญชีนี้</li>
+          <li className="text-xs text-slate-500">
+            1. เลือกแพ็กเกจด้านล่าง แล้วสแกน QR พร้อมเพย์ หรือโอนมาที่บัญชีนี้
+          </li>
           <li className="my-1 rounded-lg bg-slate-100 px-3 py-2 dark:bg-slate-900">
             <p className="font-medium">{payee.bank}</p>
             <p className="font-mono text-base tracking-wide">{payee.accountNumber}</p>
             <p className="text-xs text-slate-500">{payee.accountName}</p>
           </li>
-          <li className="text-xs text-slate-500">2. กรอกยอดและวันที่โอนด้านล่าง แล้วกดแจ้ง</li>
+          <li className="text-xs text-slate-500">2. แนบสลิป กรอกวันที่โอน แล้วกดแจ้ง</li>
         </ol>
 
-        <form
-          action={onSubmit}
-          className="flex flex-col gap-3 rounded-xl border border-slate-200 px-4 py-4 dark:border-slate-800"
-        >
-          <label className="flex flex-col gap-1 text-sm">
-            แพ็กเกจ
-            <select name="planId" required defaultValue={defaultPlan?.id ?? ''} className={field}>
-              {plans.map((plan) => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.name} — {formatBaht(plan.priceMonthly)} / เดือน
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <label className="flex flex-col gap-1 text-sm">
-              ยอดที่โอน (บาท)
-              <input
-                name="amount"
-                required
-                inputMode="decimal"
-                defaultValue={defaultPlan?.priceMonthly ?? ''}
-                placeholder="900"
-                className={field}
-              />
-            </label>
-
-            <label className="flex flex-col gap-1 text-sm">
-              วันที่โอน
-              <input type="date" name="paidAt" required defaultValue={today} max={today} className={field} />
-            </label>
-
-            <label className="flex flex-col gap-1 text-sm">
-              ต่อกี่เดือน
-              <select name="months" defaultValue="1" className={field}>
-                {Array.from({ length: MAX_MONTHS }, (_, i) => i + 1).map((m) => (
-                  <option key={m} value={m}>
-                    {m} เดือน
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <label className="flex flex-col gap-1 text-sm">
-            หมายเหตุ (ถ้ามี)
-            <input name="note" maxLength={300} placeholder="เช่น โอนจากบัญชีชื่ออื่น" className={field} />
-          </label>
-
-          <p className="text-xs text-slate-500">
-            ระบบต่ออายุให้ทันทีที่กดแจ้ง ไม่ต้องรอตรวจสอบ
-            — ถ้าโอนก่อนหมดอายุ วันที่เหลือจะถูกบวกต่อ ไม่หายไป
-          </p>
-
-          <button
-            type="submit"
-            className="ct-press w-fit rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-medium text-white"
-          >
-            แจ้งชำระเงิน
-          </button>
-        </form>
+        <RenewalForm
+          tenantId={tenantId}
+          plans={plans}
+          defaultPlanId={defaultPlan?.id ?? ''}
+          today={today}
+          maxMonths={MAX_MONTHS}
+          slipChecking={slipChecking}
+          onSubmit={onSubmit}
+        />
       </section>
 
       <section className="flex flex-col gap-2">
@@ -262,11 +224,4 @@ function PaymentChip({ status }: { status: string }) {
       {label}
     </span>
   );
-}
-
-/** numeric(10,2) in, "900 บาท" out. Display only — never arithmetic. */
-function formatBaht(amount: string): string {
-  const n = Number(amount);
-  if (!Number.isFinite(n)) return `${amount} บาท`;
-  return `${n.toLocaleString('th-TH', { maximumFractionDigits: 2 })} บาท`;
 }

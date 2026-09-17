@@ -9,7 +9,11 @@
  * The period is extended immediately rather than on verification. A salon
  * with customers booked this afternoon cannot be held shut while a human
  * reads a bank app, and the row is the audit trail if the transfer never
- * turns up. Automatic slip verification (SlipOK) is Phase 8.
+ * turns up.
+ *
+ * When a slip has been checked against the bank the caller says so and the
+ * row lands `verified` instead. A slip the service rejects never reaches
+ * here at all — the caller refuses it before anything is written.
  */
 import { and, desc, eq } from 'drizzle-orm';
 import { DateTime } from 'luxon';
@@ -26,6 +30,11 @@ export interface RecordPaymentInput {
   /** the plan being bought — set when a trial shop picks its first paid one */
   planId?: string | null;
   slipUrl?: string | null;
+  /**
+   * `verified` only when a slip verification service confirmed the transfer.
+   * Everything else is `pending_review`, which is a claim awaiting a human.
+   */
+  status?: 'pending_review' | 'verified';
   note?: string | null;
   now?: DateTime;
 }
@@ -87,6 +96,7 @@ export async function recordPaymentInTx(
     slipUrl: input.slipUrl ?? null,
     periodStart: periodStart.toJSDate(),
     periodEnd: periodEnd.toJSDate(),
+    status: input.status ?? 'pending_review',
     note: input.note ?? null,
   });
 

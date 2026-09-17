@@ -47,7 +47,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         const allowed = [
           portfolioPrefix(auth.session.tenantId),
           staffPhotoPrefix(auth.session.tenantId),
-          slipPrefix(auth.session.tenantId),
+          // A slip is evidence about the shop's own subscription, which only
+          // the owner can see or pay — a manager has no page to reach it from.
+          ...(auth.session.role === 'owner' ? [slipPrefix(auth.session.tenantId)] : []),
         ];
         if (!allowed.some((prefix) => pathname.startsWith(prefix))) {
           throw new Error('pathname outside this tenant');

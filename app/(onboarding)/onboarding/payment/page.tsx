@@ -11,7 +11,10 @@ import {
   requirePendingStaffUserId,
 } from '@/lib/auth';
 import { activatePaidTenant } from '@/lib/onboarding/create-tenant';
+import { formatBaht } from '@/lib/billing/amount';
 import { PLATFORM_PAYEE } from '@/lib/billing/platform';
+import { promptPayFor } from '@/lib/billing/promptpay';
+import { qrSvg } from '@/lib/billing/qr';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,11 +43,19 @@ export default async function OnboardingPaymentPage({
       name: schema.tenant.name,
       businessType: schema.tenant.businessType,
       status: schema.tenant.status,
+      // The first month is what this page is asking for, so the QR can carry
+      // the exact figure — unlike the renewal page, nothing here is chosen yet.
+      planName: schema.subscriptionPlan.name,
+      priceMonthly: schema.subscriptionPlan.priceMonthly,
     })
     .from(schema.tenant)
+    .leftJoin(schema.subscriptionPlan, eq(schema.subscriptionPlan.id, schema.tenant.planId))
     .where(eq(schema.tenant.id, tenantId));
   if (!tenant) redirect('/onboarding/plan');
   if (tenant.status === 'active') redirect('/onboarding/setup');
+
+  const payload = promptPayFor(PLATFORM_PAYEE.promptPayId, tenant.priceMonthly);
+  const qr = payload ? qrSvg(payload, { width: 220 }) : null;
 
   async function confirm() {
     'use server';
@@ -78,8 +89,27 @@ export default async function OnboardingPaymentPage({
         <p className="mt-1 text-sm text-slate-500">โอนเงินตามช่องทางด้านล่าง แล้วกดยืนยัน ระบบจะเปิดใช้งานร้านทันที</p>
       </div>
 
+      {qr ? (
+        <figure className="flex flex-col items-center gap-2 self-center rounded-xl bg-white p-4">
+          {/*
+            The markup is built on this request by `qrSvg` out of the payee id
+            in the code and a numeric(10,2) column — no request data reaches
+            it, and every character it emits is a digit or a tag this file's
+            dependency wrote. Inline rather than a data URI so it stays crisp.
+          */}
+          <div dangerouslySetInnerHTML={{ __html: qr }} />
+          <figcaption className="text-center text-sm text-slate-700">
+            สแกนจ่ายพร้อมเพย์
+            {tenant.priceMonthly ? (
+              <span className="block font-medium">{formatBaht(tenant.priceMonthly)}</span>
+            ) : null}
+          </figcaption>
+        </figure>
+      ) : null}
+
       <div className="rounded-xl border border-slate-200 p-4 text-sm dark:border-slate-800">
-        <p className="font-medium">{PLATFORM_PAYEE.bank}</p>
+        <p className="text-xs text-slate-500">หรือโอนเข้าบัญชี</p>
+        <p className="mt-1 font-medium">{PLATFORM_PAYEE.bank}</p>
         <p className="text-slate-600 dark:text-slate-400">เลขบัญชี {PLATFORM_PAYEE.accountNumber}</p>
         <p className="text-slate-600 dark:text-slate-400">ชื่อบัญชี {PLATFORM_PAYEE.accountName}</p>
       </div>
