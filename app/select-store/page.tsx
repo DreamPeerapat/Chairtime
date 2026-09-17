@@ -35,17 +35,17 @@ export default async function SelectStorePage() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-5 py-10">
       <div>
         <h1 className="text-lg font-semibold">เลือกร้าน</h1>
-        <p className="mt-1 text-sm text-slate-500">คุณอยู่ในหลายร้าน เลือกร้านที่ต้องการเข้าใช้งาน</p>
+        <p className="mt-1 text-sm text-muted">คุณอยู่ในหลายร้าน เลือกร้านที่ต้องการเข้าใช้งาน</p>
       </div>
 
       {tenants.map((t) => (
         <form key={t.tenantId} action={enterTenant.bind(null, staffUserId, t.tenantId)}>
           <button
             type="submit"
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-left text-sm dark:border-slate-800"
+            className="w-full rounded-xl border border-line px-4 py-3 text-left text-sm"
           >
             <span className="font-medium">{t.tenantName}</span>
-            <span className="ml-2 text-xs text-slate-500">
+            <span className="ml-2 text-xs text-muted">
               /{t.tenantSlug} · {t.role}
             </span>
           </button>

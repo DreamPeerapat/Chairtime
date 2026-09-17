@@ -28,7 +28,7 @@ export default function BookingError({
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
       <h1 className="text-lg font-semibold">ตอนนี้เปิดหน้านี้ไม่ได้</h1>
-      <p className="text-sm text-slate-600 dark:text-slate-400">
+      <p className="text-sm text-muted">
         ระบบขัดข้องชั่วคราว ไม่ได้เกิดจากร้าน ลองกดใหม่อีกสักครู่
         <br />
         ถ้ารีบ ติดต่อร้านทางโทรศัพท์หรือ LINE ได้เลย
@@ -37,7 +37,7 @@ export default function BookingError({
       <button
         type="button"
         onClick={() => retry()}
-        className="ct-press rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-medium text-white"
+        className="ct-press rounded-xl bg-brand px-5 py-2.5 text-sm font-medium text-brand-contrast"
       >
         ลองใหม่อีกครั้ง
       </button>

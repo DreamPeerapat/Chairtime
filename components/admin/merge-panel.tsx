@@ -39,7 +39,7 @@ export function MergePanel({ duplicates }: { duplicates: DuplicateGroup[] }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         รายชื่อที่ซ้ำกัน — มักเกิดจากลูกค้าคนเดิมจองทางโทรศัพท์ครั้งหนึ่งและทาง LINE อีกครั้ง
       </p>
 
@@ -50,7 +50,7 @@ export function MergePanel({ duplicates }: { duplicates: DuplicateGroup[] }) {
       ) : null}
 
       {groups.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-400 dark:border-slate-700">
+        <p className="rounded-xl border border-dashed border-line px-4 py-8 text-center text-sm text-slate-400">
           ไม่พบรายชื่อซ้ำ
         </p>
       ) : (
@@ -60,7 +60,7 @@ export function MergePanel({ duplicates }: { duplicates: DuplicateGroup[] }) {
             return (
               <li
                 key={group.name}
-                className="flex flex-col gap-2 rounded-xl border border-slate-200 p-4 dark:border-slate-800"
+                className="flex flex-col gap-2 rounded-xl border border-line p-4"
               >
                 <h2 className="text-sm font-medium">{group.name}</h2>
                 <ul className="flex flex-col gap-1.5">
@@ -79,7 +79,7 @@ export function MergePanel({ duplicates }: { duplicates: DuplicateGroup[] }) {
                           type="button"
                           onClick={() => merge(keepId, id)}
                           disabled={pending}
-                          className="rounded-lg border border-slate-200 px-2.5 py-1 disabled:opacity-50 dark:border-slate-700"
+                          className="rounded-lg border border-line px-2.5 py-1 disabled:opacity-50"
                         >
                           รวมเข้าอันแรก
                         </button>

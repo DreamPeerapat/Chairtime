@@ -21,14 +21,14 @@ export default async function GalleryPage({
     <div className="ct-enter flex flex-col gap-4">
       <div>
         <h2 className="text-base font-semibold">ผลงานของเรา</h2>
-        <p className="mt-0.5 text-sm text-slate-500">ดูตัวอย่างงานก่อนตัดสินใจจองได้เลยค่ะ</p>
+        <p className="mt-0.5 text-sm text-muted">ดูตัวอย่างงานก่อนตัดสินใจจองได้เลยค่ะ</p>
       </div>
 
       <GalleryView photos={photos} shopName={tenant.name} />
 
       <Link
         href={`/${tenantSlug}`}
-        className="ct-press mt-2 rounded-xl bg-teal-700 py-3 text-center text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800"
+        className="ct-press mt-2 rounded-xl bg-brand py-3 text-center text-sm font-medium text-brand-contrast hover:bg-brand-strong active:bg-brand-strong"
       >
         จองคิว
       </Link>

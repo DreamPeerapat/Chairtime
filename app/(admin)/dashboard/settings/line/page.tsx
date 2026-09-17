@@ -120,7 +120,7 @@ export default async function LineConnectPage({
 
       <Step n={1} title="สร้าง LINE Official Account" done={state.stepOaCreated}>
         <p>ถ้ายังไม่มี OA ของร้าน สร้างได้ที่ manager.line.biz</p>
-        <a href="https://manager.line.biz/" target="_blank" rel="noreferrer" className="text-teal-700 underline">
+        <a href="https://manager.line.biz/" target="_blank" rel="noreferrer" className="text-brand underline">
           เปิด LINE Official Account Manager
         </a>
         {!state.stepOaCreated && (
@@ -154,13 +154,13 @@ export default async function LineConnectPage({
               name="channelAccessToken"
               placeholder="Channel Access Token"
               required
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
+              className="rounded-lg border border-line px-3 py-2 text-sm dark:bg-slate-900"
             />
             <input
               name="channelSecret"
               placeholder="Channel Secret"
               required
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
+              className="rounded-lg border border-line px-3 py-2 text-sm dark:bg-slate-900"
             />
             <NextButton>บันทึก</NextButton>
           </form>
@@ -175,7 +175,7 @@ export default async function LineConnectPage({
         )}
         {state.isVerified && (
           <div className="flex flex-col items-start gap-2">
-            <p className="text-teal-700 dark:text-teal-400">เชื่อมต่อสำเร็จ</p>
+            <p className="text-brand dark:text-teal-400">เชื่อมต่อสำเร็จ</p>
             {state.oaBasicId && (
               <img
                 alt="QR code สำหรับร้าน"
@@ -195,12 +195,12 @@ export default async function LineConnectPage({
           ordinary browser — the booking then carries no LINE identity, so the
           shop ends up with a phone number and no way to reply on LINE. */}
       <Step n={5} title="เปิดหน้าจองใน LINE (LIFF)" done={Boolean(state.liffId)} locked={!state.isVerified}>
-        <p className="mb-2 text-slate-500">
+        <p className="mb-2 text-muted">
           ขั้นนี้ทำให้ลูกค้าจองในแอป LINE ได้เลย ร้านจะได้บัญชี LINE ของลูกค้าไว้ส่งคำยืนยัน
           เตือนนัด และตอบกลับ — ถ้าไม่ทำ ลูกค้ายังจองได้ แต่ร้านจะได้แค่เบอร์โทร
         </p>
 
-        <ol className="mb-3 list-decimal space-y-1 pl-4 text-xs text-slate-500">
+        <ol className="mb-3 list-decimal space-y-1 pl-4 text-xs text-muted">
           <li>
             เปิด <span className="font-medium">developers.line.biz</span> → เลือก Provider →
             แท็บ <span className="font-medium">LIFF</span> → Add
@@ -225,7 +225,7 @@ export default async function LineConnectPage({
               name="liffId"
               defaultValue={state.liffId ?? ''}
               placeholder="1234567890-abcdefgh"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm dark:border-slate-800 dark:bg-slate-900"
+              className="w-full rounded-lg border border-line px-3 py-2 font-mono text-sm dark:bg-slate-900"
             />
             <NextButton>{state.liffId ? 'บันทึกใหม่' : 'บันทึก LIFF ID'}</NextButton>
           </form>
@@ -239,7 +239,7 @@ export default async function LineConnectPage({
         <Step n={6} title="ให้ร้านรู้ทันเมื่อลูกค้าจองหรือยกเลิก" done={ownerLink.linked}>
           {ownerLink.linked ? (
             <>
-              <p className="text-teal-700 dark:text-teal-400">
+              <p className="text-brand dark:text-teal-400">
                 เชื่อมกับ LINE ของเจ้าของร้านแล้ว
               </p>
               <p>
@@ -248,7 +248,7 @@ export default async function LineConnectPage({
               <form action={newOwnerCode}>
                 <button
                   type="submit"
-                  className="w-fit rounded-lg border border-slate-200 px-3 py-1.5 text-xs dark:border-slate-700"
+                  className="w-fit rounded-lg border border-line px-3 py-1.5 text-xs"
                 >
                   เปลี่ยนไปใช้เครื่องอื่น
                 </button>
@@ -256,7 +256,7 @@ export default async function LineConnectPage({
 
               {/* Only the owner's own chat gets this menu, so a customer is
                   never offered a back-office button that refuses them. */}
-              <div className="mt-2 border-t border-slate-200 pt-3 dark:border-slate-800">
+              <div className="mt-2 border-t border-line pt-3">
                 <p className="font-medium text-slate-700 dark:text-slate-200">
                   เมนูลัดในแชท LINE ของคุณ
                 </p>
@@ -267,17 +267,17 @@ export default async function LineConnectPage({
 
                 {ownerMenu.installed ? (
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="text-teal-700 dark:text-teal-400">ติดตั้งแล้ว</span>
+                    <span className="text-brand dark:text-teal-400">ติดตั้งแล้ว</span>
                     <form action={buildOwnerMenu}>
                       <button
                         type="submit"
-                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs dark:border-slate-700"
+                        className="rounded-lg border border-line px-3 py-1.5 text-xs"
                       >
                         สร้างใหม่
                       </button>
                     </form>
                     <form action={dropOwnerMenu}>
-                      <button type="submit" className="px-1 text-xs text-slate-500 underline">
+                      <button type="submit" className="px-1 text-xs text-muted underline">
                         เอาออก
                       </button>
                     </form>
@@ -286,7 +286,7 @@ export default async function LineConnectPage({
                   <form action={buildOwnerMenu} className="mt-2">
                     <button
                       type="submit"
-                      className="rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-medium text-white"
+                      className="rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-brand-contrast"
                     >
                       สร้างเมนูเจ้าของร้าน
                     </button>
@@ -303,7 +303,7 @@ export default async function LineConnectPage({
               <code className="block w-fit rounded-lg bg-slate-100 px-4 py-2 font-mono text-lg tracking-widest dark:bg-slate-900">
                 {ownerLink.code ?? '—'}
               </code>
-              <p className="text-slate-500">
+              <p className="text-muted">
                 ส่งได้ครั้งเดียว หลังจากนั้นรหัสจะหมดอายุทันที
                 — คนอื่นที่เห็นรหัสทีหลังจะแย่งการแจ้งเตือนไปไม่ได้
               </p>
@@ -318,11 +318,11 @@ export default async function LineConnectPage({
           permanently rather than a keyword nobody knows to type. */}
       {state.liffId ? (
         <Step n={7} title="ใส่ปุ่มจองคิวใน Rich menu" done={false}>
-          <p className="mb-2 text-slate-500">
+          <p className="mb-2 text-muted">
             ปุ่มนี้จะค้างอยู่ใต้ห้องแชทตลอด ลูกค้าจึงกดจองได้โดยไม่ต้องจำว่าต้องพิมพ์อะไร
           </p>
 
-          <p className="mb-1 text-xs font-medium text-slate-600 dark:text-slate-400">
+          <p className="mb-1 text-xs font-medium text-muted">
             ลิงก์สำหรับวางใน Rich menu
           </p>
           <code className="mb-3 block rounded-lg bg-slate-100 px-3 py-2 text-xs break-all dark:bg-slate-900">
@@ -333,18 +333,18 @@ export default async function LineConnectPage({
               for a salon owner with no design tool is where the setup ends.
               The product draws one, labelled to match the keywords the webhook
               already answers. */}
-          <p className="mb-1 text-xs font-medium text-slate-600 dark:text-slate-400">
+          <p className="mb-1 text-xs font-medium text-muted">
             รูปปุ่มสำหรับ Rich menu
           </p>
           <a
             href="/dashboard/settings/line/rich-menu.png"
             download="chairtime-rich-menu.png"
-            className="mb-3 inline-block rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-700"
+            className="mb-3 inline-block rounded-lg border border-line px-3 py-2 text-xs"
           >
             ดาวน์โหลดรูปปุ่ม (2500 × 1686)
           </a>
 
-          <ol className="list-decimal space-y-1 pl-4 text-xs text-slate-500">
+          <ol className="list-decimal space-y-1 pl-4 text-xs text-muted">
             <li>
               เปิด <span className="font-medium">manager.line.biz</span> → เลือก OA ของร้าน
             </li>
@@ -369,7 +369,7 @@ export default async function LineConnectPage({
             href="https://manager.line.biz/"
             target="_blank"
             rel="noreferrer"
-            className="mt-2 inline-block text-teal-700 underline dark:text-teal-400"
+            className="mt-2 inline-block text-brand underline dark:text-teal-400"
           >
             เปิด LINE Official Account Manager
           </a>
@@ -382,24 +382,24 @@ export default async function LineConnectPage({
 function Step(props: { n: number; title: string; done: boolean; locked?: boolean; children: React.ReactNode }) {
   return (
     <section
-      className={`rounded-xl border px-4 py-3 text-sm ${props.done ? 'border-teal-600' : 'border-slate-200 dark:border-slate-800'} ${props.locked ? 'opacity-50' : ''}`}
+      className={`rounded-xl border px-4 py-3 text-sm ${props.done ? 'border-brand' : 'border-line'} ${props.locked ? 'opacity-50' : ''}`}
     >
       <h2 className="mb-2 font-medium">
         {props.done ? '✓' : props.n}. {props.title}
       </h2>
-      <div className="flex flex-col gap-2 text-xs text-slate-600 dark:text-slate-400">{props.children}</div>
+      <div className="flex flex-col gap-2 text-xs text-muted">{props.children}</div>
     </section>
   );
 }
 
 function NextButton({ children }: { children: React.ReactNode }) {
-  return <button type="submit" className="w-fit rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-medium text-white">{children}</button>;
+  return <button type="submit" className="w-fit rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-brand-contrast">{children}</button>;
 }
 
 function Banner({ tone, children }: { tone: 'ok' | 'error'; children: React.ReactNode }) {
   const cls =
     tone === 'ok'
-      ? 'bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300'
+      ? 'bg-teal-50 text-brand dark:bg-teal-950 dark:text-teal-300'
       : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300';
   return <p className={`rounded-lg px-3 py-2 text-sm ${cls}`}>{children}</p>;
 }

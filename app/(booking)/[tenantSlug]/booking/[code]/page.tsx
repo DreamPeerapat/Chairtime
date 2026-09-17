@@ -27,10 +27,10 @@ export default async function BookingDetailPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="rounded-2xl border border-slate-200 p-5 dark:border-slate-800">
+      <div className="rounded-2xl border border-line p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs text-slate-500">รหัสจอง</p>
+            <p className="text-xs text-muted">รหัสจอง</p>
             <p className="font-mono text-2xl font-semibold tracking-wider">{booking.code}</p>
           </div>
           <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${status.tone}`}>
@@ -48,7 +48,7 @@ export default async function BookingDetailPage({
       </div>
 
       {booking.status === 'cancelled' ? (
-        <p className="text-center text-sm text-slate-500">การจองนี้ถูกยกเลิกแล้ว</p>
+        <p className="text-center text-sm text-muted">การจองนี้ถูกยกเลิกแล้ว</p>
       ) : canCancel ? (
         <CancelBookingButton
           tenantId={tenant.id}
@@ -64,7 +64,7 @@ export default async function BookingDetailPage({
 
       <Link
         href={`/${tenantSlug}`}
-        className="rounded-xl border border-slate-200 py-3 text-center text-sm dark:border-slate-800"
+        className="rounded-xl border border-line py-3 text-center text-sm"
       >
         จองคิวใหม่
       </Link>
@@ -75,7 +75,7 @@ export default async function BookingDetailPage({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="shrink-0 text-slate-500">{label}</dt>
+      <dt className="shrink-0 text-muted">{label}</dt>
       <dd className="text-right">{value}</dd>
     </div>
   );

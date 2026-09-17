@@ -48,7 +48,7 @@ export function CancelBookingButton({
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-red-200 p-4 dark:border-red-900">
       <p className="text-sm">ยืนยันยกเลิกคิวนี้?</p>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         ยกเลิกได้ก่อนเวลานัดอย่างน้อย {cancelCutoffMin} นาที หลังจากนั้นต้องติดต่อร้านโดยตรง
       </p>
       {error ? <p className="text-xs text-red-600">{error}</p> : null}
@@ -57,7 +57,7 @@ export function CancelBookingButton({
           type="button"
           onClick={() => setConfirming(false)}
           disabled={busy}
-          className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm dark:border-slate-800"
+          className="flex-1 rounded-lg border border-line py-2.5 text-sm"
         >
           ไม่ยกเลิก
         </button>

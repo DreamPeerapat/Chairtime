@@ -84,7 +84,7 @@ export default async function OnboardingSetupPage({
     <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-5 py-10">
       <div>
         <h1 className="text-xl font-semibold">ตั้งค่าร้านครั้งแรก</h1>
-        <p className="mt-1 text-sm text-slate-500">เวลาทำการและราคาบริการ แก้ไขเพิ่มเติมได้ทีหลังในหลังบ้าน</p>
+        <p className="mt-1 text-sm text-muted">เวลาทำการและราคาบริการ แก้ไขเพิ่มเติมได้ทีหลังในหลังบ้าน</p>
       </div>
 
       {error ? (
@@ -95,22 +95,22 @@ export default async function OnboardingSetupPage({
 
       <form action={submit} className="flex flex-col gap-6">
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-xs font-medium text-slate-600 dark:text-slate-400">เวลาทำการ (ทุกวัน)</legend>
+          <legend className="text-xs font-medium text-muted">เวลาทำการ (ทุกวัน)</legend>
           <div className="flex items-center gap-2">
             <input
               type="time"
               name="openTime"
               defaultValue="10:00"
               required
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
+              className="rounded-lg border border-line px-3 py-2 text-sm dark:bg-slate-900"
             />
-            <span className="text-sm text-slate-500">ถึง</span>
+            <span className="text-sm text-muted">ถึง</span>
             <input
               type="time"
               name="closeTime"
               defaultValue="20:00"
               required
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
+              className="rounded-lg border border-line px-3 py-2 text-sm dark:bg-slate-900"
             />
           </div>
         </fieldset>
@@ -119,7 +119,7 @@ export default async function OnboardingSetupPage({
             service needs a person and a seat, and the template creates only
             the categories, never anything to put in them. */}
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-xs font-medium text-slate-600 dark:text-slate-400">
+          <legend className="text-xs font-medium text-muted">
             ร้านมีเท่าไหร่
           </legend>
           <div className="flex items-center justify-between gap-3 text-sm">
@@ -132,7 +132,7 @@ export default async function OnboardingSetupPage({
               max="50"
               defaultValue={1}
               required
-              className="w-24 rounded-lg border border-slate-200 px-3 py-1.5 text-right text-sm dark:border-slate-800 dark:bg-slate-900"
+              className="w-24 rounded-lg border border-line px-3 py-1.5 text-right text-sm dark:bg-slate-900"
             />
           </div>
           <div className="flex items-center justify-between gap-3 text-sm">
@@ -145,7 +145,7 @@ export default async function OnboardingSetupPage({
               max="50"
               defaultValue={1}
               required
-              className="w-24 rounded-lg border border-slate-200 px-3 py-1.5 text-right text-sm dark:border-slate-800 dark:bg-slate-900"
+              className="w-24 rounded-lg border border-line px-3 py-1.5 text-right text-sm dark:bg-slate-900"
             />
           </div>
           <p className="text-xs text-slate-400">
@@ -155,7 +155,7 @@ export default async function OnboardingSetupPage({
 
         {services.length > 0 ? (
           <fieldset className="flex flex-col gap-2">
-            <legend className="text-xs font-medium text-slate-600 dark:text-slate-400">ราคาบริการ</legend>
+            <legend className="text-xs font-medium text-muted">ราคาบริการ</legend>
             {services.map((s) => (
               <div key={s.id} className="flex items-center justify-between gap-3 text-sm">
                 <input type="hidden" name="serviceId" value={s.id} />
@@ -167,16 +167,16 @@ export default async function OnboardingSetupPage({
                   min="1"
                   defaultValue={Number(s.basePrice)}
                   required
-                  className="w-28 rounded-lg border border-slate-200 px-3 py-1.5 text-right text-sm dark:border-slate-800 dark:bg-slate-900"
+                  className="w-28 rounded-lg border border-line px-3 py-1.5 text-right text-sm dark:bg-slate-900"
                 />
               </div>
             ))}
           </fieldset>
         ) : (
-          <p className="text-sm text-slate-500">ยังไม่มีบริการ — เพิ่มได้ในหลังบ้านหลังเข้าใช้งาน</p>
+          <p className="text-sm text-muted">ยังไม่มีบริการ — เพิ่มได้ในหลังบ้านหลังเข้าใช้งาน</p>
         )}
 
-        <button type="submit" className="ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800">
+        <button type="submit" className="ct-press rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast hover:bg-brand-strong active:bg-brand-strong">
           เสร็จสิ้น เข้าใช้งาน
         </button>
       </form>

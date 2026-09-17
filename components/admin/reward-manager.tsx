@@ -49,14 +49,14 @@ export function RewardManager({ rewards, services }: { rewards: AdminReward[]; s
         <button
           type="button"
           onClick={() => setEditing('new')}
-          className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-contrast"
         >
           + เพิ่มของรางวัล
         </button>
       </div>
 
       {rewards.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500 dark:border-slate-700">
+        <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
           ยังไม่มีของรางวัลในระบบ
         </p>
       ) : null}
@@ -70,8 +70,8 @@ export function RewardManager({ rewards, services }: { rewards: AdminReward[]; s
               className={cn(
                 'flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left',
                 reward.isActive
-                  ? 'border-slate-200 dark:border-slate-800'
-                  : 'border-dashed border-slate-300 opacity-60 dark:border-slate-700',
+                  ? 'border-line'
+                  : 'border-dashed border-line opacity-60',
               )}
             >
               <span className="flex-1">
@@ -79,7 +79,7 @@ export function RewardManager({ rewards, services }: { rewards: AdminReward[]; s
                   {reward.name}
                   {!reward.isActive ? <span className="ml-2 text-xs text-slate-400">ปิดอยู่</span> : null}
                 </span>
-                <span className="mt-0.5 block text-xs text-slate-500">{rewardSubtitle(reward)}</span>
+                <span className="mt-0.5 block text-xs text-muted">{rewardSubtitle(reward)}</span>
               </span>
               <span className="shrink-0 text-sm font-medium tabular-nums">{reward.pointCost} แต้ม</span>
             </button>

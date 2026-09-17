@@ -54,11 +54,11 @@ export function CustomerDetail({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <Link href="/dashboard/customers" className="text-xs text-slate-500">
+        <Link href="/dashboard/customers" className="text-xs text-muted">
           ‹ กลับไปรายชื่อ
         </Link>
         <h1 className="mt-1 text-lg font-semibold">{customer.name}</h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted">
           {customer.phone ?? 'ไม่มีเบอร์'}
           {customer.lineUserId ? ' · เชื่อม LINE แล้ว' : ''}
         </p>
@@ -87,7 +87,7 @@ export function CustomerDetail({
       ) : null}
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">
+        <h2 className="text-sm font-medium text-muted">
           โน้ต (เห็นเฉพาะร้าน)
         </h2>
         <textarea
@@ -98,25 +98,25 @@ export function CustomerDetail({
           }}
           rows={3}
           placeholder="เช่น แพ้น้ำยา X, ชอบช่างแนน, ผมบาง"
-          className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900"
+          className="w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
         />
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={save}
             disabled={pending}
-            className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-contrast disabled:opacity-50"
           >
             {pending ? 'กำลังบันทึก…' : 'บันทึกโน้ต'}
           </button>
-          {saved ? <span className="text-xs text-teal-700">บันทึกแล้ว</span> : null}
+          {saved ? <span className="text-xs text-brand">บันทึกแล้ว</span> : null}
         </div>
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">ประวัติการมา</h2>
+        <h2 className="text-sm font-medium text-muted">ประวัติการมา</h2>
         {visits.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
+          <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-slate-400">
             ยังไม่มีประวัติ
           </p>
         ) : (
@@ -127,11 +127,11 @@ export function CustomerDetail({
               return (
                 <li
                   key={visit.id}
-                  className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800"
+                  className="flex items-start justify-between gap-3 rounded-xl border border-line px-4 py-3"
                 >
                   <div className="min-w-0">
                     <p className="text-sm">{`${thaiDateShort(at)} · ${at.toFormat('HH:mm')} น.`}</p>
-                    <p className="mt-0.5 truncate text-xs text-slate-500">
+                    <p className="mt-0.5 truncate text-xs text-muted">
                       {visit.services.join(', ')}
                     </p>
                   </div>
@@ -139,7 +139,7 @@ export function CustomerDetail({
                     <span className={`rounded-full px-2 py-0.5 text-xs ${status.tone}`}>
                       {status.label}
                     </span>
-                    <p className="mt-1 text-xs tabular-nums text-slate-500">
+                    <p className="mt-1 text-xs tabular-nums text-muted">
                       {formatBaht(visit.total)}
                     </p>
                   </div>
@@ -155,8 +155,8 @@ export function CustomerDetail({
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: 'warn' }) {
   return (
-    <div className="rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-800">
-      <dt className="text-xs text-slate-500">{label}</dt>
+    <div className="rounded-xl border border-line px-3 py-2">
+      <dt className="text-xs text-muted">{label}</dt>
       <dd className={`text-base font-semibold ${tone === 'warn' ? 'text-red-600' : ''}`}>{value}</dd>
     </div>
   );

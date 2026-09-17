@@ -37,7 +37,7 @@ export function ServiceStep({
       {grouped.map(([category, items]) => (
         <section key={category ?? 'อื่นๆ'} className="flex flex-col gap-2">
           {showCategoryHeadings ? (
-            <h3 className="text-xs font-medium text-slate-500">{category ?? 'อื่นๆ'}</h3>
+            <h3 className="text-xs font-medium text-muted">{category ?? 'อื่นๆ'}</h3>
           ) : null}
           <ul className="flex flex-col gap-2">
             {items.map((service) => {
@@ -52,8 +52,8 @@ export function ServiceStep({
                     className={cn(
                       'ct-press flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left',
                       isSelected
-                        ? 'border-teal-600 bg-teal-50 dark:border-teal-500 dark:bg-teal-950/40'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:border-slate-700 dark:hover:bg-slate-900',
+                        ? 'border-brand bg-teal-50 dark:border-teal-500 dark:bg-teal-950/40'
+                        : 'border-line hover:border-line hover:bg-slate-50 dark:hover:border-slate-700 dark:hover:bg-slate-900',
                     )}
                   >
                     {/* A tick, not just a tinted border: on a dark screen the
@@ -64,8 +64,8 @@ export function ServiceStep({
                       className={cn(
                         'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border transition',
                         isSelected
-                          ? 'border-teal-600 bg-teal-600 text-white dark:border-teal-500 dark:bg-teal-500'
-                          : 'border-slate-300 dark:border-slate-600',
+                          ? 'border-brand bg-teal-600 text-white dark:border-teal-500 dark:bg-teal-500'
+                          : 'border-line dark:border-slate-600',
                       )}
                     >
                       {isSelected ? (
@@ -82,7 +82,7 @@ export function ServiceStep({
                     </span>
                     <span className="flex-1">
                       <span className="block text-sm font-medium">{service.name}</span>
-                      <span className="mt-0.5 block text-xs text-slate-500">
+                      <span className="mt-0.5 block text-xs text-muted">
                         {formatDuration(service.durationMin)}
                         {service.hasPassiveSegment ? ' · มีช่วงพักระหว่างทำ' : ''}
                       </span>
@@ -101,7 +101,7 @@ export function ServiceStep({
         </section>
       ))}
 
-      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-slate-200 bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-line bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:bg-slate-950/95">
         {/* "เลือกแล้ว 0 รายการ · 0 นาที ฿0" is three noughts telling the
             customer nothing. Before the first pick, say what to do instead. */}
         <div className="mb-2 flex items-baseline justify-between gap-3 text-sm">
@@ -109,7 +109,7 @@ export function ServiceStep({
             <span className="text-slate-400">เลือกบริการที่ต้องการ เลือกได้มากกว่าหนึ่งอย่าง</span>
           ) : (
             <>
-              <span className="text-slate-500">
+              <span className="text-muted">
                 {selected.length} รายการ · {formatDuration(totalMin)}
               </span>
               <span className="text-base font-semibold tabular-nums">
@@ -122,7 +122,7 @@ export function ServiceStep({
           type="button"
           disabled={selected.length === 0}
           onClick={onNext}
-          className="w-full ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800 disabled:opacity-40"
+          className="w-full ct-press rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast hover:bg-brand-strong active:bg-brand-strong disabled:opacity-40"
         >
           ถัดไป
         </button>

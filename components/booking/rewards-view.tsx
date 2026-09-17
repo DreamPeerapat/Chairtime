@@ -120,28 +120,28 @@ export function RewardsView({ tenantSlug, liffId }: { tenantSlug: string; liffId
   }
 
   if (status === 'loading') {
-    return <p className="py-10 text-center text-sm text-slate-500">กำลังโหลด...</p>;
+    return <p className="py-10 text-center text-sm text-muted">กำลังโหลด...</p>;
   }
   if (status === 'error') {
-    return <p className="py-10 text-center text-sm text-slate-500">{message}</p>;
+    return <p className="py-10 text-center text-sm text-muted">{message}</p>;
   }
 
   if (issued) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 p-6 text-center dark:border-slate-800">
-        <p className="text-sm text-slate-500">แลกสำเร็จ</p>
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-line p-6 text-center">
+        <p className="text-sm text-muted">แลกสำเร็จ</p>
         <p className="text-sm font-medium">{issued.rewardName}</p>
-        <p className="rounded-lg bg-teal-50 px-6 py-3 text-3xl font-semibold tracking-widest text-teal-700 dark:bg-teal-950 dark:text-teal-300">
+        <p className="rounded-lg bg-teal-50 px-6 py-3 text-3xl font-semibold tracking-widest text-brand dark:bg-teal-950 dark:text-teal-300">
           {issued.code}
         </p>
         {issued.expiresAt ? (
-          <p className="text-xs text-slate-500">ใช้ได้ถึง {thaiDateFull(DateTime.fromISO(issued.expiresAt))}</p>
+          <p className="text-xs text-muted">ใช้ได้ถึง {thaiDateFull(DateTime.fromISO(issued.expiresAt))}</p>
         ) : null}
-        <p className="text-xs text-slate-500">แสดงโค้ดนี้ให้พนักงานตอนใช้บริการ</p>
+        <p className="text-xs text-muted">แสดงโค้ดนี้ให้พนักงานตอนใช้บริการ</p>
         <button
           type="button"
           onClick={() => setIssued(null)}
-          className="mt-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm dark:border-slate-800"
+          className="mt-2 rounded-xl border border-line px-5 py-2.5 text-sm"
         >
           ดูของรางวัลอื่น
         </button>
@@ -153,10 +153,10 @@ export function RewardsView({ tenantSlug, liffId }: { tenantSlug: string; liffId
     <div className="flex flex-col gap-4">
       <Link
         href={`/${tenantSlug}/points`}
-        className="rounded-2xl border border-slate-200 p-4 text-center dark:border-slate-800"
+        className="rounded-2xl border border-line p-4 text-center"
       >
-        <p className="text-2xl font-semibold text-teal-700 dark:text-teal-400">{balance}</p>
-        <p className="text-xs text-slate-500">แต้มคงเหลือ</p>
+        <p className="text-2xl font-semibold text-brand dark:text-teal-400">{balance}</p>
+        <p className="text-xs text-muted">แต้มคงเหลือ</p>
       </Link>
 
       {redeemError ? (
@@ -166,23 +166,23 @@ export function RewardsView({ tenantSlug, liffId }: { tenantSlug: string; liffId
       ) : null}
 
       {rewards.length === 0 ? (
-        <p className="py-6 text-center text-sm text-slate-500">ยังไม่มีของรางวัลให้แลกตอนนี้</p>
+        <p className="py-6 text-center text-sm text-muted">ยังไม่มีของรางวัลให้แลกตอนนี้</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {rewards.map((reward) => (
             <li
               key={reward.id}
-              className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800"
+              className="flex items-center gap-3 rounded-xl border border-line px-4 py-3"
             >
               <span className="flex-1">
                 <span className="block text-sm font-medium">{reward.name}</span>
-                <span className="block text-xs text-slate-500">{rewardDetail(reward)}</span>
+                <span className="block text-xs text-muted">{rewardDetail(reward)}</span>
               </span>
               <button
                 type="button"
                 disabled={redeeming === reward.id || balance < reward.pointCost}
                 onClick={() => redeem(reward.id)}
-                className="shrink-0 rounded-lg bg-teal-700 px-3 py-2 text-xs font-medium text-white disabled:opacity-40"
+                className="shrink-0 rounded-lg bg-brand px-3 py-2 text-xs font-medium text-brand-contrast disabled:opacity-40"
               >
                 {redeeming === reward.id ? 'กำลังแลก…' : `${reward.pointCost} แต้ม`}
               </button>

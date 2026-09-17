@@ -33,7 +33,7 @@ export function PaymentSteps({ current }: { current: 1 | 2 | 3 | 4 }) {
             <span
               className={`grid size-6 shrink-0 place-items-center rounded-full text-xs font-medium ${
                 done || active
-                  ? 'bg-brand text-white'
+                  ? 'bg-brand text-brand-contrast'
                   : 'bg-surface-muted text-muted'
               }`}
             >

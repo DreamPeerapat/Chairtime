@@ -31,7 +31,7 @@ export function ServiceManager({ services }: { services: AdminService[] }) {
         <button
           type="button"
           onClick={() => setEditing('new')}
-          className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-contrast"
         >
           + เพิ่มบริการ
         </button>
@@ -46,8 +46,8 @@ export function ServiceManager({ services }: { services: AdminService[] }) {
               className={cn(
                 'flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left',
                 service.isActive
-                  ? 'border-slate-200 dark:border-slate-800'
-                  : 'border-dashed border-slate-300 opacity-60 dark:border-slate-700',
+                  ? 'border-line'
+                  : 'border-dashed border-line opacity-60',
               )}
             >
               <span className="flex-1">
@@ -57,7 +57,7 @@ export function ServiceManager({ services }: { services: AdminService[] }) {
                     <span className="ml-2 text-xs text-slate-400">ปิดอยู่</span>
                   ) : null}
                 </span>
-                <span className="mt-0.5 block text-xs text-slate-500">
+                <span className="mt-0.5 block text-xs text-muted">
                   {formatDuration(service.totalMin)}
                   {service.bufferBeforeMin > 0 ? ` · เตรียม ${service.bufferBeforeMin} น.` : ''}
                   {service.bufferAfterMin > 0 ? ` · เก็บ ${service.bufferAfterMin} น.` : ''}
@@ -167,7 +167,7 @@ function ServiceForm({
           </div>
 
           {multiSegment ? (
-            <p className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <p className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-muted dark:bg-slate-800">
               บริการนี้แบ่งเป็น {service!.segments.length} ช่วง (เช่น ลงสี → รอสีติด → สระ)
               แก้เวลาแต่ละช่วงต้องทำผ่านผู้ดูแลระบบ เพื่อไม่ให้ตารางช่างเพี้ยน
             </p>
@@ -217,14 +217,14 @@ function ServiceForm({
           <button
             type="button"
             onClick={close}
-            className="rounded-xl border border-slate-200 px-5 py-3 text-sm dark:border-slate-800"
+            className="rounded-xl border border-line px-5 py-3 text-sm"
           >
             ยกเลิก
           </button>
           <button
             type="submit"
             disabled={pending}
-            className="flex-1 rounded-xl bg-teal-700 py-3 text-sm font-medium text-white disabled:opacity-40"
+            className="flex-1 rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast disabled:opacity-40"
           >
             {pending ? 'กำลังบันทึก…' : 'บันทึก'}
           </button>
@@ -236,12 +236,12 @@ function ServiceForm({
 }
 
 const inputClass =
-  'w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900 disabled:opacity-50';
+  'w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900 disabled:opacity-50';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{label}</span>
+      <span className="text-xs font-medium text-muted">{label}</span>
       {children}
     </label>
   );

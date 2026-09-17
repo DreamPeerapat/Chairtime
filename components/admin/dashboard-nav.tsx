@@ -84,8 +84,8 @@ export function DashboardNav({
                 className={cn(
                   'ct-press relative block rounded-lg px-3 py-1.5 text-sm whitespace-nowrap',
                   active
-                    ? 'font-medium text-teal-700 dark:text-teal-300'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100',
+                    ? 'font-medium text-brand'
+                    : 'text-muted hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100',
                 )}
               >
                 {item.label}

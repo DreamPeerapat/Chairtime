@@ -19,7 +19,7 @@ export default async function RewardsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Link href="/dashboard/rewards/redeem" className="self-end text-sm text-teal-700 dark:text-teal-400">
+      <Link href="/dashboard/rewards/redeem" className="self-end text-sm text-brand dark:text-teal-400">
         เช็คอินโค้ดของรางวัล →
       </Link>
       <RewardManager

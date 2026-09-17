@@ -9,14 +9,14 @@
 export const WEEKDAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 
 export const inputClass =
-  'w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900 disabled:opacity-50';
+  'w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900 disabled:opacity-50';
 export const primaryButton =
-  'flex-1 rounded-xl bg-teal-700 py-3 text-sm font-medium text-white disabled:opacity-40';
+  'flex-1 rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast disabled:opacity-40';
 export const secondaryButton =
-  'rounded-xl border border-slate-200 px-5 py-3 text-sm dark:border-slate-800';
+  'rounded-xl border border-line px-5 py-3 text-sm';
 export const activeChip =
   'border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900';
-export const idleChip = 'border-slate-200 dark:border-slate-700';
+export const idleChip = 'border-line';
 
 export function ErrorText({ children }: { children: React.ReactNode }) {
   return (

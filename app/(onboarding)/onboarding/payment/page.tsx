@@ -86,7 +86,7 @@ export default async function OnboardingPaymentPage({
     <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-5 py-10">
       <div>
         <h1 className="text-xl font-semibold">ชำระเงินเพื่อเริ่มใช้งาน {tenant.name}</h1>
-        <p className="mt-1 text-sm text-slate-500">โอนเงินตามช่องทางด้านล่าง แล้วกดยืนยัน ระบบจะเปิดใช้งานร้านทันที</p>
+        <p className="mt-1 text-sm text-muted">โอนเงินตามช่องทางด้านล่าง แล้วกดยืนยัน ระบบจะเปิดใช้งานร้านทันที</p>
       </div>
 
       {qr ? (
@@ -107,15 +107,15 @@ export default async function OnboardingPaymentPage({
         </figure>
       ) : null}
 
-      <div className="rounded-xl border border-slate-200 p-4 text-sm dark:border-slate-800">
-        <p className="text-xs text-slate-500">หรือโอนเข้าบัญชี</p>
+      <div className="rounded-xl border border-line p-4 text-sm">
+        <p className="text-xs text-muted">หรือโอนเข้าบัญชี</p>
         <p className="mt-1 font-medium">{PLATFORM_PAYEE.bank}</p>
-        <p className="text-slate-600 dark:text-slate-400">เลขบัญชี {PLATFORM_PAYEE.accountNumber}</p>
-        <p className="text-slate-600 dark:text-slate-400">ชื่อบัญชี {PLATFORM_PAYEE.accountName}</p>
+        <p className="text-muted">เลขบัญชี {PLATFORM_PAYEE.accountNumber}</p>
+        <p className="text-muted">ชื่อบัญชี {PLATFORM_PAYEE.accountName}</p>
       </div>
 
       <form action={confirm}>
-        <button type="submit" className="w-full ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800">
+        <button type="submit" className="w-full ct-press rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast hover:bg-brand-strong active:bg-brand-strong">
           ยืนยันว่าโอนเงินแล้ว
         </button>
       </form>

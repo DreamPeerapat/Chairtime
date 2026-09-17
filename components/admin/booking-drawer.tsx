@@ -23,7 +23,7 @@ import { formatBaht, statusLabel, thaiTimeRange } from '@/components/booking/for
  * the appointment.
  */
 const TRANSITIONS: Array<{ status: string; label: string; tone: string }> = [
-  { status: 'confirmed', label: 'ยืนยันแล้ว', tone: 'bg-teal-700 text-white' },
+  { status: 'confirmed', label: 'ยืนยันแล้ว', tone: 'bg-brand text-brand-contrast' },
   { status: 'completed', label: 'เสร็จแล้ว', tone: 'bg-slate-700 text-white' },
   { status: 'no_show', label: 'ไม่มา', tone: 'bg-red-600 text-white' },
   { status: 'cancelled', label: 'ยกเลิก', tone: 'border border-red-300 text-red-700' },
@@ -76,7 +76,7 @@ export function BookingDrawer({
             <h2 id={MODAL_TITLE_ID} className="text-lg font-semibold">
               {booking.customerName}
             </h2>
-            <p className="font-mono text-xs text-slate-500">{booking.code}</p>
+            <p className="font-mono text-xs text-muted">{booking.code}</p>
           </div>
           <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', status.tone)}>
             {status.label}
@@ -97,7 +97,7 @@ export function BookingDrawer({
 
         {booking.referenceImages.length > 0 ? (
           <div className="mt-3">
-            <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+            <p className="mb-1.5 text-xs font-medium text-muted">
               รูปตัวอย่างจากลูกค้า
             </p>
             <div className="ct-scroll-x flex gap-2 overflow-x-auto">
@@ -110,7 +110,7 @@ export function BookingDrawer({
                   href={image.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800"
+                  className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-surface-muted"
                 >
                   <Image src={image.url} alt="" fill sizes="80px" className="object-cover" />
                 </a>
@@ -132,7 +132,7 @@ export function BookingDrawer({
         ) : null}
 
         {LOYALTY_ENABLED && !FINISHED.includes(booking.status) ? (
-          <label className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
+          <label className="mt-4 flex items-center justify-between gap-3 text-xs text-muted">
             ใช้แต้มลูกค้า (ถ้ามี ใส่ก่อนกด &quot;เสร็จแล้ว&quot;)
             <input
               type="number"
@@ -141,13 +141,13 @@ export function BookingDrawer({
               value={redeemPoints}
               onChange={(e) => setRedeemPoints(e.target.value)}
               placeholder="0"
-              className="w-24 rounded-lg border border-slate-200 px-2 py-1 text-right text-sm dark:border-slate-800 dark:bg-slate-900"
+              className="w-24 rounded-lg border border-line px-2 py-1 text-right text-sm dark:bg-slate-900"
             />
           </label>
         ) : null}
 
         {FINISHED.includes(booking.status) ? (
-          <p className="mt-4 rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+          <p className="mt-4 rounded-lg bg-slate-100 px-3 py-2 text-xs text-muted dark:bg-slate-800">
             รายการนี้จบแล้ว — ดูย้อนหลังได้ที่หน้าสรุป
           </p>
         ) : (
@@ -169,7 +169,7 @@ export function BookingDrawer({
         <button
           type="button"
           onClick={close}
-          className="ct-press mt-4 w-full rounded-xl border border-slate-200 py-2.5 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
+          className="ct-press mt-4 w-full rounded-xl border border-line py-2.5 text-sm hover:bg-surface-muted"
         >
           ปิด
         </button>
@@ -182,10 +182,10 @@ export function BookingDrawer({
 function Row({ label, value, href }: { label: string; value: string; href?: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="shrink-0 text-slate-500">{label}</dt>
+      <dt className="shrink-0 text-muted">{label}</dt>
       <dd className="text-right">
         {href ? (
-          <a href={href} className="text-teal-700 underline dark:text-teal-400">
+          <a href={href} className="text-brand underline dark:text-teal-400">
             {value}
           </a>
         ) : (

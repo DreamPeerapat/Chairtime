@@ -241,7 +241,7 @@ function FilterChip({
         'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition',
         active
           ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900'
-          : 'border-slate-200 hover:border-slate-400 dark:border-slate-700',
+          : 'border-line hover:border-slate-400',
       )}
     >
       {color ? (

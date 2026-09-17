@@ -61,8 +61,8 @@ export function TimeStep({
                 className={cn(
                   'ct-press flex w-14 shrink-0 flex-col items-center rounded-xl border py-2 text-xs',
                   active
-                    ? 'border-teal-600 bg-teal-700 text-white shadow-sm shadow-teal-700/30'
-                    : 'border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-600',
+                    ? 'border-brand bg-brand text-brand-contrast shadow-sm shadow-teal-700/30'
+                    : 'border-line hover:border-line dark:hover:border-slate-600',
                 )}
               >
                 <span className={active ? 'text-teal-100' : 'text-slate-400'}>{dayName}</span>
@@ -111,8 +111,8 @@ export function TimeStep({
           ) : null}
         </div>
       ) : slots.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 py-8 text-center dark:border-slate-700">
-          <p className="text-sm text-slate-500">วันนี้ไม่มีเวลาว่าง</p>
+        <div className="rounded-xl border border-dashed border-line py-8 text-center">
+          <p className="text-sm text-muted">วันนี้ไม่มีเวลาว่าง</p>
           <p className="mt-1 text-xs text-slate-400">ลองเลือกวันอื่น หรือเปลี่ยนช่างดูนะคะ</p>
         </div>
       ) : (
@@ -120,7 +120,7 @@ export function TimeStep({
           {groups.map(([label, items]) =>
             items.length === 0 ? null : (
               <section key={label} className="flex flex-col gap-2">
-                <h3 className="text-xs font-medium text-slate-500">{label}</h3>
+                <h3 className="text-xs font-medium text-muted">{label}</h3>
                 <div className="grid grid-cols-4 gap-2">
                   {items.map((slot) => {
                     const active = selected?.startsAt === slot.startsAt;
@@ -133,8 +133,8 @@ export function TimeStep({
                         className={cn(
                           'ct-press rounded-lg border py-2 text-sm tabular-nums',
                           active
-                            ? 'border-teal-600 bg-teal-700 text-white shadow-sm shadow-teal-700/30'
-                            : 'border-slate-200 hover:border-teal-500 hover:bg-teal-50 dark:border-slate-800 dark:hover:bg-teal-950/40',
+                            ? 'border-brand bg-brand text-brand-contrast shadow-sm shadow-teal-700/30'
+                            : 'border-line hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-950/40',
                         )}
                       >
                         {DateTime.fromISO(slot.startsAt).setZone(timezone).toFormat('HH:mm')}
@@ -148,11 +148,11 @@ export function TimeStep({
         </div>
       )}
 
-      <div className="sticky bottom-0 -mx-5 mt-auto flex gap-2 border-t border-slate-200 bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+      <div className="sticky bottom-0 -mx-5 mt-auto flex gap-2 border-t border-line bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:bg-slate-950/95">
         <button
           type="button"
           onClick={onBack}
-          className="ct-press rounded-xl border border-slate-200 px-5 py-3 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
+          className="ct-press rounded-xl border border-line px-5 py-3 text-sm hover:bg-surface-muted"
         >
           ย้อนกลับ
         </button>
@@ -160,7 +160,7 @@ export function TimeStep({
           type="button"
           disabled={!selected}
           onClick={onNext}
-          className="flex-1 ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800 disabled:opacity-40"
+          className="flex-1 ct-press rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast hover:bg-brand-strong active:bg-brand-strong disabled:opacity-40"
         >
           ถัดไป
         </button>

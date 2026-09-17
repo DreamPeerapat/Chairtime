@@ -57,7 +57,7 @@ export function SlipUploader({
 
       <div className="flex items-center gap-3">
         {value ? (
-          <span className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+          <span className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
             <Image src={value} alt="สลิปที่แนบไว้" fill sizes="64px" className="object-cover" />
           </span>
         ) : null}
@@ -74,7 +74,7 @@ export function SlipUploader({
             type="button"
             disabled={busy}
             onClick={() => inputRef.current?.click()}
-            className="w-fit rounded-lg border border-slate-200 px-3 py-1.5 text-xs disabled:opacity-40 dark:border-slate-700"
+            className="w-fit rounded-lg border border-line px-3 py-1.5 text-xs disabled:opacity-40"
           >
             {busy ? 'กำลังแนบ…' : value ? 'เปลี่ยนสลิป' : 'แนบสลิป'}
           </button>
@@ -83,7 +83,7 @@ export function SlipUploader({
               type="button"
               disabled={busy}
               onClick={() => onChange(null)}
-              className="w-fit text-xs text-slate-500 underline disabled:opacity-40"
+              className="w-fit text-xs text-muted underline disabled:opacity-40"
             >
               เอาสลิปออก
             </button>

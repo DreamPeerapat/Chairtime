@@ -124,19 +124,16 @@ export function BillingView({
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-muted">วิธีต่ออายุ</h2>
 
-        <ol className="flex flex-col gap-1 rounded-xl border border-line px-4 py-3 text-sm">
-          <li className="text-xs text-muted">
-            1. เลือกแพ็กเกจแล้วกดสร้าง QR — หน้าถัดไปจะมี QR พร้อมยอด หรือจะโอนเข้าบัญชีนี้ก็ได้
-          </li>
-          <li className="my-1 rounded-lg bg-surface-muted px-3 py-2">
+        <div className="rounded-xl border border-line px-4 py-3">
+          <p className="text-xs text-muted">
+            โอนตามยอดใน QR แล้วแนบสลิปกดยืนยัน ใบเสร็จจะส่งเข้าอีเมลและ LINE ของร้าน
+          </p>
+          <div className="mt-2 rounded-lg bg-surface-muted px-3 py-2">
             <p className="font-medium">{payee.bank}</p>
             <p className="font-mono text-base tracking-wide">{payee.accountNumber}</p>
             <p className="text-xs text-muted">{payee.accountName}</p>
-          </li>
-          <li className="text-xs text-muted">
-            2. โอนตามยอดใน QR แล้วแนบสลิปกดยืนยัน ใบเสร็จจะส่งเข้าอีเมลและ LINE ของร้าน
-          </li>
-        </ol>
+          </div>
+        </div>
 
         <RenewalForm
           plans={plans}

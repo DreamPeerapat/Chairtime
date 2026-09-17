@@ -77,7 +77,7 @@ export function ResourceManager(props: Props) {
               'rounded-lg px-3 py-1.5 text-sm',
               tab === key
                 ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
-                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
+                : 'text-muted hover:bg-slate-100 dark:hover:bg-slate-800',
             )}
           >
             {label}
@@ -143,9 +143,9 @@ function Group({
   return (
     <section className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">{title}</h2>
+        <h2 className="text-sm font-medium text-muted">{title}</h2>
         {onAdd ? (
-          <button type="button" onClick={onAdd} className="text-xs text-teal-700 dark:text-teal-400">
+          <button type="button" onClick={onAdd} className="text-xs text-brand dark:text-teal-400">
             + เพิ่ม
           </button>
         ) : null}
@@ -159,8 +159,8 @@ function Group({
               className={cn(
                 'w-full rounded-xl border px-4 py-3 text-left',
                 resource.isActive
-                  ? 'border-slate-200 dark:border-slate-800'
-                  : 'border-dashed border-slate-300 opacity-60 dark:border-slate-700',
+                  ? 'border-line'
+                  : 'border-dashed border-line opacity-60',
               )}
             >
               <span className="block text-sm font-medium">
@@ -171,7 +171,7 @@ function Group({
                 ) : null}
               </span>
               {resource.isHuman ? (
-                <span className="mt-0.5 block text-xs text-slate-500">
+                <span className="mt-0.5 block text-xs text-muted">
                   {resource.serviceIds.length === 0
                     ? 'ยังไม่ได้กำหนดว่าทำบริการอะไรได้ — จะไม่ถูกจัดคิวให้'
                     : `ทำได้ ${resource.serviceIds.length} บริการ`}
@@ -182,7 +182,7 @@ function Group({
           </li>
         ))}
         {items.length === 0 ? (
-          <li className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
+          <li className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-slate-400">
             ยังไม่มีข้อมูล
           </li>
         ) : null}
@@ -242,7 +242,7 @@ function ResourceForm({
         <h2 className="text-lg font-semibold">{resource ? 'แก้ไข' : 'เพิ่ม'}</h2>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">ประเภท</span>
+          <span className="text-xs font-medium text-muted">ประเภท</span>
           <select
             value={typeId}
             onChange={(e) => setTypeId(e.target.value)}
@@ -258,7 +258,7 @@ function ResourceForm({
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">ชื่อ</span>
+          <span className="text-xs font-medium text-muted">ชื่อ</span>
           <input
             name="name"
             required
@@ -274,7 +274,7 @@ function ResourceForm({
 
         {isHuman ? (
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+            <span className="text-xs font-medium text-muted">
               แนะนำตัว (ลูกค้าเห็น)
             </span>
             <input name="bio" defaultValue={resource?.bio ?? ''} className={inputClass} />
@@ -283,7 +283,7 @@ function ResourceForm({
 
         {isHuman ? (
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+            <span className="text-xs font-medium text-muted">
               ทำบริการอะไรได้บ้าง
             </span>
             <div className="flex flex-wrap gap-1.5">
@@ -301,8 +301,8 @@ function ResourceForm({
                     className={cn(
                       'rounded-lg border px-2.5 py-1.5 text-xs',
                       on
-                        ? 'border-teal-600 bg-teal-700 text-white'
-                        : 'border-slate-200 dark:border-slate-700',
+                        ? 'border-brand bg-brand text-brand-contrast'
+                        : 'border-line',
                     )}
                   >
                     {service.name}
@@ -395,11 +395,11 @@ function TimeOffTab({ resources, timeOff, timezone }: Props) {
 
   return (
     <div className="flex flex-col gap-5">
-      <form action={add} className="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+      <form action={add} className="flex flex-col gap-3 rounded-xl border border-line p-4">
         <h2 className="text-sm font-medium">เพิ่มวันลา / ปิดร้าน</h2>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">ใคร</span>
+          <span className="text-xs font-medium text-muted">ใคร</span>
           <select name="resourceId" className={inputClass}>
             <option value="">ปิดทั้งร้าน</option>
             {resources
@@ -414,17 +414,17 @@ function TimeOffTab({ resources, timeOff, timezone }: Props) {
 
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">ตั้งแต่</span>
+            <span className="text-xs font-medium text-muted">ตั้งแต่</span>
             <input type="date" name="startDate" required defaultValue={today} className={inputClass} />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">ถึง</span>
+            <span className="text-xs font-medium text-muted">ถึง</span>
             <input type="date" name="endDate" required defaultValue={today} className={inputClass} />
           </label>
         </div>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">เหตุผล</span>
+          <span className="text-xs font-medium text-muted">เหตุผล</span>
           <input name="reason" placeholder="เช่น ลาพักร้อน, ปิดปรับปรุงร้าน" className={inputClass} />
         </label>
 
@@ -436,9 +436,9 @@ function TimeOffTab({ resources, timeOff, timezone }: Props) {
       </form>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">ที่กำหนดไว้</h2>
+        <h2 className="text-sm font-medium text-muted">ที่กำหนดไว้</h2>
         {timeOff.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
+          <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-slate-400">
             ยังไม่มีวันลา
           </p>
         ) : (
@@ -450,11 +450,11 @@ function TimeOffTab({ resources, timeOff, timezone }: Props) {
               return (
                 <li
                   key={off.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3"
                 >
                   <div>
                     <p className="text-sm font-medium">{person?.name ?? 'ปิดทั้งร้าน'}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted">
                       {thaiDayMonth(start)}
                       {start.hasSame(end, 'day') ? '' : ` – ${thaiDayMonth(end)}`}
                       {off.reason ? ` · ${off.reason}` : ''}

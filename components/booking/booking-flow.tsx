@@ -273,7 +273,7 @@ function StepIndicator({ current, disabled }: { current: number; disabled: numbe
                 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-medium',
                 'transition-[background-color,color,transform] duration-200',
                 index === current
-                  ? 'scale-110 bg-teal-700 text-white shadow-sm shadow-teal-700/30'
+                  ? 'scale-110 bg-brand text-brand-contrast shadow-sm shadow-teal-700/30'
                   : index < current
                     ? 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200'
                     : 'bg-slate-100 text-slate-400 dark:bg-slate-800',
@@ -303,7 +303,7 @@ function StepIndicator({ current, disabled }: { current: number; disabled: numbe
                 index === current
                   ? 'font-medium'
                   : index < current
-                    ? 'text-slate-500'
+                    ? 'text-muted'
                     : 'text-slate-400',
               )}
             >

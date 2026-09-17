@@ -47,7 +47,7 @@ export function StaffStep({
       {/* Said out loud rather than left to be noticed. A shorter list with no
           explanation reads as stylists being away today. */}
       {hiddenCount > 0 ? (
-        <p className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+        <p className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-muted dark:bg-slate-800">
           แสดงเฉพาะช่างที่ทำบริการที่คุณเลือกได้ — ช่างอีก {hiddenCount} คนไม่ได้ทำบริการนี้
         </p>
       ) : null}
@@ -98,18 +98,18 @@ export function StaffStep({
         })}
       </ul>
 
-      <div className="sticky bottom-0 -mx-5 mt-auto flex gap-2 border-t border-slate-200 bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+      <div className="sticky bottom-0 -mx-5 mt-auto flex gap-2 border-t border-line bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:bg-slate-950/95">
         <button
           type="button"
           onClick={onBack}
-          className="ct-press rounded-xl border border-slate-200 px-5 py-3 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
+          className="ct-press rounded-xl border border-line px-5 py-3 text-sm hover:bg-surface-muted"
         >
           ย้อนกลับ
         </button>
         <button
           type="button"
           onClick={onNext}
-          className="flex-1 ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800"
+          className="flex-1 ct-press rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast hover:bg-brand-strong active:bg-brand-strong"
         >
           ถัดไป
         </button>
@@ -159,8 +159,8 @@ function Card({
       className={cn(
         'ct-press relative overflow-hidden rounded-2xl border',
         active
-          ? 'border-teal-600 bg-teal-50 dark:border-teal-500 dark:bg-teal-950/40'
-          : 'border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700',
+          ? 'border-brand bg-teal-50 dark:border-teal-500 dark:bg-teal-950/40'
+          : 'border-line hover:border-line dark:hover:border-slate-700',
       )}
     >
       <button
@@ -189,7 +189,7 @@ function Avatar({
 }) {
   if (photoUrl) {
     return (
-      <span className="relative size-11 shrink-0 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+      <span className="relative size-11 shrink-0 overflow-hidden rounded-full bg-surface-muted">
         <Image src={photoUrl} alt="" fill sizes="44px" className="object-cover" />
       </span>
     );
@@ -201,7 +201,7 @@ function Avatar({
       className={cn(
         'grid size-11 shrink-0 place-items-center rounded-full text-sm font-medium',
         anyone
-          ? 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+          ? 'bg-slate-100 text-muted dark:bg-slate-800'
           : 'bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200',
       )}
     >
@@ -214,7 +214,7 @@ function Text({ name, hint }: { name: string; hint: string | null }) {
   return (
     <span className="min-w-0 flex-1">
       <span className="block truncate text-sm font-medium">{name}</span>
-      {hint ? <span className="mt-0.5 block text-xs text-slate-500">{hint}</span> : null}
+      {hint ? <span className="mt-0.5 block text-xs text-muted">{hint}</span> : null}
     </span>
   );
 }
@@ -226,8 +226,8 @@ function Tick({ shown }: { shown: boolean }) {
       className={cn(
         'grid size-5 shrink-0 place-items-center rounded-full border text-[11px] leading-none',
         shown
-          ? 'border-teal-600 bg-teal-600 text-white dark:border-teal-500 dark:bg-teal-500'
-          : 'border-slate-300 text-transparent dark:border-slate-700',
+          ? 'border-brand bg-teal-600 text-white dark:border-teal-500 dark:bg-teal-500'
+          : 'border-line text-transparent',
       )}
     >
       ✓
@@ -255,7 +255,7 @@ function PortfolioStrip({
 
   return (
     <div className="relative z-10 px-4 pb-3">
-      <p className="mb-1.5 text-[11px] text-slate-500">ผลงานของ{staffName}</p>
+      <p className="mb-1.5 text-[11px] text-muted">ผลงานของ{staffName}</p>
       <div className="ct-scroll-x flex gap-2 overflow-x-auto">
         {shown.map((photo, index) => (
           <button

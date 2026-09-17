@@ -32,7 +32,7 @@ export function PhotoViewer({
         ผลงานของ{staffName}
       </h2>
 
-      <div className="relative mt-3 aspect-square w-full overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
+      <div className="relative mt-3 aspect-square w-full overflow-hidden rounded-xl bg-surface-muted">
         <Image
           src={photo.imageUrl}
           alt={photo.caption ?? `ผลงานของ${staffName}`}
@@ -44,7 +44,7 @@ export function PhotoViewer({
 
       {photo.caption ? <p className="mt-3 text-sm">{photo.caption}</p> : null}
       {photo.serviceName ? (
-        <p className="mt-1 text-xs text-slate-500">{photo.serviceName}</p>
+        <p className="mt-1 text-xs text-muted">{photo.serviceName}</p>
       ) : null}
 
       {photos.length > 1 ? (
@@ -53,18 +53,18 @@ export function PhotoViewer({
             type="button"
             disabled={index === 0}
             onClick={() => onIndexChange(index - 1)}
-            className="ct-press rounded-lg border border-slate-200 px-4 py-2 text-sm disabled:opacity-30 dark:border-slate-700"
+            className="ct-press rounded-lg border border-line px-4 py-2 text-sm disabled:opacity-30"
           >
             ‹ ก่อนหน้า
           </button>
-          <span className="text-xs tabular-nums text-slate-500">
+          <span className="text-xs tabular-nums text-muted">
             {index + 1} / {photos.length}
           </span>
           <button
             type="button"
             disabled={index === photos.length - 1}
             onClick={() => onIndexChange(index + 1)}
-            className="ct-press rounded-lg border border-slate-200 px-4 py-2 text-sm disabled:opacity-30 dark:border-slate-700"
+            className="ct-press rounded-lg border border-line px-4 py-2 text-sm disabled:opacity-30"
           >
             ถัดไป ›
           </button>

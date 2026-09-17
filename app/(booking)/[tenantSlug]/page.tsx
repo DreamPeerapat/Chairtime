@@ -23,7 +23,7 @@ export default async function BookingPage({
 
   if (services.length === 0) {
     return (
-      <p className="py-10 text-center text-sm text-slate-500">
+      <p className="py-10 text-center text-sm text-muted">
         ร้านนี้ยังไม่ได้เปิดให้จองออนไลน์
         {tenant.phone ? ` กรุณาโทร ${tenant.phone}` : ''}
       </p>

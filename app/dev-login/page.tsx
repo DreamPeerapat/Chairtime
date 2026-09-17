@@ -88,13 +88,13 @@ export default async function DevLoginPage() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-5 py-10">
       <div>
         <h1 className="text-lg font-semibold">Dev login</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           ทางลัดสำหรับ dev เท่านั้น — ของจริงล็อกอินผ่าน LINE/Google ที่ /login
         </p>
       </div>
 
       {rows.length === 0 ? (
-        <p className="text-sm text-slate-500">ยังไม่มีร้านที่ seed ไว้ — รัน `pnpm db:seed` ก่อน</p>
+        <p className="text-sm text-muted">ยังไม่มีร้านที่ seed ไว้ — รัน `pnpm db:seed` ก่อน</p>
       ) : (
         rows.map(({ tenant, owner }) =>
           owner ? (
@@ -103,10 +103,10 @@ export default async function DevLoginPage() {
               <input type="hidden" name="staffId" value={owner.staffId} />
               <button
                 type="submit"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-left text-sm dark:border-slate-800"
+                className="w-full rounded-xl border border-line px-4 py-3 text-left text-sm"
               >
                 <span className="font-medium">{tenant.name}</span>
-                <span className="ml-2 text-xs text-slate-500">
+                <span className="ml-2 text-xs text-muted">
                   /{tenant.slug} · {owner.role}
                 </span>
               </button>

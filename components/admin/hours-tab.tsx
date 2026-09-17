@@ -100,7 +100,7 @@ export function HoursTab({
           ))}
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         {target === null
           ? 'เวลาเปิด-ปิดของร้าน ใช้กับทุกคนที่ไม่ได้ตั้งเวลาเฉพาะตัว'
           : 'ถ้าไม่ติ๊กวันไหนเลย คนนี้จะใช้เวลาของร้านแทน'}
@@ -108,7 +108,7 @@ export function HoursTab({
 
       <ul className="flex flex-col gap-3">
         {days.map((day) => (
-          <li key={day.weekday} className="flex flex-col gap-2 border-b border-slate-100 pb-3 last:border-0 dark:border-slate-800">
+          <li key={day.weekday} className="flex flex-col gap-2 border-b border-slate-100 pb-3 last:border-0">
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -165,7 +165,7 @@ export function HoursTab({
                       }))
                     }
                     aria-label={`ลบช่วงที่ ${index + 1} ของวัน${WEEKDAYS[day.weekday]}`}
-                    className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500 dark:border-slate-700"
+                    className="rounded-lg border border-line px-2 py-1 text-xs text-muted"
                   >
                     ลบ
                   </button>
@@ -182,7 +182,7 @@ export function HoursTab({
                     ranges: [...d.ranges, { openTime: '14:00', closeTime: '20:00' }],
                   }))
                 }
-                className="ms-6 w-fit rounded-lg border border-slate-200 px-2.5 py-1 text-xs dark:border-slate-700"
+                className="ms-6 w-fit rounded-lg border border-line px-2.5 py-1 text-xs"
               >
                 + เพิ่มช่วง
               </button>

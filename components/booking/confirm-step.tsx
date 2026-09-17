@@ -106,7 +106,7 @@ export function ConfirmStep({
     <div className="flex flex-1 flex-col gap-4">
       <h2 className="text-base font-semibold">ยืนยันการจอง</h2>
 
-      <dl className="rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-800">
+      <dl className="rounded-xl border border-line px-4 py-3 text-sm">
         <Row label="วันที่" value={thaiDateFull(start)} />
         <Row label="เวลา" value={thaiTimeRange(start, end)} />
         <Row label="ใช้เวลา" value={formatDuration(slot.durationMin)} />
@@ -132,7 +132,7 @@ export function ConfirmStep({
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900"
+              className="w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
               placeholder="ชื่อที่ให้ร้านเรียก"
             />
           </Field>
@@ -143,7 +143,7 @@ export function ConfirmStep({
             onChange={(e) => setPhone(e.target.value)}
             inputMode="tel"
             autoComplete="tel"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900"
+            className="w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
             placeholder="08xxxxxxxx"
           />
         </Field>
@@ -159,7 +159,7 @@ export function ConfirmStep({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={2}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900"
+            className="w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
             placeholder="เช่น แพ้น้ำยาบางชนิด, ขอที่จอดรถ"
           />
         </Field>
@@ -171,9 +171,9 @@ export function ConfirmStep({
         </p>
       ) : null}
 
-      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-slate-200 bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-line bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:bg-slate-950/95">
         {showMissing ? (
-          <p className="mb-2 text-xs text-slate-500">ยังขาด {missing.join(' และ ')}</p>
+          <p className="mb-2 text-xs text-muted">ยังขาด {missing.join(' และ ')}</p>
         ) : null}
 
         <div className="flex gap-2">
@@ -181,7 +181,7 @@ export function ConfirmStep({
             type="button"
             onClick={onBack}
             disabled={submitting}
-            className="ct-press rounded-xl border border-slate-200 px-5 py-3 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
+            className="ct-press rounded-xl border border-line px-5 py-3 text-sm hover:bg-surface-muted"
           >
             ย้อนกลับ
           </button>
@@ -189,7 +189,7 @@ export function ConfirmStep({
             type="button"
             disabled={!canSubmit}
             onClick={submit}
-            className="flex-1 ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800 disabled:opacity-40"
+            className="flex-1 ct-press rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast hover:bg-brand-strong active:bg-brand-strong disabled:opacity-40"
           >
             {submitting ? 'กำลังจอง…' : 'ยืนยันการจอง'}
           </button>
@@ -202,8 +202,8 @@ export function ConfirmStep({
 function Row({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
   const { symbol, digits } = splitBaht(value);
   return (
-    <div className="flex justify-between gap-4 border-b border-slate-100 py-2 last:border-0 dark:border-slate-800/60">
-      <dt className="shrink-0 text-slate-500">{label}</dt>
+    <div className="flex justify-between gap-4 border-b border-slate-100 py-2 last:border-0/60">
+      <dt className="shrink-0 text-muted">{label}</dt>
       <dd className={emphasis ? 'font-semibold' : 'text-right'}>
         {symbol ? <span className="mr-0.5">{symbol}</span> : null}
         <span className={emphasis ? 'tabular-nums' : ''}>{digits}</span>
@@ -223,7 +223,7 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+      <span className="text-xs font-medium text-muted">
         {label}
         {required ? <span className="ml-0.5 text-red-500">*</span> : null}
       </span>

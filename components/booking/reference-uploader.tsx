@@ -77,7 +77,7 @@ export function ReferenceUploader({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+      <span className="text-xs font-medium text-muted">
         รูปตัวอย่างที่อยากได้ (ไม่ใส่ก็ได้)
       </span>
 
@@ -85,7 +85,7 @@ export function ReferenceUploader({
         {images.map((image) => (
           <span
             key={image.pathname}
-            className="relative size-20 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800"
+            className="relative size-20 overflow-hidden rounded-xl bg-surface-muted"
           >
             <Image src={image.url} alt="" fill sizes="80px" className="object-cover" />
             <button
@@ -104,7 +104,7 @@ export function ReferenceUploader({
             type="button"
             disabled={busy}
             onClick={() => inputRef.current?.click()}
-            className="ct-press grid size-20 place-items-center rounded-xl border border-dashed border-slate-300 text-xs text-slate-500 disabled:opacity-40 dark:border-slate-700"
+            className="ct-press grid size-20 place-items-center rounded-xl border border-dashed border-line text-xs text-muted disabled:opacity-40"
           >
             {busy ? '…' : '+ เพิ่มรูป'}
           </button>
@@ -120,7 +120,7 @@ export function ReferenceUploader({
         onChange={(event) => void add(event.target.files)}
       />
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         แนบได้สูงสุด {MAX_REFERENCE_IMAGES} รูป ช่างจะเห็นตอนเตรียมงานให้คุณ
       </p>
 

@@ -83,7 +83,7 @@ export default async function OnboardingPlanPage({
     <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-5 py-10">
       <div>
         <h1 className="text-xl font-semibold">เริ่มต้นใช้งาน Chairtime</h1>
-        <p className="mt-1 text-sm text-slate-500">ตั้งชื่อร้าน เลือกประเภทธุรกิจ และแพ็กเกจ</p>
+        <p className="mt-1 text-sm text-muted">ตั้งชื่อร้าน เลือกประเภทธุรกิจ และแพ็กเกจ</p>
       </div>
 
       {error ? (
@@ -94,23 +94,23 @@ export default async function OnboardingPlanPage({
 
       <form action={submit} className="flex flex-col gap-6">
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">ชื่อร้าน</span>
+          <span className="text-xs font-medium text-muted">ชื่อร้าน</span>
           <input
             name="shopName"
             required
             maxLength={120}
             placeholder="เช่น Nail Bar อารีย์"
-            className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900"
+            className="rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
           />
         </label>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-xs font-medium text-slate-600 dark:text-slate-400">ประเภทธุรกิจ</legend>
+          <legend className="text-xs font-medium text-muted">ประเภทธุรกิจ</legend>
           <div className="grid grid-cols-2 gap-2">
             {templates.map((t, i) => (
               <label
                 key={t.businessType}
-                className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm has-[:checked]:border-teal-600 has-[:checked]:bg-teal-50 dark:border-slate-800 dark:has-[:checked]:bg-teal-950"
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-3 py-2.5 text-sm has-[:checked]:border-brand has-[:checked]:bg-teal-50 dark:has-[:checked]:bg-teal-950"
               >
                 <input
                   type="radio"
@@ -126,21 +126,21 @@ export default async function OnboardingPlanPage({
         </fieldset>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-xs font-medium text-slate-600 dark:text-slate-400">แพ็กเกจ</legend>
+          <legend className="text-xs font-medium text-muted">แพ็กเกจ</legend>
           <div className="flex flex-col gap-2">
             {plans.map((plan, i) => (
               <label
                 key={plan.code}
-                className="flex cursor-pointer items-start justify-between gap-3 rounded-lg border border-slate-200 px-3 py-3 text-sm has-[:checked]:border-teal-600 has-[:checked]:bg-teal-50 dark:border-slate-800 dark:has-[:checked]:bg-teal-950"
+                className="flex cursor-pointer items-start justify-between gap-3 rounded-lg border border-line px-3 py-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-teal-50 dark:has-[:checked]:bg-teal-950"
               >
                 <span className="flex items-start gap-2">
                   <input type="radio" name="planCode" value={plan.code} required defaultChecked={i === 0} className="mt-0.5" />
                   <span>
                     <span className="block font-medium">{plan.name}</span>
                     {plan.trialDays > 0 ? (
-                      <span className="block text-xs text-slate-500">ทดลองใช้ฟรี {plan.trialDays} วัน</span>
+                      <span className="block text-xs text-muted">ทดลองใช้ฟรี {plan.trialDays} วัน</span>
                     ) : (
-                      <span className="block text-xs text-slate-500">
+                      <span className="block text-xs text-muted">
                         {plan.priceMonthly ? `${Number(plan.priceMonthly).toLocaleString('th-TH')} บาท/เดือน` : 'ติดต่อฝ่ายขาย'}
                       </span>
                     )}
@@ -151,7 +151,7 @@ export default async function OnboardingPlanPage({
           </div>
         </fieldset>
 
-        <button type="submit" className="ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800">
+        <button type="submit" className="ct-press rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast hover:bg-brand-strong active:bg-brand-strong">
           เริ่มใช้งาน
         </button>
       </form>

@@ -96,7 +96,7 @@ export default async function SettingsPage() {
       {LOYALTY_ENABLED ? (
         <Link
           href="/dashboard/settings/loyalty"
-          className="ct-press mt-2 block rounded-xl border border-slate-200 px-4 py-3 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
+          className="ct-press mt-2 block rounded-xl border border-line px-4 py-3 text-sm hover:bg-surface-muted"
         >
           ตั้งค่ากติกาแต้มสะสม
         </Link>

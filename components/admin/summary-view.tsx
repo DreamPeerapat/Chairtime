@@ -81,8 +81,8 @@ export function SummaryView({
               className={cn(
                 'ct-press rounded-lg px-3 py-1.5 text-sm',
                 range === option.value
-                  ? 'bg-teal-700 font-medium text-white'
-                  : 'border border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-400',
+                  ? 'bg-brand font-medium text-brand-contrast'
+                  : 'border border-line text-muted',
               )}
             >
               {option.label}
@@ -94,7 +94,7 @@ export function SummaryView({
           <Link
             href={`/dashboard/summary?range=${range}&at=${previousAt}`}
             aria-label="ช่วงก่อนหน้า"
-            className="ct-press rounded-lg border border-slate-200 px-2.5 py-1.5 dark:border-slate-800"
+            className="ct-press rounded-lg border border-line px-2.5 py-1.5"
           >
             ‹
           </Link>
@@ -103,7 +103,7 @@ export function SummaryView({
             <Link
               href={`/dashboard/summary?range=${range}&at=${nextAt}`}
               aria-label="ช่วงถัดไป"
-              className="ct-press rounded-lg border border-slate-200 px-2.5 py-1.5 dark:border-slate-800"
+              className="ct-press rounded-lg border border-line px-2.5 py-1.5"
             >
               ›
             </Link>
@@ -127,7 +127,7 @@ export function SummaryView({
       </dl>
 
       {stats.completed === 0 ? (
-        <p className="rounded-xl border border-slate-200 px-4 py-6 text-center text-sm text-slate-500 dark:border-slate-800">
+        <p className="rounded-xl border border-line px-4 py-6 text-center text-sm text-muted">
           ช่วงนี้ยังไม่มีคิวที่ทำเสร็จ — ตัวเลขจะขึ้นเมื่อกดปุ่ม “เสร็จแล้ว” ที่คิว
         </p>
       ) : (
@@ -140,19 +140,19 @@ export function SummaryView({
           ) : null}
 
           <section className="flex flex-col gap-2">
-            <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            <h2 className="text-sm font-medium text-muted">
               บริการที่ขายได้
             </h2>
             <ul className="flex flex-col gap-1.5">
               {stats.services.map((row) => (
                 <li
                   key={row.serviceName}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-2.5 text-sm dark:border-slate-800"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-2.5 text-sm"
                 >
                   <span className="min-w-0 truncate">{row.serviceName}</span>
                   <span className="shrink-0 text-right">
                     <span className="font-medium">{formatBaht(row.revenue)}</span>
-                    <span className="ml-2 text-xs text-slate-500">{row.bookings} ครั้ง</span>
+                    <span className="ml-2 text-xs text-muted">{row.bookings} ครั้ง</span>
                   </span>
                 </li>
               ))}
@@ -161,17 +161,17 @@ export function SummaryView({
 
           {stats.staff.length > 0 ? (
             <section className="flex flex-col gap-2">
-              <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">รายช่าง</h2>
+              <h2 className="text-sm font-medium text-muted">รายช่าง</h2>
               <ul className="flex flex-col gap-1.5">
                 {stats.staff.map((row) => (
                   <li
                     key={row.staffName}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-2.5 text-sm dark:border-slate-800"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-2.5 text-sm"
                   >
                     <span className="min-w-0 truncate">{row.staffName}</span>
                     <span className="shrink-0 text-right">
                       <span className="font-medium">{formatBaht(row.revenue)}</span>
-                      <span className="ml-2 text-xs text-slate-500">{row.bookings} คิว</span>
+                      <span className="ml-2 text-xs text-muted">{row.bookings} คิว</span>
                     </span>
                   </li>
                 ))}
@@ -198,8 +198,8 @@ function Stat({
   tone?: 'warn';
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800">
-      <dt className="text-xs text-slate-500">{label}</dt>
+    <div className="rounded-xl border border-line px-4 py-3">
+      <dt className="text-xs text-muted">{label}</dt>
       <dd
         className={cn(
           'mt-0.5 font-semibold tabular-nums',

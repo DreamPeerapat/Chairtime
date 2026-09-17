@@ -146,14 +146,14 @@ export function RewardForm({
           <button
             type="button"
             onClick={close}
-            className="rounded-xl border border-slate-200 px-5 py-3 text-sm dark:border-slate-800"
+            className="rounded-xl border border-line px-5 py-3 text-sm"
           >
             ยกเลิก
           </button>
           <button
             type="submit"
             disabled={pending}
-            className="flex-1 rounded-xl bg-teal-700 py-3 text-sm font-medium text-white disabled:opacity-40"
+            className="flex-1 rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast disabled:opacity-40"
           >
             {pending ? 'กำลังบันทึก…' : 'บันทึก'}
           </button>
@@ -165,12 +165,12 @@ export function RewardForm({
 }
 
 const inputClass =
-  'w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900 disabled:opacity-50';
+  'w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900 disabled:opacity-50';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{label}</span>
+      <span className="text-xs font-medium text-muted">{label}</span>
       {children}
     </label>
   );

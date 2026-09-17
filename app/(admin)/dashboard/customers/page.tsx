@@ -26,7 +26,7 @@ export default async function CustomersPage({
         <h1 className="text-lg font-semibold">ลูกค้า</h1>
         <Link
           href={merge ? '/dashboard/customers' : '/dashboard/customers?merge=1'}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs dark:border-slate-800"
+          className="rounded-lg border border-line px-3 py-1.5 text-xs"
         >
           {merge ? 'กลับไปรายชื่อ' : 'หาลูกค้าซ้ำ'}
         </Link>

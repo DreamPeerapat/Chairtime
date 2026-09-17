@@ -74,19 +74,19 @@ export function PointsView({ tenantSlug, liffId }: { tenantSlug: string; liffId:
   }, [liffId, tenantSlug]);
 
   if (status === 'loading') {
-    return <p className="py-10 text-center text-sm text-slate-500">กำลังโหลด...</p>;
+    return <p className="py-10 text-center text-sm text-muted">กำลังโหลด...</p>;
   }
 
   if (status === 'error' || !data) {
-    return <p className="py-10 text-center text-sm text-slate-500">{message}</p>;
+    return <p className="py-10 text-center text-sm text-muted">{message}</p>;
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-2xl border border-slate-200 p-6 text-center dark:border-slate-800">
-        <p className="text-xs text-slate-500">{data.shopName}</p>
-        <p className="mt-2 text-4xl font-semibold text-teal-700 dark:text-teal-400">{data.balance}</p>
-        <p className="text-xs text-slate-500">แต้มคงเหลือ</p>
+      <div className="rounded-2xl border border-line p-6 text-center">
+        <p className="text-xs text-muted">{data.shopName}</p>
+        <p className="mt-2 text-4xl font-semibold text-brand dark:text-teal-400">{data.balance}</p>
+        <p className="text-xs text-muted">แต้มคงเหลือ</p>
       </div>
 
       {data.nextExpiry ? (
@@ -97,7 +97,7 @@ export function PointsView({ tenantSlug, liffId }: { tenantSlug: string; liffId:
 
       <Link
         href={`/${tenantSlug}/rewards`}
-        className="rounded-xl border border-slate-200 px-4 py-3 text-center text-sm font-medium dark:border-slate-800"
+        className="rounded-xl border border-line px-4 py-3 text-center text-sm font-medium"
       >
         แลกแต้มเป็นรางวัล →
       </Link>

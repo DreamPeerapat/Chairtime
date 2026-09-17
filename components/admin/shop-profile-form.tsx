@@ -19,7 +19,7 @@ import { saveShopProfile } from '@/lib/admin/actions';
 import { ErrorText } from './ui';
 
 const field =
-  'rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900';
+  'rounded-lg border border-line px-3 py-2 text-sm dark:bg-slate-900';
 
 export function ShopProfileForm({
   name,
@@ -62,7 +62,7 @@ export function ShopProfileForm({
   return (
     <form
       action={save}
-      className="flex flex-col gap-3 rounded-xl border border-slate-200 px-4 py-4 dark:border-slate-800"
+      className="flex flex-col gap-3 rounded-xl border border-line px-4 py-4"
     >
       <label className="flex flex-col gap-1 text-sm">
         ชื่อร้าน
@@ -102,7 +102,7 @@ export function ShopProfileForm({
         />
       </label>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         เปิด Google Maps → หาร้านของคุณ → กด <span className="font-medium">แชร์</span> →
         คัดลอกลิงก์ มาวางในช่องด้านบน (พิมพ์พิกัดเองก็ได้ เช่น 13.7563, 100.5018)
       </p>
@@ -112,24 +112,24 @@ export function ShopProfileForm({
           href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
           target="_blank"
           rel="noreferrer"
-          className="w-fit text-xs text-teal-700 underline dark:text-teal-400"
+          className="w-fit text-xs text-brand underline dark:text-teal-400"
         >
           ดูจุดที่บันทึกไว้บนแผนที่ — ตรวจว่าหมุดถูกที่
         </a>
       ) : null}
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         ลูกค้าเห็นข้อมูลนี้เมื่อกดปุ่ม ติดต่อ ใน LINE — ถ้าใส่แผนที่ไว้
         ระบบจะส่งการ์ดแผนที่ให้ด้วย กดแล้วนำทางไปร้านได้เลย
       </p>
 
       {error ? <ErrorText>{error}</ErrorText> : null}
-      {saved ? <p className="text-xs text-teal-700 dark:text-teal-400">บันทึกแล้ว</p> : null}
+      {saved ? <p className="text-xs text-brand dark:text-teal-400">บันทึกแล้ว</p> : null}
 
       <button
         type="submit"
         disabled={pending}
-        className="ct-press w-fit rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+        className="ct-press w-fit rounded-xl bg-brand px-5 py-2.5 text-sm font-medium text-brand-contrast disabled:opacity-40"
       >
         {pending ? 'กำลังบันทึก…' : 'บันทึกข้อมูลร้าน'}
       </button>

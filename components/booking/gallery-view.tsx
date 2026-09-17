@@ -29,7 +29,7 @@ export function GalleryView({ photos, shopName }: { photos: PortfolioPhoto[]; sh
 
   if (photos.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-slate-300 px-4 py-12 text-center text-sm text-slate-400 dark:border-slate-700">
+      <p className="rounded-xl border border-dashed border-line px-4 py-12 text-center text-sm text-slate-400">
         ร้านยังไม่ได้ลงรูปผลงาน
       </p>
     );
@@ -59,7 +59,7 @@ export function GalleryView({ photos, shopName }: { photos: PortfolioPhoto[]; sh
             <button
               type="button"
               onClick={() => setOpen(photo)}
-              className="ct-press group relative block aspect-square w-full overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800"
+              className="ct-press group relative block aspect-square w-full overflow-hidden rounded-xl bg-surface-muted"
             >
               <Image
                 src={photo.imageUrl}
@@ -78,7 +78,7 @@ export function GalleryView({ photos, shopName }: { photos: PortfolioPhoto[]; sh
           <h2 id={MODAL_TITLE_ID} className="sr-only">
             {open.caption ?? `ผลงานของ ${shopName}`}
           </h2>
-          <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
+          <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-surface-muted">
             <Image
               src={open.imageUrl}
               alt={open.caption ?? `ผลงานของ ${shopName}`}
@@ -88,7 +88,7 @@ export function GalleryView({ photos, shopName }: { photos: PortfolioPhoto[]; sh
             />
           </div>
           {open.caption ? <p className="mt-3 text-sm">{open.caption}</p> : null}
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-muted">
             {[open.serviceName, open.resourceName && `โดย ${open.resourceName}`]
               .filter(Boolean)
               .join(' · ')}
@@ -116,8 +116,8 @@ function FilterChip({
       className={cn(
         'ct-press shrink-0 rounded-full border px-3.5 py-1.5 text-xs whitespace-nowrap',
         active
-          ? 'border-teal-600 bg-teal-700 text-white'
-          : 'border-slate-200 hover:border-slate-300 dark:border-slate-700',
+          ? 'border-brand bg-brand text-brand-contrast'
+          : 'border-line hover:border-line',
       )}
     >
       {label}

@@ -45,7 +45,7 @@ export default async function LoyaltySettingsPage({
       <h1 className="text-lg font-semibold">กติกาแต้มสะสม</h1>
 
       {ok ? (
-        <p className="rounded-lg bg-teal-50 px-3 py-2 text-sm text-teal-700 dark:bg-teal-950 dark:text-teal-300">
+        <p className="rounded-lg bg-teal-50 px-3 py-2 text-sm text-brand dark:bg-teal-950 dark:text-teal-300">
           บันทึกแล้ว
         </p>
       ) : null}
@@ -59,11 +59,11 @@ export default async function LoyaltySettingsPage({
         <Field label="ใช้กี่บาทถึงได้ 1 แต้ม" name="bahtPerPoint" defaultValue={rule?.bahtPerPoint ?? '100'} suffix="บาท" />
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">การปัดเศษแต้ม</span>
+          <span className="text-xs font-medium text-muted">การปัดเศษแต้ม</span>
           <select
             name="rounding"
             defaultValue={rule?.rounding ?? 'floor'}
-            className="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800 dark:bg-slate-900"
+            className="rounded-lg border border-line px-3 py-2 dark:bg-slate-900"
           >
             <option value="floor">ปัดลง</option>
             <option value="round">ปัดใกล้เคียง</option>
@@ -84,12 +84,12 @@ export default async function LoyaltySettingsPage({
         <Field label="โบนัสวันเกิด" name="birthdayBonus" defaultValue={rule?.birthdayBonus ?? 0} suffix="แต้ม" />
         <Field label="โบนัสแนะนำเพื่อน" name="referralBonus" defaultValue={rule?.referralBonus ?? 0} suffix="แต้ม" />
 
-        <label className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+        <label className="flex items-center gap-2 text-xs font-medium text-muted">
           <input type="checkbox" name="isActive" defaultChecked={rule?.isActive ?? true} />
           เปิดใช้งานระบบแต้ม
         </label>
 
-        <button type="submit" className="ct-press rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800">
+        <button type="submit" className="ct-press rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast hover:bg-brand-strong active:bg-brand-strong">
           บันทึก
         </button>
       </form>
@@ -110,7 +110,7 @@ function Field({
 }) {
   return (
     <label className="flex items-center justify-between gap-3">
-      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{label}</span>
+      <span className="text-xs font-medium text-muted">{label}</span>
       <span className="flex items-center gap-2">
         <input
           type="number"
@@ -118,9 +118,9 @@ function Field({
           step="any"
           min={0}
           defaultValue={defaultValue}
-          className="w-28 rounded-lg border border-slate-200 px-3 py-1.5 text-right text-sm dark:border-slate-800 dark:bg-slate-900"
+          className="w-28 rounded-lg border border-line px-3 py-1.5 text-right text-sm dark:bg-slate-900"
         />
-        <span className="w-16 text-xs text-slate-500">{suffix}</span>
+        <span className="w-16 text-xs text-muted">{suffix}</span>
       </span>
     </label>
   );

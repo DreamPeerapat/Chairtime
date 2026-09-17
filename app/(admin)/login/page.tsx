@@ -33,7 +33,7 @@ export default async function LoginPage({
       <div className="flex w-full max-w-sm flex-col gap-4">
         <div>
           <h1 className="text-xl font-semibold">Chairtime</h1>
-          <p className="mt-1 text-sm text-slate-500">เข้าสู่ระบบหลังร้าน</p>
+          <p className="mt-1 text-sm text-muted">เข้าสู่ระบบหลังร้าน</p>
         </div>
 
         {message ? (
@@ -54,7 +54,7 @@ export default async function LoginPage({
         {googleReady ? (
           <a
             href="/auth/start?provider=google"
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-medium text-slate-800 dark:border-slate-700 dark:text-slate-100"
+            className="flex items-center justify-center gap-2 rounded-xl border border-line py-3 text-sm font-medium text-slate-800 dark:text-slate-100"
           >
             เข้าสู่ระบบด้วย Google
           </a>

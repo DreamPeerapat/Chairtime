@@ -17,7 +17,7 @@ export default async function RewardRedeemPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">เช็คอินโค้ดของรางวัล</h1>
         {hasRole(session, 'manager') ? (
-          <Link href="/dashboard/rewards" className="text-sm text-teal-700 dark:text-teal-400">
+          <Link href="/dashboard/rewards" className="text-sm text-brand dark:text-teal-400">
             จัดการของรางวัล →
           </Link>
         ) : null}

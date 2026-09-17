@@ -18,11 +18,11 @@ export default async function BookingLayout({
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col">
-      <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+      <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
         <div className="min-w-0">
           <h1 className="text-lg font-semibold">{tenant.name}</h1>
           {tenant.address ? (
-            <p className="mt-0.5 text-xs text-slate-500">{tenant.address}</p>
+            <p className="mt-0.5 text-xs text-muted">{tenant.address}</p>
           ) : null}
         </div>
 
@@ -33,7 +33,7 @@ export default async function BookingLayout({
           {tenant.phone ? (
             <a
               href={`tel:${tenant.phone}`}
-              className="ct-press rounded-lg border border-slate-200 px-3 py-1.5 text-xs whitespace-nowrap hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+              className="ct-press rounded-lg border border-line px-3 py-1.5 text-xs whitespace-nowrap hover:bg-surface-muted"
             >
               โทรหาร้าน
             </a>
@@ -44,7 +44,7 @@ export default async function BookingLayout({
           {hasPortfolio ? (
             <Link
               href={`/${tenantSlug}/gallery`}
-              className="ct-press rounded-lg border border-slate-200 px-3 py-1.5 text-xs whitespace-nowrap hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+              className="ct-press rounded-lg border border-line px-3 py-1.5 text-xs whitespace-nowrap hover:bg-surface-muted"
             >
               ดูผลงาน
             </Link>

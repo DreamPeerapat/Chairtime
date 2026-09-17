@@ -33,7 +33,7 @@ export default async function PortfolioPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold">ผลงานของร้าน</h1>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <p className="mt-0.5 text-sm text-muted">
             รูปที่ลูกค้าจะเห็นในหน้าแกลเลอรี่ และตอนเลือกช่าง
           </p>
         </div>

@@ -69,7 +69,7 @@ export function SettingsView(props: Props) {
       <h1 className="text-lg font-semibold">ตั้งค่า</h1>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">ข้อมูลร้าน</h2>
+        <h2 className="text-sm font-medium text-muted">ข้อมูลร้าน</h2>
         <ShopProfileForm
           name={props.tenant.name}
           phone={props.tenant.phone}
@@ -81,19 +81,19 @@ export function SettingsView(props: Props) {
 
       {props.billing ? (
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">แพ็กเกจ</h2>
+          <h2 className="text-sm font-medium text-muted">แพ็กเกจ</h2>
           <div
             className={`rounded-xl border px-4 py-3 text-sm ${
               props.billing.lapsed
                 ? 'border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/40'
-                : 'border-slate-200 dark:border-slate-800'
+                : 'border-line'
             }`}
           >
             <p className="font-medium">{props.billing.label}</p>
-            <p className="mt-0.5 text-xs text-slate-500">{props.billing.detail}</p>
+            <p className="mt-0.5 text-xs text-muted">{props.billing.detail}</p>
             <Link
               href="/dashboard/billing"
-              className="mt-3 inline-block rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium dark:border-slate-700"
+              className="mt-3 inline-block rounded-lg border border-line px-3 py-1.5 text-xs font-medium"
             >
               ดูแพ็กเกจและต่ออายุ
             </Link>
@@ -102,34 +102,34 @@ export function SettingsView(props: Props) {
       ) : null}
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">ลิงก์จองของร้าน</h2>
-        <div className="rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800">
+        <h2 className="text-sm font-medium text-muted">ลิงก์จองของร้าน</h2>
+        <div className="rounded-xl border border-line px-4 py-3">
           <code className="break-all text-sm">{bookingUrl}</code>
-          <p className="mt-1 text-xs text-slate-500">ส่งลิงก์นี้ให้ลูกค้า หรือใส่ใน LINE Official Account</p>
+          <p className="mt-1 text-xs text-muted">ส่งลิงก์นี้ให้ลูกค้า หรือใส่ใน LINE Official Account</p>
         </div>
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">LINE</h2>
-        <div className="rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-800">
+        <h2 className="text-sm font-medium text-muted">LINE</h2>
+        <div className="rounded-xl border border-line px-4 py-3 text-sm">
           {props.lineConnected ? (
             <>
-              <p className="text-teal-700 dark:text-teal-400">เชื่อมต่อแล้ว</p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="text-brand dark:text-teal-400">เชื่อมต่อแล้ว</p>
+              <p className="mt-1 text-xs text-muted">
                 {props.liffId ? `LIFF ID: ${props.liffId}` : 'ยังไม่ได้ตั้ง LIFF ID'}
               </p>
             </>
           ) : (
             <>
-              <p className="text-slate-600 dark:text-slate-300">ยังไม่ได้เชื่อม LINE Official Account</p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="text-muted">ยังไม่ได้เชื่อม LINE Official Account</p>
+              <p className="mt-1 text-xs text-muted">
                 การแจ้งเตือนจะถูกเก็บไว้ในคิวจนกว่าจะเชื่อมต่อ แล้วจะทยอยส่งให้เอง
               </p>
             </>
           )}
           <Link
             href="/dashboard/settings/line"
-            className="mt-3 inline-block rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium dark:border-slate-700"
+            className="mt-3 inline-block rounded-lg border border-line px-3 py-1.5 text-xs font-medium"
           >
             {props.lineConnected ? 'จัดการการเชื่อมต่อ LINE' : 'เชื่อมต่อ LINE OA'}
           </Link>
@@ -138,7 +138,7 @@ export function SettingsView(props: Props) {
 
       {props.policy ? (
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">นโยบายการจอง</h2>
+          <h2 className="text-sm font-medium text-muted">นโยบายการจอง</h2>
           <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             <Item label="ปล่อยช่องทุก" value={`${props.policy.slotGranularityMin} นาที`} />
             <Item label="จองล่วงหน้าอย่างน้อย" value={`${props.policy.minLeadTimeMin} นาที`} />
@@ -154,17 +154,17 @@ export function SettingsView(props: Props) {
 
       {props.role === 'owner' ? (
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">
+          <h2 className="text-sm font-medium text-muted">
             เทมเพลตตามประเภทร้าน
           </h2>
 
           {props.hasServices ? (
-            <p className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <p className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-muted dark:bg-slate-800">
               ร้านนี้มีบริการอยู่แล้ว เทมเพลตใช้ได้เฉพาะร้านที่ยังไม่มีบริการ
               เพื่อไม่ให้เมนูที่แก้ไว้แล้วซ้ำซ้อน
             </p>
           ) : (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               เลือกประเภทร้าน แล้วระบบจะสร้างบริการมาตรฐาน ที่นั่ง และเวลาทำการเริ่มต้นให้ —
               แก้ไขทีหลังได้ทุกอย่าง
             </p>
@@ -188,13 +188,13 @@ export function SettingsView(props: Props) {
                 className={cn(
                   'flex items-center justify-between gap-3 rounded-xl border px-4 py-3',
                   props.hasServices
-                    ? 'border-slate-200 opacity-50 dark:border-slate-800'
-                    : 'border-slate-200 dark:border-slate-800',
+                    ? 'border-line opacity-50'
+                    : 'border-line',
                 )}
               >
                 <div>
                   <p className="text-sm font-medium">{template.label}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted">
                     {template.serviceCount} บริการ · {template.defaultSpaces} {template.spaceLabel}
                   </p>
                 </div>
@@ -202,7 +202,7 @@ export function SettingsView(props: Props) {
                   type="button"
                   disabled={props.hasServices || pending}
                   onClick={() => apply(template.businessType, template.defaultSpaces)}
-                  className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-medium text-white disabled:opacity-40"
+                  className="rounded-lg bg-brand px-3 py-2 text-xs font-medium text-brand-contrast disabled:opacity-40"
                 >
                   {pending ? '…' : 'ใช้เทมเพลตนี้'}
                 </button>
@@ -219,8 +219,8 @@ export function SettingsView(props: Props) {
 
 function Item({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-800">
-      <dt className="text-xs text-slate-500">{label}</dt>
+    <div className="rounded-xl border border-line px-3 py-2">
+      <dt className="text-xs text-muted">{label}</dt>
       <dd className="text-sm font-medium">{value}</dd>
     </div>
   );

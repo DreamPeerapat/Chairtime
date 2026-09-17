@@ -34,15 +34,15 @@ export function CustomerSearch({ query, customers }: { query: string; customers:
           value={term}
           onChange={(e) => setTerm(e.target.value)}
           placeholder="ค้นหาด้วยชื่อหรือเบอร์โทร"
-          className="flex-1 rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900"
+          className="flex-1 rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
         />
-        <button type="submit" className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white">
+        <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-contrast">
           ค้นหา
         </button>
       </form>
 
       {customers.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-400 dark:border-slate-700">
+        <p className="rounded-xl border border-dashed border-line px-4 py-8 text-center text-sm text-slate-400">
           {query ? `ไม่พบลูกค้าที่ตรงกับ "${query}"` : 'ยังไม่มีลูกค้า'}
         </p>
       ) : (
@@ -51,7 +51,7 @@ export function CustomerSearch({ query, customers }: { query: string; customers:
             <li key={customer.id}>
               <Link
                 href={`/dashboard/customers/${customer.id}`}
-                className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-800"
+                className="flex items-start justify-between gap-3 rounded-xl border border-line px-4 py-3"
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">
@@ -60,7 +60,7 @@ export function CustomerSearch({ query, customers }: { query: string; customers:
                       <span className="ml-2 text-xs text-slate-400">รวมแล้ว/บล็อก</span>
                     ) : null}
                   </span>
-                  <span className="mt-0.5 block text-xs text-slate-500">
+                  <span className="mt-0.5 block text-xs text-muted">
                     {customer.phone ?? 'ไม่มีเบอร์'}
                     {customer.lineUserId ? ' · LINE' : ''}
                     {customer.lastVisitAt

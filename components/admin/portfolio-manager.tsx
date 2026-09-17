@@ -39,7 +39,7 @@ export function PortfolioManager({
 
   if (photos.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-400 dark:border-slate-700">
+      <p className="rounded-xl border border-dashed border-line px-4 py-10 text-center text-sm text-slate-400">
         ยังไม่มีรูปผลงาน — กดปุ่มด้านบนเพื่อเพิ่มรูปแรก
       </p>
     );
@@ -52,11 +52,11 @@ export function PortfolioManager({
           <li
             key={photo.id}
             className={cn(
-              'ct-enter overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800',
+              'ct-enter overflow-hidden rounded-xl border border-line',
               !photo.isPublished && 'opacity-60',
             )}
           >
-            <div className="relative aspect-square bg-slate-100 dark:bg-slate-800">
+            <div className="relative aspect-square bg-surface-muted">
               <Image
                 src={photo.imageUrl}
                 alt={photo.caption ?? 'ผลงานของร้าน'}
@@ -72,7 +72,7 @@ export function PortfolioManager({
             </div>
 
             <div className="flex flex-col gap-1.5 p-2.5">
-              <p className="truncate text-xs text-slate-600 dark:text-slate-300">
+              <p className="truncate text-xs text-muted">
                 {photo.caption ?? 'ไม่มีคำอธิบาย'}
               </p>
               <p className="truncate text-[11px] text-slate-400">
@@ -85,7 +85,7 @@ export function PortfolioManager({
                   disabled={pending || index === 0}
                   onClick={() => move(photo.id, 'up')}
                   aria-label="เลื่อนขึ้น"
-                  className="ct-press rounded-md border border-slate-200 px-2 py-1 text-xs disabled:opacity-30 dark:border-slate-700"
+                  className="ct-press rounded-md border border-line px-2 py-1 text-xs disabled:opacity-30"
                 >
                   ↑
                 </button>
@@ -94,14 +94,14 @@ export function PortfolioManager({
                   disabled={pending || index === photos.length - 1}
                   onClick={() => move(photo.id, 'down')}
                   aria-label="เลื่อนลง"
-                  className="ct-press rounded-md border border-slate-200 px-2 py-1 text-xs disabled:opacity-30 dark:border-slate-700"
+                  className="ct-press rounded-md border border-line px-2 py-1 text-xs disabled:opacity-30"
                 >
                   ↓
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditing(photo)}
-                  className="ct-press ml-auto rounded-md border border-slate-200 px-2.5 py-1 text-xs dark:border-slate-700"
+                  className="ct-press ml-auto rounded-md border border-line px-2.5 py-1 text-xs"
                 >
                   แก้ไข
                 </button>
@@ -162,7 +162,7 @@ function PortfolioEditor({
   }
 
   const field =
-    'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900';
+    'w-full rounded-lg border border-line px-3 py-2 text-sm dark:bg-slate-900';
 
   return (
     <Modal onClose={onClose} labelledBy={MODAL_TITLE_ID}>
@@ -173,7 +173,7 @@ function PortfolioEditor({
           </h2>
 
           <div className="mt-4 flex flex-col gap-3">
-            <label className="flex flex-col gap-1 text-xs text-slate-600 dark:text-slate-400">
+            <label className="flex flex-col gap-1 text-xs text-muted">
               คำอธิบาย
               <input
                 value={caption}
@@ -184,7 +184,7 @@ function PortfolioEditor({
               />
             </label>
 
-            <label className="flex flex-col gap-1 text-xs text-slate-600 dark:text-slate-400">
+            <label className="flex flex-col gap-1 text-xs text-muted">
               ช่างที่ทำ
               <select value={resourceId} onChange={(e) => setResourceId(e.target.value)} className={field}>
                 <option value="">ไม่ระบุ</option>
@@ -196,7 +196,7 @@ function PortfolioEditor({
               </select>
             </label>
 
-            <label className="flex flex-col gap-1 text-xs text-slate-600 dark:text-slate-400">
+            <label className="flex flex-col gap-1 text-xs text-muted">
               บริการ
               <select value={serviceId} onChange={(e) => setServiceId(e.target.value)} className={field}>
                 <option value="">ไม่ระบุ</option>
@@ -224,7 +224,7 @@ function PortfolioEditor({
               type="button"
               onClick={close}
               disabled={pending}
-              className="ct-press rounded-xl border border-slate-200 px-4 py-2.5 text-sm hover:bg-slate-50 disabled:opacity-50 dark:border-slate-800 dark:hover:bg-slate-800"
+              className="ct-press rounded-xl border border-line px-4 py-2.5 text-sm hover:bg-slate-50 disabled:opacity-50 dark:hover:bg-slate-800"
             >
               ยกเลิก
             </button>
@@ -232,7 +232,7 @@ function PortfolioEditor({
               type="button"
               onClick={save}
               disabled={pending}
-              className="ct-press flex-1 rounded-xl bg-teal-700 py-2.5 text-sm font-medium text-white hover:bg-teal-600 disabled:opacity-50"
+              className="ct-press flex-1 rounded-xl bg-brand py-2.5 text-sm font-medium text-brand-contrast hover:bg-brand-strong disabled:opacity-50"
             >
               {pending ? 'กำลังบันทึก…' : 'บันทึก'}
             </button>

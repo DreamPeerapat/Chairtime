@@ -45,11 +45,11 @@ export function RevenueChart({
   return (
     <section className="flex flex-col gap-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">{TITLES[range]}</h2>
-        {HINTS[range] ? <p className="text-xs text-slate-500">{HINTS[range]}</p> : null}
+        <h2 className="text-sm font-medium text-muted">{TITLES[range]}</h2>
+        {HINTS[range] ? <p className="text-xs text-muted">{HINTS[range]}</p> : null}
       </div>
 
-      <div className="ct-scroll-x overflow-x-auto rounded-xl border border-slate-200 px-3 py-4 dark:border-slate-800">
+      <div className="ct-scroll-x overflow-x-auto rounded-xl border border-line px-3 py-4">
         <ul className="flex items-end gap-1.5" style={{ minHeight: MAX_BAR + 44 }}>
           {buckets.map((bucket, index) => {
             const value = Number(bucket.revenue);
@@ -75,7 +75,7 @@ export function RevenueChart({
                         : 'bg-teal-600/45 dark:bg-teal-500/45',
                   )}
                 />
-                <span className="text-center text-[10px] leading-tight text-slate-500">
+                <span className="text-center text-[10px] leading-tight text-muted">
                   {bucket.label}
                 </span>
               </>

@@ -81,7 +81,7 @@ export function PortfolioUploader({ tenantId }: { tenantId: string }) {
         type="button"
         disabled={busy}
         onClick={() => inputRef.current?.click()}
-        className="ct-press rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800 disabled:opacity-50"
+        className="ct-press rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-brand-contrast hover:bg-brand-strong active:bg-brand-strong disabled:opacity-50"
       >
         {busy && progress
           ? `กำลังอัปโหลด ${progress.done}/${progress.total}…`

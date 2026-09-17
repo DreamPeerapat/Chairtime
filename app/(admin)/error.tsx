@@ -34,7 +34,7 @@ export default function AdminError({
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center">
       <h1 className="text-lg font-semibold">หน้านี้โหลดไม่สำเร็จ</h1>
-      <p className="text-sm text-slate-600 dark:text-slate-400">
+      <p className="text-sm text-muted">
         ระบบขัดข้องชั่วคราว ข้อมูลการจองและการชำระเงินของร้านยังอยู่ครบ ไม่ได้หายไปไหน
         <br />
         ลองใหม่อีกครั้ง ถ้ายังไม่ได้ให้แจ้งผู้ดูแลระบบพร้อมรหัสด้านล่าง
@@ -43,13 +43,13 @@ export default function AdminError({
       <button
         type="button"
         onClick={() => retry()}
-        className="ct-press rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-medium text-white"
+        className="ct-press rounded-xl bg-brand px-5 py-2.5 text-sm font-medium text-brand-contrast"
       >
         ลองใหม่อีกครั้ง
       </button>
 
       {error.digest ? (
-        <p className="font-mono text-xs text-slate-500">รหัสข้อผิดพลาด {error.digest}</p>
+        <p className="font-mono text-xs text-muted">รหัสข้อผิดพลาด {error.digest}</p>
       ) : null}
     </div>
   );

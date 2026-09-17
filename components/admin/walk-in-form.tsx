@@ -112,7 +112,7 @@ export function WalkInForm({
         </h2>
 
         <section className="mt-4">
-          <h3 className="mb-2 text-xs font-medium text-slate-500">บริการ</h3>
+          <h3 className="mb-2 text-xs font-medium text-muted">บริการ</h3>
           <div className="flex flex-wrap gap-1.5">
             {services.map((service) => (
               <button
@@ -122,8 +122,8 @@ export function WalkInForm({
                 className={cn(
                   'rounded-lg border px-3 py-1.5 text-xs',
                   serviceId === service.id
-                    ? 'border-teal-600 bg-teal-700 text-white'
-                    : 'border-slate-200 dark:border-slate-700',
+                    ? 'border-brand bg-brand text-brand-contrast'
+                    : 'border-line',
                 )}
               >
                 {service.name}
@@ -134,7 +134,7 @@ export function WalkInForm({
 
         {serviceId ? (
           <section className="mt-4">
-            <h3 className="mb-2 text-xs font-medium text-slate-500">ช่าง</h3>
+            <h3 className="mb-2 text-xs font-medium text-muted">ช่าง</h3>
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
@@ -142,8 +142,8 @@ export function WalkInForm({
                 className={cn(
                   'rounded-lg border px-3 py-1.5 text-xs',
                   staffId === null
-                    ? 'border-teal-600 bg-teal-700 text-white'
-                    : 'border-slate-200 dark:border-slate-700',
+                    ? 'border-brand bg-brand text-brand-contrast'
+                    : 'border-line',
                 )}
               >
                 ใครก็ได้
@@ -156,8 +156,8 @@ export function WalkInForm({
                   className={cn(
                     'rounded-lg border px-3 py-1.5 text-xs',
                     staffId === person.id
-                      ? 'border-teal-600 bg-teal-700 text-white'
-                      : 'border-slate-200 dark:border-slate-700',
+                      ? 'border-brand bg-brand text-brand-contrast'
+                      : 'border-line',
                   )}
                 >
                   {person.name}
@@ -169,11 +169,11 @@ export function WalkInForm({
 
         {serviceId ? (
           <section className="mt-4">
-            <h3 className="mb-2 text-xs font-medium text-slate-500">เวลา</h3>
+            <h3 className="mb-2 text-xs font-medium text-muted">เวลา</h3>
             {loading ? (
               <p className="text-sm text-slate-400">กำลังหาเวลาว่าง…</p>
             ) : slots.length === 0 ? (
-              <p className="text-sm text-slate-500">ไม่มีเวลาว่างเหลือในวันนี้</p>
+              <p className="text-sm text-muted">ไม่มีเวลาว่างเหลือในวันนี้</p>
             ) : (
               <div className="grid grid-cols-4 gap-1.5">
                 {slots.slice(0, 16).map((option) => (
@@ -184,8 +184,8 @@ export function WalkInForm({
                     className={cn(
                       'rounded-lg border py-1.5 text-xs tabular-nums',
                       slot?.startsAt === option.startsAt
-                        ? 'border-teal-600 bg-teal-700 text-white'
-                        : 'border-slate-200 dark:border-slate-700',
+                        ? 'border-brand bg-brand text-brand-contrast'
+                        : 'border-line',
                     )}
                   >
                     {DateTime.fromISO(option.startsAt).setZone(calendar.timezone).toFormat('HH:mm')}
@@ -201,14 +201,14 @@ export function WalkInForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="ชื่อลูกค้า (ไม่ใส่ก็ได้)"
-            className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900"
+            className="rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
           />
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             inputMode="tel"
             placeholder="เบอร์โทร (ไม่ใส่ก็ได้)"
-            className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-800 dark:bg-slate-900"
+            className="rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
           />
         </section>
 
@@ -222,7 +222,7 @@ export function WalkInForm({
           <button
             type="button"
             onClick={close}
-            className="ct-press rounded-xl border border-slate-200 px-5 py-3 text-sm hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
+            className="ct-press rounded-xl border border-line px-5 py-3 text-sm hover:bg-surface-muted"
           >
             ยกเลิก
           </button>
@@ -230,7 +230,7 @@ export function WalkInForm({
             type="button"
             disabled={!slot || pending}
             onClick={submit}
-            className="ct-press flex-1 rounded-xl bg-teal-700 py-3 text-sm font-medium text-white hover:bg-teal-600 active:bg-teal-800 disabled:opacity-40"
+            className="ct-press flex-1 rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast hover:bg-brand-strong active:bg-brand-strong disabled:opacity-40"
           >
             {pending ? 'กำลังสร้าง…' : 'สร้างคิว'}
           </button>

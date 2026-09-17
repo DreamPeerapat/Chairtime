@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 /**
@@ -12,9 +13,14 @@ export function SiteNav() {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-surface/85 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="grid size-8 place-items-center rounded-lg bg-brand text-sm font-semibold text-brand-contrast">
-            C
+        <Link href="/" className="flex items-center gap-2.5">
+          {/*
+            The mark is artwork on black, so it keeps its own dark tile in both
+            themes rather than sitting in a white square in light mode with a
+            black box inside it.
+          */}
+          <span className="relative size-9 shrink-0 overflow-hidden rounded-xl bg-[#0b1220]">
+            <Image src="/logo-mark.png" alt="" fill sizes="36px" className="object-cover" priority />
           </span>
           <span className="text-base font-semibold tracking-tight">Chairtime</span>
         </Link>
