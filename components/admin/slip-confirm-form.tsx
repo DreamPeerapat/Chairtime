@@ -32,12 +32,12 @@ export function SlipConfirmForm({
       <button
         type="submit"
         disabled={slipRequired && !slipUrl}
-        className="ct-press w-full rounded-xl bg-teal-700 py-3 text-sm font-medium text-white disabled:opacity-50"
+        className="ct-press w-full rounded-xl bg-brand  py-3  text-sm font-medium text-brand-contrast disabled:opacity-50"
       >
         {slipRequired && !slipUrl ? 'แนบสลิปก่อนจึงจะยืนยันได้' : 'โอนแล้ว ตรวจสอบเลย'}
       </button>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         {slipRequired
           ? 'ระบบจะอ่านสลิปแล้วตรวจยอดกับธนาคารทันที ถ้าไม่ตรงจะยังไม่ต่ออายุให้'
           : 'แนบสลิปไว้ด้วยก็ได้ จะช่วยให้ตรวจสอบย้อนหลังง่ายขึ้น'}

@@ -128,6 +128,8 @@ export interface PurchasablePlan {
   code: string;
   name: string;
   priceMonthly: string;
+  /** null when the plan is not sold by the year */
+  priceYearly: string | null;
 }
 
 /**
@@ -144,6 +146,7 @@ export async function purchasablePlans(): Promise<PurchasablePlan[]> {
       code: schema.subscriptionPlan.code,
       name: schema.subscriptionPlan.name,
       priceMonthly: schema.subscriptionPlan.priceMonthly,
+      priceYearly: schema.subscriptionPlan.priceYearly,
     })
     .from(schema.subscriptionPlan)
     .where(eq(schema.subscriptionPlan.isActive, true))

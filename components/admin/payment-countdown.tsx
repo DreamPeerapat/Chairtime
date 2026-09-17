@@ -43,7 +43,7 @@ function Unit({ value, label }: { value: number; label: string }) {
   return (
     <div className="text-center">
       <div className="text-3xl font-semibold tabular-nums">{String(value).padStart(2, '0')}</div>
-      <div className="text-[11px] text-slate-500">{label}</div>
+      <div className="text-[11px] text-muted">{label}</div>
     </div>
   );
 }

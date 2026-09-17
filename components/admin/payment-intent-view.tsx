@@ -54,7 +54,7 @@ export function PaymentIntentView({
     <div className="mx-auto flex w-full max-w-lg flex-col gap-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-lg font-semibold">ชำระค่าบริการ</h1>
-        <p className="font-mono text-xs text-slate-500">{intent.reference}</p>
+        <p className="font-mono text-xs text-muted">{intent.reference}</p>
       </div>
 
       <PaymentSteps current={step} />
@@ -69,8 +69,8 @@ export function PaymentIntentView({
         <PaidPanel intent={intent} />
       ) : open ? (
         <>
-          <section className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 px-4 py-5 dark:border-slate-800">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+          <section className="flex flex-col items-center gap-3 rounded-2xl border border-line px-4 py-5">
+            <p className="text-sm text-muted">
               กรุณาชำระเงินภายใน
             </p>
             <PaymentCountdown expiresAt={intent.expiresAt} />
@@ -85,14 +85,14 @@ export function PaymentIntentView({
               />
             </div>
 
-            <p className="text-center text-xs text-slate-500">
+            <p className="text-center text-xs text-muted">
               สแกนด้วยแอปธนาคารใดก็ได้ · ยอดในโค้ดถูกใส่ไว้แล้ว ไม่ต้องพิมพ์เอง
               <br />
               หรือโอนเข้า {payee.bank} {payee.accountNumber} ({payee.accountName})
             </p>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 px-4 py-4 dark:border-slate-800">
+          <section className="rounded-2xl border border-line px-4 py-4">
             <SlipConfirmForm
               tenantId={tenantId}
               slipRequired={slipChecking}
@@ -104,8 +104,8 @@ export function PaymentIntentView({
         <ClosedPanel status={intent.status} />
       )}
 
-      <section className="rounded-2xl border border-slate-200 px-4 py-4 text-sm dark:border-slate-800">
-        <h2 className="text-xs font-medium text-slate-500">รายละเอียดการชำระเงิน</h2>
+      <section className="rounded-2xl border border-line px-4 py-4 text-sm">
+        <h2 className="text-xs font-medium text-muted">รายละเอียดการชำระเงิน</h2>
         <dl className="mt-3 flex flex-col gap-1.5">
           <Row label="แพ็กเกจ" value={`${intent.planName ?? '—'} · ${intent.months} เดือน`} />
           <Row label="ยอดที่ต้องชำระ" value={formatBaht(intent.amount)} />
@@ -120,7 +120,7 @@ export function PaymentIntentView({
         </dl>
       </section>
 
-      <Link href="/dashboard/billing" className="text-center text-xs text-slate-500 underline">
+      <Link href="/dashboard/billing" className="text-center text-xs text-muted underline">
         กลับไปหน้าแพ็กเกจ
       </Link>
     </div>
@@ -129,9 +129,9 @@ export function PaymentIntentView({
 
 function PaidPanel({ intent }: { intent: PaymentIntentForView }) {
   return (
-    <section className="flex flex-col items-center gap-3 rounded-2xl border border-teal-300 bg-teal-50 px-4 py-6 text-center dark:border-teal-900 dark:bg-teal-950/40">
+    <section className="flex flex-col items-center gap-3 rounded-2xl border border-brand bg-brand-soft px-4 py-6 text-center">
       <p className="text-base font-semibold">ได้รับการชำระเงินแล้ว</p>
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+      <p className="text-sm text-muted">
         {intent.receiptUrl
           ? 'ต่ออายุให้เรียบร้อย ใบเสร็จส่งไปที่อีเมลของร้านแล้ว'
           : 'ต่ออายุให้เรียบร้อยแล้ว'}
@@ -141,12 +141,12 @@ function PaidPanel({ intent }: { intent: PaymentIntentForView }) {
           href={intent.receiptUrl}
           target="_blank"
           rel="noreferrer"
-          className="ct-press rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-medium text-white"
+          className="ct-press rounded-xl bg-brand  px-5 py-2.5 text-sm font-medium text-brand-contrast"
         >
           เปิดใบเสร็จ {intent.receiptNumber ?? ''}
         </a>
       ) : (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           ใบเสร็จออกทีหลังได้ — เปิดดูได้จากประวัติการชำระเงินในหน้าแพ็กเกจ
         </p>
       )}
@@ -156,16 +156,16 @@ function PaidPanel({ intent }: { intent: PaymentIntentForView }) {
 
 function ClosedPanel({ status }: { status: string }) {
   return (
-    <section className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 px-4 py-6 text-center dark:border-slate-800">
+    <section className="flex flex-col items-center gap-3 rounded-2xl border border-line px-4 py-6 text-center">
       <p className="text-base font-semibold">
         {status === 'cancelled' ? 'รายการนี้ถูกยกเลิก' : 'หมดเวลาชำระเงินแล้ว'}
       </p>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         QR ที่มียอดเงินใช้ได้ครั้งเดียวและมีอายุจำกัด สร้างรายการใหม่ได้ทันที ไม่มีค่าใช้จ่าย
       </p>
       <Link
         href="/dashboard/billing"
-        className="ct-press rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-medium text-white"
+        className="ct-press rounded-xl bg-brand  px-5 py-2.5 text-sm font-medium text-brand-contrast"
       >
         สร้างรายการใหม่
       </Link>
@@ -176,7 +176,7 @@ function ClosedPanel({ status }: { status: string }) {
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="shrink-0 text-slate-500">{label}</dt>
+      <dt className="shrink-0 text-muted">{label}</dt>
       <dd className={`text-right font-medium ${mono ? 'font-mono text-xs' : ''}`}>{value}</dd>
     </div>
   );

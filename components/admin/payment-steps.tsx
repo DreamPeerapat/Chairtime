@@ -26,22 +26,22 @@ export function PaymentSteps({ current }: { current: 1 | 2 | 3 | 4 }) {
             key={step.title}
             className={`flex flex-1 items-center gap-2 rounded-xl border px-3 py-2 ${
               active
-                ? 'border-teal-600 bg-teal-50 dark:bg-teal-950/40'
-                : 'border-slate-200 dark:border-slate-800'
+                ? 'border-brand bg-brand-soft'
+                : 'border-line'
             }`}
           >
             <span
               className={`grid size-6 shrink-0 place-items-center rounded-full text-xs font-medium ${
                 done || active
-                  ? 'bg-teal-700 text-white'
-                  : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                  ? 'bg-brand text-white'
+                  : 'bg-surface-muted text-muted'
               }`}
             >
               {done ? '✓' : number}
             </span>
             <span className="min-w-0">
               <span className="block truncate text-xs font-medium">{step.title}</span>
-              <span className="block truncate text-[11px] text-slate-500">{step.caption}</span>
+              <span className="block truncate text-[11px] text-muted">{step.caption}</span>
             </span>
           </li>
         );

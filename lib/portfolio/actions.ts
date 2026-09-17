@@ -14,6 +14,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { schema } from '@/lib/db/client';
 import { withTenant } from '@/lib/db/tenant';
 import { requireSession } from '@/lib/auth';
+import { entitlementsFor } from '@/lib/billing/entitlements';
 import { findBlobPathname } from './queries';
 import { portfolioItemSchema, portfolioUpdateSchema } from './validation';
 import { z } from 'zod';
@@ -39,6 +40,29 @@ export async function addPortfolioItem(input: unknown): Promise<ActionResult> {
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'ข้อมูลไม่ถูกต้อง');
 
   const { imageUrl, blobPathname, caption, resourceId, serviceId } = parsed.data;
+
+  // The plan's cap, checked where the row is written rather than where the
+  // button is drawn: the uploader is a client component and a disabled button
+  // is a suggestion. Counted inside the same call that inserts, so two photos
+  // picked at once cannot both see room for one.
+  const limit = (await entitlementsFor(session.tenantId)).maxPortfolioItems;
+
+  const full = await withTenant(session.tenantId, async (tx) => {
+    if (limit !== null) {
+      const [row] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(schema.portfolioItem)
+        .where(eq(schema.portfolioItem.tenantId, session.tenantId));
+      if ((row?.count ?? 0) >= limit) return true;
+    }
+    return false;
+  });
+
+  if (full) {
+    return fail(
+      `แพ็กเกจนี้เก็บผลงานได้ ${limit} รูป — ลบรูปเก่าออกก่อน หรืออัปเกรดเป็น Pro เพื่อลงได้ไม่จำกัด`,
+    );
+  }
 
   await withTenant(session.tenantId, async (tx) => {
     // New photos go to the front: the shop just chose to show this one.

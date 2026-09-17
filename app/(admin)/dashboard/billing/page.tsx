@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireSession } from '@/lib/auth';
 import { loadBillingState, purchasablePlans } from '@/lib/billing/access';
 import { totalForMonths } from '@/lib/billing/amount';
+import { TERM_MONTHS } from '@/lib/billing/catalog';
 import { IntentError, createIntent } from '@/lib/billing/intent';
 import { PLATFORM_PAYEE } from '@/lib/billing/platform';
 import { MAX_MONTHS, MIN_MONTHS, listPayments } from '@/lib/billing/renew';
@@ -19,7 +20,7 @@ export const dynamic = 'force-dynamic';
  * the QR, and the QR is what somebody's banking app is about to obey.
  */
 const purchaseSchema = z.object({
-  months: z.coerce.number().int().min(MIN_MONTHS).max(MAX_MONTHS),
+  term: z.enum(['monthly', 'yearly']),
   planId: z.uuid(),
 });
 
@@ -51,7 +52,7 @@ export default async function BillingPage({
     const active = await requireSession('owner');
 
     const parsed = purchaseSchema.safeParse({
-      months: formData.get('months'),
+      term: formData.get('term'),
       planId: formData.get('planId'),
     });
     if (!parsed.success) redirect('/dashboard/billing?error=invalid');
@@ -59,15 +60,22 @@ export default async function BillingPage({
     const plan = (await purchasablePlans()).find((p) => p.id === parsed.data.planId);
     if (!plan) redirect('/dashboard/billing?error=invalid');
 
-    const amount = totalForMonths(plan.priceMonthly, parsed.data.months);
-    if (!amount) redirect('/dashboard/billing?error=invalid');
+    // A year has its own price rather than twelve times the monthly one, and
+    // the price is read from the plan's row here — the form's total is what
+    // the shop was shown, not what it gets charged.
+    const yearly = parsed.data.term === 'yearly' && plan.priceYearly;
+    const months = yearly ? TERM_MONTHS.yearly : TERM_MONTHS.monthly;
+    const amount = yearly ? plan.priceYearly! : totalForMonths(plan.priceMonthly, 1);
+    if (!amount || months < MIN_MONTHS || months > MAX_MONTHS) {
+      redirect('/dashboard/billing?error=invalid');
+    }
 
     let reference: string;
     try {
       const intent = await createIntent({
         tenantId: active.tenantId,
         planId: plan.id,
-        months: parsed.data.months,
+        months,
         amount,
       });
       reference = intent.reference;

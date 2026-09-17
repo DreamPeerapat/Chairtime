@@ -3,6 +3,7 @@ import { DateTime } from 'luxon';
 import { requireSession } from '@/lib/auth';
 import { db, schema } from '@/lib/db/client';
 import { loadPeriodStats, periodFor, type StatsRange } from '@/lib/admin/stats';
+import { entitlementsFor } from '@/lib/billing/entitlements';
 import { SummaryView } from '@/components/admin/summary-view';
 
 export const dynamic = 'force-dynamic';
@@ -19,9 +20,16 @@ export default async function SummaryPage({
   const session = await requireSession('manager');
   const params = await searchParams;
 
-  const range = RANGES.includes(params.range as StatsRange)
-    ? (params.range as StatsRange)
-    : 'month';
+  // Basic buys this week's numbers; the range switch, the history and the
+  // chart are Pro. Enforced here rather than by hiding the links, because a
+  // hidden link is still a URL somebody can type.
+  const { reports } = await entitlementsFor(session.tenantId);
+
+  const range = !reports
+    ? 'week'
+    : RANGES.includes(params.range as StatsRange)
+      ? (params.range as StatsRange)
+      : 'month';
 
   const [tenant] = await db
     .select({ timezone: schema.tenant.timezone })
@@ -34,7 +42,7 @@ export default async function SummaryPage({
   // to one week still means that week tomorrow — which is what makes drilling
   // from a month into one of its weeks a plain link.
   const anchor =
-    params.at && /^\d{4}-\d{2}-\d{2}$/.test(params.at)
+    reports && params.at && /^\d{4}-\d{2}-\d{2}$/.test(params.at)
       ? DateTime.fromISO(params.at, { zone: timezone })
       : DateTime.now().setZone(timezone);
 
@@ -48,6 +56,7 @@ export default async function SummaryPage({
   return (
     <SummaryView
       range={range}
+      reports={reports}
       timezone={timezone}
       previousAt={previous.start.toISODate()!}
       nextAt={isCurrent ? null : next.start.toISODate()!}

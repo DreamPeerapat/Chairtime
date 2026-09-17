@@ -1,7 +1,6 @@
 import { DateTime } from 'luxon';
 import type { BillingState, PurchasablePlan } from '@/lib/billing/access';
 import { formatBaht } from '@/lib/billing/amount';
-import { MAX_MONTHS } from '@/lib/billing/renew';
 import { thaiDateFull } from '@/components/booking/format';
 import { RenewalForm } from './renewal-form';
 
@@ -69,12 +68,12 @@ export function BillingView({
       ) : null}
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">สถานะตอนนี้</h2>
+        <h2 className="text-sm font-medium text-muted">สถานะตอนนี้</h2>
         <div
           className={`rounded-xl border px-4 py-4 ${
             lapsed
               ? 'border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/40'
-              : 'border-slate-200 dark:border-slate-800'
+              : 'border-line'
           }`}
         >
           <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -110,18 +109,18 @@ export function BillingView({
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">วิธีต่ออายุ</h2>
+        <h2 className="text-sm font-medium text-muted">วิธีต่ออายุ</h2>
 
-        <ol className="flex flex-col gap-1 rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-800">
-          <li className="text-xs text-slate-500">
+        <ol className="flex flex-col gap-1 rounded-xl border border-line px-4 py-3 text-sm">
+          <li className="text-xs text-muted">
             1. เลือกแพ็กเกจแล้วกดสร้าง QR — หน้าถัดไปจะมี QR พร้อมยอด หรือจะโอนเข้าบัญชีนี้ก็ได้
           </li>
-          <li className="my-1 rounded-lg bg-slate-100 px-3 py-2 dark:bg-slate-900">
+          <li className="my-1 rounded-lg bg-surface-muted px-3 py-2">
             <p className="font-medium">{payee.bank}</p>
             <p className="font-mono text-base tracking-wide">{payee.accountNumber}</p>
-            <p className="text-xs text-slate-500">{payee.accountName}</p>
+            <p className="text-xs text-muted">{payee.accountName}</p>
           </li>
-          <li className="text-xs text-slate-500">
+          <li className="text-xs text-muted">
             2. โอนตามยอดใน QR แล้วแนบสลิปกดยืนยัน ใบเสร็จจะส่งเข้าอีเมลและ LINE ของร้าน
           </li>
         </ol>
@@ -129,16 +128,15 @@ export function BillingView({
         <RenewalForm
           plans={plans}
           defaultPlanId={defaultPlan?.id ?? ''}
-          maxMonths={MAX_MONTHS}
           slipChecking={slipChecking}
           onSubmit={onSubmit}
         />
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-slate-600 dark:text-slate-400">ประวัติการชำระเงิน</h2>
+        <h2 className="text-sm font-medium text-muted">ประวัติการชำระเงิน</h2>
         {payments.length === 0 ? (
-          <p className="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-500 dark:border-slate-800">
+          <p className="rounded-xl border border-line px-4 py-3 text-sm text-muted">
             ยังไม่มีรายการ
           </p>
         ) : (
@@ -146,11 +144,11 @@ export function BillingView({
             {payments.map((p) => (
               <li
                 key={p.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-800"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line px-4 py-3 text-sm"
               >
                 <div>
                   <p className="font-medium">{formatBaht(p.amount)}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted">
                     โอน {thaiDateFull(DateTime.fromISO(p.paidAt).setZone(ZONE))} · ครอบคลุมถึง{' '}
                     {thaiDateFull(DateTime.fromISO(p.periodEnd).setZone(ZONE))}
                   </p>
@@ -159,7 +157,7 @@ export function BillingView({
                       href={p.receiptUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-xs text-teal-700 underline dark:text-teal-300"
+                      className="text-xs text-brand underline"
                     >
                       ใบเสร็จ {p.receiptNumber ?? ''} (PDF)
                     </a>
@@ -178,7 +176,7 @@ export function BillingView({
 function Banner({ tone, children }: { tone: 'ok' | 'error'; children: React.ReactNode }) {
   const cls =
     tone === 'ok'
-      ? 'bg-teal-50 text-teal-800 dark:bg-teal-950/50 dark:text-teal-200'
+      ? 'bg-brand-soft text-brand'
       : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300';
   return <p className={`rounded-lg px-3 py-2 text-sm ${cls}`}>{children}</p>;
 }
@@ -186,7 +184,7 @@ function Banner({ tone, children }: { tone: 'ok' | 'error'; children: React.Reac
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="shrink-0 text-slate-500">{label}</dt>
+      <dt className="shrink-0 text-muted">{label}</dt>
       <dd className="text-right font-medium">{value}</dd>
     </div>
   );
@@ -208,7 +206,7 @@ function StatusChip({ status, onTrial }: { status: string; onTrial: boolean }) {
     <span
       className={`rounded-full px-2.5 py-1 text-xs font-medium ${
         status === 'active'
-          ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200'
+          ? 'bg-brand-soft text-brand'
           : 'bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200'
       }`}
     >
@@ -224,10 +222,10 @@ function PaymentChip({ status }: { status: string }) {
     <span
       className={`shrink-0 rounded-full px-2.5 py-1 text-xs ${
         status === 'verified'
-          ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200'
+          ? 'bg-brand-soft text-brand'
           : status === 'rejected'
             ? 'bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200'
-            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+            : 'bg-surface-muted text-muted'
       }`}
     >
       {label}

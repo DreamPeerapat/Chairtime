@@ -34,9 +34,16 @@ export function SummaryView({
   previousAt,
   nextAt,
   stats,
+  reports = true,
 }: {
   range: StatsRange;
   timezone: string;
+  /**
+   * Whether the plan includes the reporting half of this page: the range
+   * switch, moving between periods, and the chart. Without it the shop still
+   * sees this week's numbers, which is what Basic is sold as.
+   */
+  reports?: boolean;
   previousAt: string;
   /** null while looking at the current period — there is nothing ahead of it */
   nextAt: string | null;
@@ -48,7 +55,24 @@ export function SummaryView({
     <div className="flex flex-col gap-5">
       <h1 className="text-lg font-semibold">สรุปยอด</h1>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {!reports ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-muted px-4 py-3">
+          <p className="text-sm">
+            <span className="font-medium">{stats.periodLabel}</span>
+            <span className="ml-2 text-muted">
+              แพ็กเกจ Basic ดูได้เฉพาะสัปดาห์นี้ — กราฟรายได้และย้อนหลังอยู่ในแพ็กเกจ Pro
+            </span>
+          </p>
+          <Link
+            href="/dashboard/billing"
+            className="ct-press shrink-0 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-contrast"
+          >
+            อัปเกรดเป็น Pro
+          </Link>
+        </div>
+      ) : null}
+
+      <div className={cn('flex flex-wrap items-center justify-between gap-3', !reports && 'hidden')}>
         <div className="flex gap-1">
           {RANGE_LABELS.map((option) => (
             <Link
@@ -155,7 +179,7 @@ export function SummaryView({
             </section>
           ) : null}
 
-          <RevenueChart range={range} buckets={stats.buckets} />
+          {reports ? <RevenueChart range={range} buckets={stats.buckets} /> : null}
         </>
       )}
     </div>
