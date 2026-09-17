@@ -1,7 +1,9 @@
 import { DateTime } from 'luxon';
 import type { BillingState, PurchasablePlan } from '@/lib/billing/access';
 import { formatBaht } from '@/lib/billing/amount';
+import type { BillingIdentityInput } from '@/lib/billing/identity';
 import { thaiDateFull } from '@/components/booking/format';
+import { BillingIdentityForm } from './billing-identity-form';
 import { RenewalForm } from './renewal-form';
 
 export interface BillingPaymentRow {
@@ -32,6 +34,11 @@ export function BillingView({
   notice,
   slipReason,
   slipChecking,
+  identity,
+  identitySaved,
+  identityError,
+  shopName,
+  onSaveIdentity,
   onSubmit,
 }: {
   state: BillingState;
@@ -43,6 +50,12 @@ export function BillingView({
   slipReason?: string | null;
   /** whether an attached slip is checked against the bank */
   slipChecking: boolean;
+  /** what to print on this shop's documents; empty fields fall back */
+  identity: BillingIdentityInput;
+  identitySaved?: boolean;
+  identityError?: string | null;
+  shopName: string;
+  onSaveIdentity: (formData: FormData) => Promise<void>;
   onSubmit: (formData: FormData) => Promise<void>;
 }) {
   const lapsed = state.status !== 'active';
@@ -130,6 +143,15 @@ export function BillingView({
           defaultPlanId={defaultPlan?.id ?? ''}
           slipChecking={slipChecking}
           onSubmit={onSubmit}
+        />
+
+        <BillingIdentityForm
+          values={identity}
+          shopName={shopName}
+          fallbackEmail=""
+          saved={identitySaved}
+          error={identityError}
+          onSubmit={onSaveIdentity}
         />
       </section>
 

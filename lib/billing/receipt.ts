@@ -229,6 +229,8 @@ async function paymentDetails(
         name: schema.tenant.name,
         address: schema.tenant.address,
         taxId: schema.tenant.taxId,
+        billingName: schema.tenant.billingName,
+        billingAddress: schema.tenant.billingAddress,
         billingEmail: schema.tenant.billingEmail,
         timezone: schema.tenant.timezone,
       })
@@ -236,6 +238,9 @@ async function paymentDetails(
       .where(eq(schema.tenant.id, tenantId));
     if (!shop) return null;
 
+    // The billing identity wins where it was filled in: a salon trading as
+    // "The Hair" may be invoiced as a company, and its accountant cannot file
+    // a document made out to the shopfront.
     const email = shop.billingEmail ?? (await ownerEmail(tx, tenantId));
 
     const months = monthsBetween(payment.periodStart, payment.periodEnd);
@@ -248,8 +253,8 @@ async function paymentDetails(
       periodEnd: payment.periodEnd,
       note: payment.note,
       planName: payment.planName,
-      shopName: shop.name,
-      address: shop.address,
+      shopName: shop.billingName ?? shop.name,
+      address: shop.billingAddress ?? shop.address,
       taxId: shop.taxId,
       email,
       timezone: shop.timezone,

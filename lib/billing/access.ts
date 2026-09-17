@@ -31,6 +31,8 @@ export function acceptsBookings(status: string): boolean {
 
 export interface BillingState {
   status: TenantStatus;
+  /** the shop's own name — the fallback shown on the document form */
+  shopName: string;
   /** never paid us anything yet — the wording differs from a lapsed renewal */
   onTrial: boolean;
   planCode: string | null;
@@ -70,6 +72,7 @@ export async function loadBillingState(
   const [row] = await db
     .select({
       status: schema.tenant.status,
+      shopName: schema.tenant.name,
       trialEndsAt: schema.tenant.trialEndsAt,
       paidUntil: schema.tenant.paidUntil,
       timezone: schema.tenant.timezone,
@@ -87,6 +90,7 @@ export async function loadBillingState(
 
 type BillingRow = {
   status: string;
+  shopName: string;
   trialEndsAt: Date | null;
   paidUntil: Date | null;
   timezone: string;
@@ -112,6 +116,7 @@ export function describe(row: BillingRow, now: DateTime = DateTime.now()): Billi
 
   return {
     status: row.status as TenantStatus,
+    shopName: row.shopName,
     onTrial: row.paidUntil === null && row.trialEndsAt !== null,
     planCode: row.planCode,
     planName: row.planName,

@@ -4,6 +4,11 @@ import { requireSession } from '@/lib/auth';
 import { loadBillingState, purchasablePlans } from '@/lib/billing/access';
 import { totalForMonths } from '@/lib/billing/amount';
 import { TERM_MONTHS } from '@/lib/billing/catalog';
+import {
+  loadBillingIdentity,
+  saveBillingIdentity,
+  taxIdLooksValid,
+} from '@/lib/billing/identity';
 import { IntentError, createIntent } from '@/lib/billing/intent';
 import { PLATFORM_PAYEE } from '@/lib/billing/platform';
 import { MAX_MONTHS, MIN_MONTHS, listPayments } from '@/lib/billing/renew';
@@ -24,6 +29,21 @@ const purchaseSchema = z.object({
   planId: z.uuid(),
 });
 
+/**
+ * Who to print on the shop's documents. Every field may be left empty, which
+ * means "use the shop's own" — so the only real rule is the one a Thai tax id
+ * has to obey, and an address long enough to be an address.
+ */
+const identitySchema = z.object({
+  billingName: z.string().trim().max(200),
+  taxId: z
+    .string()
+    .trim()
+    .refine(taxIdLooksValid, 'เลขประจำตัวผู้เสียภาษีต้องมี 13 หลัก'),
+  billingAddress: z.string().trim().max(400),
+  billingEmail: z.union([z.literal(''), z.email('อีเมลไม่ถูกต้อง')]),
+});
+
 export default async function BillingPage({
   searchParams,
 }: {
@@ -38,12 +58,31 @@ export default async function BillingPage({
 
   const { error, ok, reason } = await searchParams;
 
-  const [billing, payments, plans] = await Promise.all([
+  const [billing, payments, plans, identity] = await Promise.all([
     loadBillingState(session.tenantId),
     listPayments(session.tenantId),
     purchasablePlans(),
+    loadBillingIdentity(session.tenantId),
   ]);
   if (!billing) redirect('/dashboard');
+
+  async function saveIdentity(formData: FormData) {
+    'use server';
+    const active = await requireSession('owner');
+
+    const parsed = identitySchema.safeParse({
+      billingName: formData.get('billingName') ?? '',
+      taxId: formData.get('taxId') ?? '',
+      billingAddress: formData.get('billingAddress') ?? '',
+      billingEmail: formData.get('billingEmail') ?? '',
+    });
+    if (!parsed.success) {
+      redirect(`/dashboard/billing?error=identity&reason=${encodeURIComponent(parsed.error.issues[0]?.message ?? '')}`);
+    }
+
+    await saveBillingIdentity(active.tenantId, parsed.data);
+    redirect('/dashboard/billing?ok=identity');
+  }
 
   async function startPayment(formData: FormData) {
     'use server';
@@ -102,9 +141,14 @@ export default async function BillingPage({
       }))}
       plans={plans}
       payee={PLATFORM_PAYEE}
-      notice={ok ? 'ok' : error ? (error as 'invalid' | 'rejected' | 'slip') : null}
+      notice={ok === 'identity' ? null : ok ? 'ok' : error === 'identity' ? null : error ? (error as 'invalid' | 'rejected' | 'slip') : null}
       slipReason={reason ? reason.slice(0, 200) : null}
       slipChecking={slipCheckingEnabled()}
+      identity={identity}
+      identitySaved={ok === 'identity'}
+      identityError={error === 'identity' ? (reason ?? 'ข้อมูลไม่ถูกต้อง') : null}
+      shopName={billing.shopName}
+      onSaveIdentity={saveIdentity}
       onSubmit={startPayment}
     />
   );

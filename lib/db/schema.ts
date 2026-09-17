@@ -100,12 +100,17 @@ export const tenant = pgTable(
     latitude: numeric('latitude', { precision: 10, scale: 7 }),
     longitude: numeric('longitude', { precision: 10, scale: 7 }),
     /**
-     * What goes on the shop's receipt, which is not the same as what goes on
-     * its booking page. A salon trading under one name may be invoiced as a
-     * company with a tax id, and the accountant needs that number or the
-     * document is no use to them. Both optional: most shops are one person.
+     * Who the shop is when it is being invoiced, which is not who it is on its
+     * booking page. A salon trading as "The Hair" may be billed as a company
+     * with its own registered name, address and tax id, and an accountant with
+     * the wrong one of those cannot put the document through.
+     *
+     * All optional, and all fall back to the shop's own name and address —
+     * most shops are one person and the two are the same thing.
      */
     taxId: text('tax_id'),
+    billingName: text('billing_name'),
+    billingAddress: text('billing_address'),
     billingEmail: text('billing_email'),
     planId: uuid('plan_id').references(() => subscriptionPlan.id),
     // pending_payment = chose a paid plan but has not paid yet (not usable)
@@ -1043,6 +1048,16 @@ export const paymentIntent = pgTable(
     tenantPaymentId: uuid('tenant_payment_id').references(() => tenantPayment.id, {
       onDelete: 'set null',
     }),
+    /**
+     * The invoice งานเข้า issued for this, when a shop asked to be billed
+     * before paying. It hangs off the intent rather than off the payment,
+     * because the whole point of an invoice is that it exists while the money
+     * still does not — a shop that has to put it through an approval process
+     * needs the document first and pays weeks later.
+     */
+    invoiceNumber: text('invoice_number'),
+    invoiceUrl: text('invoice_url'),
+    invoiceIssuedAt: timestamp('invoice_issued_at', { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [
