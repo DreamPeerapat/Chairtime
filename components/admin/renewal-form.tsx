@@ -3,18 +3,19 @@
 /**
  * Choosing what to buy, before any money moves.
  *
- * Two decisions, not twelve: which plan, and monthly or yearly. It used to
- * offer 1–12 months and multiply, which was arithmetic pretending to be a
- * choice — nobody buys seven months, and the year has its own price rather
- * than twelve times the monthly one.
+ * One decision, not two. Asking for the plan and the billing term as two
+ * equal rows of tiles read as two separate things to pick. The term is not a
+ * second product — it is a switch on the prices of the one product — so it is
+ * a switch, above the plans, and the plans show the price for whichever side
+ * of it is on.
  *
  * The total shown here is the shop's, not the source of truth. The server
  * works the same figure out again from the plan's own row before it builds a
- * QR, because a number that arrived from a browser must never decide what a
- * banking app is told to pay.
+ * QR: a number that arrived from a browser must never decide what a banking
+ * app is told to pay.
  */
 import { useState } from 'react';
-import { formatBaht } from '@/lib/billing/amount';
+import { formatBaht, fromSatang, toSatang } from '@/lib/billing/amount';
 import type { PurchasablePlan } from '@/lib/billing/access';
 import type { BillingTerm } from '@/lib/billing/catalog';
 
@@ -52,56 +53,50 @@ export function RenewalForm({
       action={onSubmit}
       className="flex flex-col gap-4 rounded-xl border border-line bg-surface px-4 py-4"
     >
+      <input type="hidden" name="planId" value={planId} />
+      <input type="hidden" name="term" value={yearly ? 'yearly' : 'monthly'} />
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-sm">แพ็กเกจ</span>
+        <TermSwitch term={term} onSelect={setTerm} saving={saving} />
+      </div>
+
       {/*
         Tiles rather than a dropdown. There are two plans and the difference
         between them is the reason a shop is on this page — a `<select>` hides
         the alternative behind a tap and shows one price at a time, which is
         the one thing a person choosing between two prices needs not to happen.
       */}
-      <fieldset className="flex flex-col gap-1.5 text-sm">
-        <legend className="mb-1">แพ็กเกจ</legend>
-        <input type="hidden" name="planId" value={planId} />
-        <div className="grid gap-2 sm:grid-cols-2">
-          {plans.map((p) => (
+      <div role="group" aria-label="แพ็กเกจ" className="grid gap-2 sm:grid-cols-2">
+        {plans.map((p) => {
+          const asYearly = term === 'yearly' && Boolean(p.priceYearly);
+          return (
             <Tile
               key={p.id}
               selected={p.id === planId}
               onSelect={() => setPlanId(p.id)}
               title={p.name}
-              note={`${formatBaht(p.priceMonthly)} / เดือน`}
-              foot={p.priceYearly ? `หรือ ${formatBaht(p.priceYearly)} / ปี` : undefined}
+              note={
+                asYearly
+                  ? `${formatBaht(p.priceYearly!)} / ปี`
+                  : `${formatBaht(p.priceMonthly)} / เดือน`
+              }
+              foot={
+                asYearly
+                  ? `เฉลี่ยเดือนละ ${formatBaht(perMonth(p.priceYearly!))}`
+                  : term === 'yearly'
+                    ? 'แพ็กเกจนี้ไม่มีรายปี — คิดเป็นรายเดือน'
+                    : undefined
+              }
             />
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className="flex flex-col gap-1.5 text-sm">
-        <legend className="mb-1">รอบการชำระ</legend>
-        <input type="hidden" name="term" value={yearly ? 'yearly' : 'monthly'} />
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Tile
-            selected={!yearly}
-            onSelect={() => setTerm('monthly')}
-            title="รายเดือน"
-            note={plan ? `${formatBaht(plan.priceMonthly)} / เดือน` : ''}
-          />
-          <Tile
-            selected={yearly}
-            disabled={!yearlyOffered}
-            onSelect={() => setTerm('yearly')}
-            title="รายปี"
-            note={
-              plan?.priceYearly
-                ? `${formatBaht(plan.priceYearly)} / ปี`
-                : 'แพ็กเกจนี้ไม่มีรายปี'
-            }
-            badge={saving && yearlyOffered ? `ประหยัด ${saving}%` : undefined}
-          />
-        </div>
-      </fieldset>
+          );
+        })}
+      </div>
 
       <div className="flex items-baseline justify-between rounded-lg bg-surface-muted px-3 py-2.5">
-        <span className="text-sm text-muted">ยอดที่ต้องชำระ</span>
+        <span className="text-sm text-muted">
+          ยอดที่ต้องชำระ{yearly ? ' (1 ปี)' : ' (1 เดือน)'}
+        </span>
         <span className="text-base font-semibold">{total ? formatBaht(total) : '—'}</span>
       </div>
 
@@ -124,52 +119,94 @@ export function RenewalForm({
 }
 
 /**
- * One choice, as a tile.
- *
- * Both rows on this form are the same shape on purpose: pick a plan, pick a
- * term. A selected tile carries the brand border and a ring, so which one is
- * chosen survives being looked at quickly on a phone — a border alone at
- * this size does not.
+ * Monthly or yearly, level with the word "แพ็กเกจ" so it reads as a setting
+ * on the prices below it. It carries what the year saves, which is the only
+ * reason anybody would touch it.
  */
-function Tile({
-  selected,
-  disabled,
+function TermSwitch({
+  term,
   onSelect,
-  title,
-  note,
-  foot,
-  badge,
+  saving,
+}: {
+  term: BillingTerm;
+  onSelect: (term: BillingTerm) => void;
+  /** percent off the twelve-month price, when there is one */
+  saving: number | null;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="รอบการชำระ"
+      className="flex rounded-full border border-line p-0.5 text-xs"
+    >
+      <Segment selected={term === 'monthly'} onSelect={() => onSelect('monthly')}>
+        รายเดือน
+      </Segment>
+      <Segment selected={term === 'yearly'} onSelect={() => onSelect('yearly')}>
+        รายปี{saving ? ` · ประหยัด ${saving}%` : ''}
+      </Segment>
+    </div>
+  );
+}
+
+function Segment({
+  selected,
+  onSelect,
+  children,
 }: {
   selected: boolean;
-  disabled?: boolean;
   onSelect: () => void;
-  title: string;
-  note: string;
-  foot?: string;
-  badge?: string;
+  children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onSelect}
-      disabled={disabled}
       aria-pressed={selected}
-      className={`rounded-xl border px-4 py-3.5 text-left transition disabled:opacity-40 ${
-        selected
-          ? 'border-brand bg-brand-soft ring-1 ring-brand/30'
-          : 'border-line hover:bg-surface-muted'
+      className={`rounded-full px-3 py-1.5 whitespace-nowrap transition ${
+        selected ? 'bg-brand font-medium text-brand-contrast' : 'text-muted'
       }`}
     >
-      <span className="flex items-center justify-between gap-2">
-        <span className="text-sm font-semibold">{title}</span>
-        {badge ? (
-          <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-medium text-brand-contrast">
-            {badge}
-          </span>
-        ) : null}
-      </span>
+      {children}
+    </button>
+  );
+}
+
+/**
+ * One plan. The selected tile carries the brand border and a ring, so which
+ * one is chosen survives being looked at quickly on a phone — a border alone
+ * at this size does not.
+ */
+function Tile({
+  selected,
+  onSelect,
+  title,
+  note,
+  foot,
+}: {
+  selected: boolean;
+  onSelect: () => void;
+  title: string;
+  note: string;
+  foot?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      className={`rounded-xl border px-4 py-3.5 text-left transition ${
+        selected ? 'border-brand bg-brand-soft ring-1 ring-brand/30' : 'border-line hover:bg-surface-muted'
+      }`}
+    >
+      <span className="block text-sm font-semibold">{title}</span>
       <span className="mt-1 block text-sm">{note}</span>
       {foot ? <span className="mt-0.5 block text-xs text-muted">{foot}</span> : null}
     </button>
   );
+}
+
+/** A year's price divided twelve ways, in satang — iron rule #5, no floats. */
+function perMonth(priceYearly: string): string {
+  return fromSatang(Math.round(toSatang(priceYearly) / 12));
 }
