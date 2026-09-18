@@ -8,6 +8,7 @@ import { SHOP_TEMPLATES } from '@/lib/admin/templates';
 import { SettingsView } from '@/components/admin/settings-view';
 import { loadBillingState, type BillingState } from '@/lib/billing/access';
 import { thaiDateFull } from '@/components/booking/format';
+import { liffEndpointFor } from '@/lib/line/wizard';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,10 @@ export default async function SettingsPage() {
     ),
   ]);
 
+  // The policy row is created with the tenant, so the fallbacks below are a
+  // safety net rather than a state anyone should reach. They mirror the column
+  // defaults in lib/db/schema.ts, so a shop that saves the form without
+  // touching a chip writes back what it was already running on.
   return (
     <SettingsView
       role={session.role}
@@ -70,17 +75,13 @@ export default async function SettingsPage() {
         latitude: tenant?.latitude ?? null,
         longitude: tenant?.longitude ?? null,
       }}
-      policy={
-        policy[0]
-          ? {
-              slotGranularityMin: policy[0].slotGranularityMin,
-              minLeadTimeMin: policy[0].minLeadTimeMin,
-              maxAdvanceDays: policy[0].maxAdvanceDays,
-              cancelCutoffMin: policy[0].cancelCutoffMin,
-              allowCustomerPickStaff: policy[0].allowCustomerPickStaff,
-            }
-          : null
-      }
+      policy={{
+        slotGranularityMin: policy[0]?.slotGranularityMin ?? 15,
+        minLeadTimeMin: policy[0]?.minLeadTimeMin ?? 60,
+        maxAdvanceDays: policy[0]?.maxAdvanceDays ?? 60,
+        cancelCutoffMin: policy[0]?.cancelCutoffMin ?? 180,
+        allowCustomerPickStaff: policy[0]?.allowCustomerPickStaff ?? true,
+      }}
       hasServices={serviceCount.length > 0}
       templates={SHOP_TEMPLATES.map((t) => ({
         businessType: t.businessType,
@@ -89,6 +90,7 @@ export default async function SettingsPage() {
         defaultSpaces: t.defaultSpaces,
         spaceLabel: t.spaceLabel,
       }))}
+      bookingUrl={liffEndpointFor(session.tenantSlug)}
       lineConnected={lineChannel.length > 0 && (lineChannel[0]?.isVerified ?? false)}
       liffId={lineChannel[0]?.liffId ?? null}
       billing={billingCard(billing)}

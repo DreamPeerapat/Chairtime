@@ -592,6 +592,51 @@ export async function saveShopProfile(input: unknown): Promise<ActionResult> {
   return ok;
 }
 
+// ---------------------------------------------------------------------
+// Booking policy — the rules that decide what a customer may book
+// ---------------------------------------------------------------------
+
+/**
+ * Bounds, not a fixed list of choices.
+ *
+ * The form offers a handful of sensible values as chips, but a shop that
+ * wants 45-minute slots is not wrong, and the form is never the only way in.
+ * What has to hold is that the availability engine can still work: a zero
+ * granularity divides by zero, and a year of open calendar is something to
+ * scrape rather than a booking window.
+ */
+const bookingPolicySchema = z.object({
+  slotGranularityMin: z.coerce.number().int().min(5).max(120),
+  minLeadTimeMin: z.coerce.number().int().min(0).max(30 * 24 * 60),
+  maxAdvanceDays: z.coerce.number().int().min(1).max(365),
+  cancelCutoffMin: z.coerce.number().int().min(0).max(30 * 24 * 60),
+  allowCustomerPickStaff: z.boolean(),
+});
+
+export async function saveBookingPolicy(input: unknown): Promise<ActionResult> {
+  const session = await requireSession('manager');
+  const parsed = bookingPolicySchema.safeParse(input);
+  if (!parsed.success) return fail('ค่าที่ตั้งอยู่นอกช่วงที่ระบบรับได้');
+
+  // Upserted rather than updated: a shop whose policy row went missing would
+  // otherwise save nothing and be told that it worked.
+  await withTenant(session.tenantId, (tx) =>
+    tx
+      .insert(schema.tenantBookingPolicy)
+      .values({ tenantId: session.tenantId, ...parsed.data })
+      .onConflictDoUpdate({
+        target: schema.tenantBookingPolicy.tenantId,
+        set: parsed.data,
+      }),
+  );
+
+  // The booking side reads these on every availability search, and the
+  // dashboard header shows how far ahead the calendar goes.
+  revalidatePath('/dashboard/settings');
+  revalidatePath('/dashboard');
+  return ok;
+}
+
 const hoursSchema = z.object({
   resourceId: z.uuid().nullish(),
   rows: z

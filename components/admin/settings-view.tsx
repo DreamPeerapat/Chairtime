@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { PageBody, PageHeader } from '@/components/ui/page';
 import { applyShopTemplate } from '@/lib/admin/actions';
 import { ShopProfileForm } from './shop-profile-form';
+import { BookingPolicyForm, type BookingPolicy } from './booking-policy-form';
 
 interface Props {
   role: string;
@@ -20,13 +21,13 @@ interface Props {
     latitude: string | null;
     longitude: string | null;
   };
-  policy: {
-    slotGranularityMin: number;
-    minLeadTimeMin: number;
-    maxAdvanceDays: number;
-    cancelCutoffMin: number;
-    allowCustomerPickStaff: boolean;
-  } | null;
+  policy: BookingPolicy;
+  /**
+   * Built on the server from NEXT_PUBLIC_APP_URL. It used to come off
+   * `window.location.origin` here — a bare path on the server and a full URL
+   * in the browser, so this page threw a hydration mismatch on every load.
+   */
+  bookingUrl: string;
   hasServices: boolean;
   templates: Array<{
     businessType: string;
@@ -47,9 +48,6 @@ export function SettingsView(props: Props) {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const bookingUrl =
-    typeof window !== 'undefined' ? `${window.location.origin}/${props.tenant.slug}` : `/${props.tenant.slug}`;
 
   function apply(businessType: string, spaceCount: number) {
     setError(null);
@@ -108,7 +106,7 @@ export function SettingsView(props: Props) {
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-muted">ลิงก์จองของร้าน</h2>
         <div className="rounded-xl border border-line px-4 py-3">
-          <code className="break-all text-sm">{bookingUrl}</code>
+          <code className="break-all text-sm select-all">{props.bookingUrl}</code>
           <p className="mt-1 text-xs text-muted">ส่งลิงก์นี้ให้ลูกค้า หรือใส่ใน LINE Official Account</p>
         </div>
       </section>
@@ -140,21 +138,12 @@ export function SettingsView(props: Props) {
         </div>
       </section>
 
-      {props.policy ? (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-muted">นโยบายการจอง</h2>
-          <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <Item label="ปล่อยช่องทุก" value={`${props.policy.slotGranularityMin} นาที`} />
-            <Item label="จองล่วงหน้าอย่างน้อย" value={`${props.policy.minLeadTimeMin} นาที`} />
-            <Item label="จองล่วงหน้าได้ไกลสุด" value={`${props.policy.maxAdvanceDays} วัน`} />
-            <Item label="ยกเลิกฟรีก่อน" value={`${props.policy.cancelCutoffMin} นาที`} />
-            <Item
-              label="ลูกค้าเลือกช่างได้"
-              value={props.policy.allowCustomerPickStaff ? 'ได้' : 'ไม่ได้'}
-            />
-          </dl>
-        </section>
-      ) : null}
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-medium text-muted">นโยบายการจอง</h2>
+        <div className="rounded-xl border border-line px-4 py-4">
+          <BookingPolicyForm policy={props.policy} />
+        </div>
+      </section>
 
       {props.role === 'owner' ? (
         <section className="flex flex-col gap-2">
@@ -218,14 +207,5 @@ export function SettingsView(props: Props) {
 
       {props.children}
     </PageBody>
-  );
-}
-
-function Item({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-line px-3 py-2">
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd className="text-sm font-medium">{value}</dd>
-    </div>
   );
 }
