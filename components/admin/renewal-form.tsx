@@ -18,9 +18,6 @@ import { formatBaht } from '@/lib/billing/amount';
 import type { PurchasablePlan } from '@/lib/billing/access';
 import type { BillingTerm } from '@/lib/billing/catalog';
 
-const field =
-  'rounded-lg border border-line bg-surface px-3 py-2 text-sm dark:bg-surface-muted';
-
 export function RenewalForm({
   plans,
   defaultPlanId,
@@ -55,43 +52,50 @@ export function RenewalForm({
       action={onSubmit}
       className="flex flex-col gap-4 rounded-xl border border-line bg-surface px-4 py-4"
     >
-      <label className="flex flex-col gap-1 text-sm">
-        แพ็กเกจ
-        <select
-          name="planId"
-          required
-          value={planId}
-          onChange={(event) => setPlanId(event.target.value)}
-          className={field}
-        >
+      {/*
+        Tiles rather than a dropdown. There are two plans and the difference
+        between them is the reason a shop is on this page — a `<select>` hides
+        the alternative behind a tap and shows one price at a time, which is
+        the one thing a person choosing between two prices needs not to happen.
+      */}
+      <fieldset className="flex flex-col gap-1.5 text-sm">
+        <legend className="mb-1">แพ็กเกจ</legend>
+        <input type="hidden" name="planId" value={planId} />
+        <div className="grid gap-2 sm:grid-cols-2">
           {plans.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} — {formatBaht(p.priceMonthly)} / เดือน
-            </option>
+            <Tile
+              key={p.id}
+              selected={p.id === planId}
+              onSelect={() => setPlanId(p.id)}
+              title={p.name}
+              note={`${formatBaht(p.priceMonthly)} / เดือน`}
+              foot={p.priceYearly ? `หรือ ${formatBaht(p.priceYearly)} / ปี` : undefined}
+            />
           ))}
-        </select>
-      </label>
+        </div>
+      </fieldset>
 
-      <fieldset className="flex flex-col gap-1 text-sm">
+      <fieldset className="flex flex-col gap-1.5 text-sm">
         <legend className="mb-1">รอบการชำระ</legend>
         <input type="hidden" name="term" value={yearly ? 'yearly' : 'monthly'} />
-        <div className="grid grid-cols-2 gap-2">
-          <TermOption
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Tile
             selected={!yearly}
             onSelect={() => setTerm('monthly')}
             title="รายเดือน"
             note={plan ? `${formatBaht(plan.priceMonthly)} / เดือน` : ''}
           />
-          <TermOption
+          <Tile
             selected={yearly}
             disabled={!yearlyOffered}
             onSelect={() => setTerm('yearly')}
             title="รายปี"
             note={
               plan?.priceYearly
-                ? `${formatBaht(plan.priceYearly)} / ปี${saving ? ` · ประหยัด ${saving}%` : ''}`
+                ? `${formatBaht(plan.priceYearly)} / ปี`
                 : 'แพ็กเกจนี้ไม่มีรายปี'
             }
+            badge={saving && yearlyOffered ? `ประหยัด ${saving}%` : undefined}
           />
         </div>
       </fieldset>
@@ -119,18 +123,30 @@ export function RenewalForm({
   );
 }
 
-function TermOption({
+/**
+ * One choice, as a tile.
+ *
+ * Both rows on this form are the same shape on purpose: pick a plan, pick a
+ * term. A selected tile carries the brand border and a ring, so which one is
+ * chosen survives being looked at quickly on a phone — a border alone at
+ * this size does not.
+ */
+function Tile({
   selected,
   disabled,
   onSelect,
   title,
   note,
+  foot,
+  badge,
 }: {
   selected: boolean;
   disabled?: boolean;
   onSelect: () => void;
   title: string;
   note: string;
+  foot?: string;
+  badge?: string;
 }) {
   return (
     <button
@@ -138,12 +154,22 @@ function TermOption({
       onClick={onSelect}
       disabled={disabled}
       aria-pressed={selected}
-      className={`rounded-xl border px-3 py-3 text-left transition disabled:opacity-40 ${
-        selected ? 'border-brand bg-brand-soft' : 'border-line hover:bg-surface-muted'
+      className={`rounded-xl border px-4 py-3.5 text-left transition disabled:opacity-40 ${
+        selected
+          ? 'border-brand bg-brand-soft ring-1 ring-brand/30'
+          : 'border-line hover:bg-surface-muted'
       }`}
     >
-      <span className="block text-sm font-medium">{title}</span>
-      <span className="mt-0.5 block text-xs text-muted">{note}</span>
+      <span className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold">{title}</span>
+        {badge ? (
+          <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-medium text-brand-contrast">
+            {badge}
+          </span>
+        ) : null}
+      </span>
+      <span className="mt-1 block text-sm">{note}</span>
+      {foot ? <span className="mt-0.5 block text-xs text-muted">{foot}</span> : null}
     </button>
   );
 }
