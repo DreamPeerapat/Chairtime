@@ -69,7 +69,7 @@ export function DashboardNav({
 
   return (
     <nav className="ct-scroll-x mx-auto max-w-6xl overflow-x-auto px-4">
-      <ul className="flex gap-1 pb-2">
+      <ul className="flex gap-1.5 pb-2.5">
         {items.map((item) => {
           // '/dashboard' is a prefix of every other tab, so it only wins on an
           // exact match; the rest own their whole subtree.
@@ -82,19 +82,16 @@ export function DashboardNav({
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'ct-press relative block rounded-lg px-3 py-1.5 text-sm whitespace-nowrap',
+                  // A filled pill rather than a hairline under the word: on a
+                  // phone the strip scrolls and a 2px underline at the edge of
+                  // the viewport is invisible, while a filled shape is not.
+                  'ct-press block rounded-xl px-3.5 py-2 text-sm whitespace-nowrap transition',
                   active
-                    ? 'font-medium text-brand'
-                    : 'text-muted hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100',
+                    ? 'bg-brand-soft font-medium text-brand'
+                    : 'text-muted hover:bg-surface-muted hover:text-foreground',
                 )}
               >
                 {item.label}
-                {active ? (
-                  <span
-                    aria-hidden
-                    className="ct-fade absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-teal-600 dark:bg-teal-400"
-                  />
-                ) : null}
               </Link>
             </li>
           );

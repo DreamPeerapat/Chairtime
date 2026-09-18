@@ -4,6 +4,7 @@ import { requireSession } from '@/lib/auth';
 import { findMergeCandidates, searchCustomers } from '@/lib/admin/queries';
 import { CustomerSearch } from '@/components/admin/customer-search';
 import { MergePanel } from '@/components/admin/merge-panel';
+import { PageBody, PageHeader } from '@/components/ui/page';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,16 +22,19 @@ export default async function CustomersPage({
   ]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold">ลูกค้า</h1>
-        <Link
-          href={merge ? '/dashboard/customers' : '/dashboard/customers?merge=1'}
-          className="rounded-lg border border-line px-3 py-1.5 text-xs"
-        >
-          {merge ? 'กลับไปรายชื่อ' : 'หาลูกค้าซ้ำ'}
-        </Link>
-      </div>
+    <PageBody>
+      <PageHeader
+        title="ลูกค้า"
+        description="ทุกคนที่เคยจองหรือเคยมาที่ร้าน กดชื่อเพื่อดูประวัติและโน้ตของคนนั้น"
+        action={
+          <Link
+            href={merge ? '/dashboard/customers' : '/dashboard/customers?merge=1'}
+            className="ct-press rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-medium"
+          >
+            {merge ? 'กลับไปรายชื่อ' : 'หาลูกค้าซ้ำ'}
+          </Link>
+        }
+      />
 
       {merge ? (
         <MergePanel duplicates={duplicates} />
@@ -43,6 +47,6 @@ export default async function CustomersPage({
           }))}
         />
       )}
-    </div>
+    </PageBody>
   );
 }

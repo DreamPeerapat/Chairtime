@@ -44,30 +44,28 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b border-line bg-white/80 backdrop-blur-md dark:bg-slate-950/80">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2.5">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <Image
-              src="/icon.png"
-              alt=""
-              width={28}
-              height={28}
-              className="shrink-0"
-              priority
-            />
+    // The page sits on the muted surface and every card on the bright one, so
+    // a card reads as a raised thing rather than as a rectangle drawn on the
+    // same colour it stands on.
+    <div className="min-h-screen bg-surface-muted">
+      <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="relative size-9 shrink-0 overflow-hidden rounded-xl bg-[#0b1220]">
+              <Image src="/logo-mark.png" alt="" fill sizes="36px" className="object-cover" priority />
+            </span>
             <span className="flex min-w-0 flex-col leading-tight">
               <span className="truncate text-sm font-semibold">
                 {tenant?.name ?? session.tenantSlug}
               </span>
-              <span className="truncate text-[11px] text-slate-400">{session.displayName}</span>
+              <span className="truncate text-xs text-muted">{session.displayName}</span>
             </span>
           </div>
 
           <form action={logout}>
             <button
               type="submit"
-              className="ct-press rounded-lg px-2.5 py-1.5 text-xs text-muted hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              className="ct-press rounded-lg border border-line px-3 py-2 text-xs text-muted hover:bg-surface-muted hover:text-foreground"
             >
               ออกจากระบบ
             </button>
@@ -87,7 +85,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* Keyed on nothing in particular — the animation replays on every server
           navigation, which is the point: it marks that the page changed. */}
-      <main className="ct-enter mx-auto max-w-6xl px-4 py-5">{children}</main>
+      <main className="ct-enter mx-auto max-w-6xl px-4 py-6 sm:py-8">{children}</main>
     </div>
   );
 }

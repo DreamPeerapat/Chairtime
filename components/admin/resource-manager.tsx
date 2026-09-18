@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/modal';
 import { useRouter } from 'next/navigation';
 import { DateTime } from 'luxon';
 import { cn } from '@/lib/utils';
+import { PageBody, PageHeader } from '@/components/ui/page';
 import { createTimeOff, deleteTimeOff, saveHours, saveResource } from '@/lib/admin/actions';
 import { thaiDayMonth } from '@/components/booking/format';
 import { AvatarPicker } from './avatar-picker';
@@ -58,8 +59,11 @@ export function ResourceManager(props: Props) {
   const [tab, setTab] = useState<Tab>('people');
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-lg font-semibold">ช่างและที่นั่ง</h1>
+    <PageBody>
+      <PageHeader
+        title="ช่างและที่นั่ง"
+        description="ใครทำงานได้ เก้าอี้มีกี่ตัว ร้านเปิดเวลาไหน และใครลาวันไหน — สามอย่างนี้คือสิ่งที่ระบบใช้คำนวณว่าคิวไหนว่าง"
+      />
 
       <div className="flex gap-1">
         {(
@@ -88,7 +92,7 @@ export function ResourceManager(props: Props) {
       {tab === 'people' ? <PeopleTab {...props} /> : null}
       {tab === 'hours' ? <HoursTab {...props} /> : null}
       {tab === 'timeoff' ? <TimeOffTab {...props} /> : null}
-    </div>
+    </PageBody>
   );
 }
 

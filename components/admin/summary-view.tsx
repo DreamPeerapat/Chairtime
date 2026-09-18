@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { RevenueChart } from './revenue-chart';
+import { Card, EmptyState, PageBody, PageHeader, Rows, Stat } from '@/components/ui/page';
 import type { Bucket, ServiceSales, StaffSales, StatsRange } from '@/lib/admin/stats';
 
 export interface SummaryStats {
@@ -52,8 +53,15 @@ export function SummaryView({
   const topService = stats.services[0];
 
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="text-lg font-semibold">สรุปยอด</h1>
+    <PageBody>
+      <PageHeader
+        title="สรุปยอด"
+        description={
+          reports
+            ? 'รายได้และคิวของร้าน เลือกช่วงเวลาได้ กดแท่งในกราฟเพื่อเจาะดูช่วงนั้น'
+            : 'รายได้และคิวของร้านในสัปดาห์นี้'
+        }
+      />
 
       {!reports ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-muted px-4 py-3">
@@ -115,9 +123,9 @@ export function SummaryView({
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label="รายได้" value={formatBaht(stats.revenue)} big />
-        <Stat label="คิวที่ทำเสร็จ" value={String(stats.completed)} />
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="รายได้" value={formatBaht(stats.revenue)} tone="brand" />
+        <Stat label="คิวที่ทำเสร็จ" value={stats.completed} />
         <Stat label="เฉลี่ยต่อคิว" value={formatBaht(stats.averageTicket)} />
         <Stat
           label="ยกเลิก / ไม่มา"
@@ -127,89 +135,64 @@ export function SummaryView({
       </dl>
 
       {stats.completed === 0 ? (
-        <p className="rounded-xl border border-line px-4 py-6 text-center text-sm text-muted">
-          ช่วงนี้ยังไม่มีคิวที่ทำเสร็จ — ตัวเลขจะขึ้นเมื่อกดปุ่ม “เสร็จแล้ว” ที่คิว
-        </p>
+        <Card padded={false}>
+          <EmptyState
+            title="ช่วงนี้ยังไม่มีคิวที่ทำเสร็จ"
+            description="ตัวเลขจะขึ้นเมื่อกดปุ่ม “เสร็จแล้ว” ที่คิวในปฏิทิน — คิวที่ยังไม่ปิดจะไม่นับเป็นรายได้"
+          />
+        </Card>
       ) : (
         <>
           {topService ? (
-            <p className="rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-900 dark:bg-teal-950/40 dark:text-teal-200">
+            <p className="rounded-2xl bg-brand-soft px-4 py-3.5 text-sm text-brand">
               บริการที่ขายดีที่สุดคือ <span className="font-semibold">{topService.serviceName}</span>{' '}
               — {topService.bookings} ครั้ง คิดเป็น {formatBaht(topService.revenue)}
             </p>
           ) : null}
 
-          <section className="flex flex-col gap-2">
-            <h2 className="text-sm font-medium text-muted">
-              บริการที่ขายได้
-            </h2>
-            <ul className="flex flex-col gap-1.5">
-              {stats.services.map((row) => (
-                <li
-                  key={row.serviceName}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-2.5 text-sm"
-                >
-                  <span className="min-w-0 truncate">{row.serviceName}</span>
-                  <span className="shrink-0 text-right">
-                    <span className="font-medium">{formatBaht(row.revenue)}</span>
-                    <span className="ml-2 text-xs text-muted">{row.bookings} ครั้ง</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {stats.staff.length > 0 ? (
-            <section className="flex flex-col gap-2">
-              <h2 className="text-sm font-medium text-muted">รายช่าง</h2>
-              <ul className="flex flex-col gap-1.5">
-                {stats.staff.map((row) => (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card title="บริการที่ขายได้" padded={false}>
+              <Rows>
+                {stats.services.map((row) => (
                   <li
-                    key={row.staffName}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-2.5 text-sm"
+                    key={row.serviceName}
+                    className="flex items-center gap-4 px-4 py-3"
                   >
-                    <span className="min-w-0 truncate">{row.staffName}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm">{row.serviceName}</span>
                     <span className="shrink-0 text-right">
-                      <span className="font-medium">{formatBaht(row.revenue)}</span>
-                      <span className="ml-2 text-xs text-muted">{row.bookings} คิว</span>
+                      <span className="block text-sm font-medium tabular-nums">
+                        {formatBaht(row.revenue)}
+                      </span>
+                      <span className="block text-xs text-muted">{row.bookings} ครั้ง</span>
                     </span>
                   </li>
                 ))}
-              </ul>
-            </section>
-          ) : null}
+              </Rows>
+            </Card>
+
+            {stats.staff.length > 0 ? (
+              <Card title="รายช่าง" padded={false}>
+                <Rows>
+                  {stats.staff.map((row) => (
+                    <li key={row.staffName} className="flex items-center gap-4 px-4 py-3">
+                      <span className="min-w-0 flex-1 truncate text-sm">{row.staffName}</span>
+                      <span className="shrink-0 text-right">
+                        <span className="block text-sm font-medium tabular-nums">
+                          {formatBaht(row.revenue)}
+                        </span>
+                        <span className="block text-xs text-muted">{row.bookings} คิว</span>
+                      </span>
+                    </li>
+                  ))}
+                </Rows>
+              </Card>
+            ) : null}
+          </div>
 
           {reports ? <RevenueChart range={range} buckets={stats.buckets} /> : null}
         </>
       )}
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  big,
-  tone,
-}: {
-  label: string;
-  value: string;
-  big?: boolean;
-  tone?: 'warn';
-}) {
-  return (
-    <div className="rounded-xl border border-line px-4 py-3">
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd
-        className={cn(
-          'mt-0.5 font-semibold tabular-nums',
-          big ? 'text-xl' : 'text-lg',
-          tone === 'warn' ? 'text-amber-700 dark:text-amber-400' : undefined,
-        )}
-      >
-        {value}
-      </dd>
-    </div>
+    </PageBody>
   );
 }
 

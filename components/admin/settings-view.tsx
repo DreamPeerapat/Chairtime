@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { PageBody, PageHeader } from '@/components/ui/page';
 import { applyShopTemplate } from '@/lib/admin/actions';
 import { ShopProfileForm } from './shop-profile-form';
 
@@ -65,8 +66,11 @@ export function SettingsView(props: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-lg font-semibold">ตั้งค่า</h1>
+    <PageBody className="gap-6">
+      <PageHeader
+        title="ตั้งค่า"
+        description="ข้อมูลร้านที่ลูกค้าเห็น การเชื่อม LINE ของร้าน และเทมเพลตบริการ"
+      />
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-muted">ข้อมูลร้าน</h2>
@@ -213,7 +217,7 @@ export function SettingsView(props: Props) {
       ) : null}
 
       {props.children}
-    </div>
+    </PageBody>
   );
 }
 
