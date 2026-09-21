@@ -5,6 +5,7 @@ import { withTenant } from '@/lib/db/tenant';
 import { listPortfolioForAdmin } from '@/lib/portfolio/queries';
 import { PortfolioManager } from '@/components/admin/portfolio-manager';
 import { PortfolioUploader } from '@/components/admin/portfolio-uploader';
+import { PageBody, PageHeader } from '@/components/ui/page';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,18 +30,14 @@ export default async function PortfolioPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">ผลงานของร้าน</h1>
-          <p className="mt-0.5 text-sm text-muted">
-            รูปที่ลูกค้าจะเห็นในหน้าแกลเลอรี่ และตอนเลือกช่าง
-          </p>
-        </div>
-        <PortfolioUploader tenantId={session.tenantId} />
-      </div>
+    <PageBody>
+      <PageHeader
+        title="ผลงานของร้าน"
+        description="รูปที่ลูกค้าจะเห็นในหน้าแกลเลอรี่ และตอนเลือกช่าง"
+        action={<PortfolioUploader tenantId={session.tenantId} />}
+      />
 
       <PortfolioManager photos={photos} staff={options.staff} services={options.services} />
-    </div>
+    </PageBody>
   );
 }

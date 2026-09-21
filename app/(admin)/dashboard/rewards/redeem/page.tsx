@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { hasRole, requireSession } from '@/lib/auth';
 import { RewardCheckin } from '@/components/admin/reward-checkin';
+import { PageBody, PageHeader } from '@/components/ui/page';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,16 +14,22 @@ export default async function RewardRedeemPage() {
   const session = await requireSession('staff');
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">เช็คอินโค้ดของรางวัล</h1>
-        {hasRole(session, 'manager') ? (
-          <Link href="/dashboard/rewards" className="text-sm text-brand">
-            จัดการของรางวัล →
-          </Link>
-        ) : null}
-      </div>
+    <PageBody>
+      <PageHeader
+        title="เช็คอินโค้ดของรางวัล"
+        description="กรอกโค้ดที่ลูกค้าเปิดจากมือถือ ระบบตัดแต้มและบันทึกให้ทันที"
+        action={
+          hasRole(session, 'manager') ? (
+            <Link
+              href="/dashboard/rewards"
+              className="ct-press inline-flex h-11 items-center rounded-xl border border-line bg-surface px-4 text-sm font-medium"
+            >
+              จัดการของรางวัล
+            </Link>
+          ) : null
+        }
+      />
       <RewardCheckin />
-    </div>
+    </PageBody>
   );
 }

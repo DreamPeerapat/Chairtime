@@ -65,7 +65,12 @@ export function Card({
   className?: string;
 }) {
   return (
-    <section className={cn('overflow-hidden rounded-2xl border border-line bg-surface', className)}>
+    <section
+      className={cn(
+        'overflow-hidden rounded-2xl border border-line bg-surface shadow-card',
+        className,
+      )}
+    >
       {title || action ? (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
           <div className="min-w-0">
@@ -167,18 +172,18 @@ export function Stat({
   tone?: 'brand' | 'warn';
 }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface px-4 py-3.5">
+    <div className="rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-card">
       <dt className="text-xs text-muted">{label}</dt>
       <dd
         className={cn(
-          'mt-1 text-xl font-semibold tabular-nums',
+          'mt-1.5 font-display text-2xl leading-none font-semibold tabular-nums',
           tone === 'brand' && 'text-brand',
           tone === 'warn' && 'text-amber-600 dark:text-amber-400',
         )}
       >
         {value}
       </dd>
-      {hint ? <p className="mt-0.5 text-xs text-muted">{hint}</p> : null}
+      {hint ? <p className="mt-1.5 text-xs text-muted">{hint}</p> : null}
     </div>
   );
 }

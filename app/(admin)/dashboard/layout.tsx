@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { SESSION_COOKIE, requireSession } from '@/lib/auth';
 import { db, schema } from '@/lib/db/client';
 import { DashboardNav } from '@/components/admin/dashboard-nav';
+import { DashboardSidebar } from '@/components/admin/dashboard-sidebar';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { BillingBanner } from '@/components/admin/billing-banner';
 import { ImpersonationBanner } from '@/components/admin/impersonation-banner';
@@ -49,9 +50,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
     // a card reads as a raised thing rather than as a rectangle drawn on the
     // same colour it stands on.
     <div className="min-h-screen bg-surface-muted">
-      <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
+      {/*
+        Two shells, one set of tabs.
+
+        From `lg` the rail on the left is always there and only the content
+        column scrolls, which is what makes this feel like a back office
+        rather than a website you happen to be logged into: the shop's name
+        and the tabs stay put while the work moves. Below `lg` the rail
+        cannot fit, so the identity and the tabs go back to the top bar.
+
+        Both read their tabs from nav-items.tsx, so neither can offer a door
+        the other does not.
+      */}
+      <div className="lg:grid lg:min-h-screen lg:grid-cols-[16rem_minmax(0,1fr)]">
+        <aside className="sticky top-0 hidden h-screen flex-col border-r border-line bg-surface lg:flex">
+          <div className="flex min-w-0 items-center gap-3 px-5 py-4">
             <span className="relative size-9 shrink-0 overflow-hidden rounded-xl bg-[#0b1220]">
               <Image src="/logo-mark.png" alt="" fill sizes="36px" className="object-cover" priority />
             </span>
@@ -63,34 +76,92 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </span>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
-            <ThemeToggle />
+          {/* The rail scrolls on its own if the tab list ever outgrows a short
+              laptop screen; the footer below stays reachable either way. */}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <DashboardSidebar
+              role={session.role}
+              platformAdmin={isPlatformAdmin(session.staffUserId) && !session.impersonating}
+              impersonating={session.impersonating ?? false}
+            />
+          </div>
 
-            <form action={logout}>
+          <div className="flex items-center gap-2 border-t border-line px-3 py-3">
+            <ThemeToggle />
+            <form action={logout} className="flex-1">
               <button
                 type="submit"
-                className="ct-press h-11 rounded-xl border border-line px-3.5 text-xs text-muted hover:bg-surface-muted hover:text-foreground"
+                className="ct-press h-11 w-full rounded-xl border border-line px-3.5 text-xs text-muted hover:bg-surface-muted hover:text-foreground"
               >
                 ออกจากระบบ
               </button>
             </form>
           </div>
+        </aside>
+
+        <div className="flex min-w-0 flex-col">
+          <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur-md lg:static lg:border-b-0 lg:bg-transparent lg:backdrop-blur-none">
+            <div className="flex items-center justify-between gap-4 px-4 py-3 lg:hidden">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="relative size-9 shrink-0 overflow-hidden rounded-xl bg-[#0b1220]">
+                  <Image
+                    src="/logo-mark.png"
+                    alt=""
+                    fill
+                    sizes="36px"
+                    className="object-cover"
+                    priority
+                  />
+                </span>
+                <span className="flex min-w-0 flex-col leading-tight">
+                  <span className="truncate text-sm font-semibold">
+                    {tenant?.name ?? session.tenantSlug}
+                  </span>
+                  <span className="truncate text-xs text-muted">{session.displayName}</span>
+                </span>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <ThemeToggle />
+
+                <form action={logout}>
+                  <button
+                    type="submit"
+                    className="ct-press h-11 rounded-xl border border-line px-3.5 text-xs text-muted hover:bg-surface-muted hover:text-foreground"
+                  >
+                    ออกจากระบบ
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <div className="lg:hidden">
+              <DashboardNav
+                role={session.role}
+                platformAdmin={isPlatformAdmin(session.staffUserId) && !session.impersonating}
+                impersonating={session.impersonating ?? false}
+              />
+            </div>
+
+            {/* Both banners stay full width at every size: an expiring
+                subscription and "you are standing in someone else's shop" are
+                not things to tuck into a rail. */}
+            {session.impersonating ? (
+              <ImpersonationBanner
+                shopName={tenant?.name ?? session.tenantSlug}
+                onLeave={stopImpersonating}
+              />
+            ) : null}
+            {billing ? <BillingBanner state={billing} /> : null}
+          </header>
+
+          {/* Keyed on nothing in particular — the animation replays on every server
+              navigation, which is the point: it marks that the page changed. */}
+          <main className="ct-enter mx-auto w-full max-w-5xl px-4 py-6 sm:py-8 lg:px-8">
+            {children}
+          </main>
         </div>
-
-        <DashboardNav
-          role={session.role}
-          platformAdmin={isPlatformAdmin(session.staffUserId) && !session.impersonating}
-          impersonating={session.impersonating ?? false}
-        />
-        {session.impersonating ? (
-          <ImpersonationBanner shopName={tenant?.name ?? session.tenantSlug} onLeave={stopImpersonating} />
-        ) : null}
-        {billing ? <BillingBanner state={billing} /> : null}
-      </header>
-
-      {/* Keyed on nothing in particular — the animation replays on every server
-          navigation, which is the point: it marks that the page changed. */}
-      <main className="ct-enter mx-auto max-w-6xl px-4 py-6 sm:py-8">{children}</main>
+      </div>
     </div>
   );
 }
