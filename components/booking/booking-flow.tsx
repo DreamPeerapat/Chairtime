@@ -267,7 +267,7 @@ function StepIndicator({ current, disabled }: { current: number; disabled: numbe
       {STEPS.map((label, index) => {
         const skipped = disabled.includes(index);
         return (
-          <li key={label} className="flex flex-1 items-center gap-1.5">
+          <li key={label} className="flex min-w-0 flex-1 items-center gap-1.5">
             <span
               className={cn(
                 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-medium',

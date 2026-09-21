@@ -22,15 +22,16 @@ const ZONE = 'Asia/Bangkok';
 /**
  * What the shop is on, until when, and how to keep it.
  *
- * A server component around one interactive island: the status, the account
- * details and the receipts are read, and only the plan picker has to follow
- * what the shop is choosing. Paying happens on the page it opens.
+ * A server component around one interactive island: the status and the
+ * receipts are read, and only the plan picker has to follow what the shop is
+ * choosing. Paying happens on the page it opens, which is where the account
+ * to pay into is shown — this page is for deciding, not for transcribing a
+ * bank account nobody can act on until they have picked a plan.
  */
 export function BillingView({
   state,
   payments,
   plans,
-  payee,
   notice,
   slipReason,
   slipChecking,
@@ -44,7 +45,6 @@ export function BillingView({
   state: BillingState;
   payments: BillingPaymentRow[];
   plans: PurchasablePlan[];
-  payee: { bank: string; accountNumber: string; accountName: string };
   notice: 'ok' | 'invalid' | 'rejected' | 'slip' | null;
   /** why the slip was refused, in the words the checking service used */
   slipReason?: string | null;
@@ -123,17 +123,6 @@ export function BillingView({
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-muted">วิธีต่ออายุ</h2>
-
-        <div className="rounded-xl border border-line px-4 py-3">
-          <p className="text-xs text-muted">
-            โอนตามยอดใน QR แล้วแนบสลิปกดยืนยัน ใบเสร็จจะส่งเข้าอีเมลและ LINE ของร้าน
-          </p>
-          <div className="mt-2 rounded-lg bg-surface-muted px-3 py-2">
-            <p className="font-medium">{payee.bank}</p>
-            <p className="font-mono text-base tracking-wide">{payee.accountNumber}</p>
-            <p className="text-xs text-muted">{payee.accountName}</p>
-          </div>
-        </div>
 
         <RenewalForm
           plans={plans}

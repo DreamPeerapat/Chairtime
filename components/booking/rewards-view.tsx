@@ -174,7 +174,7 @@ export function RewardsView({ tenantSlug, liffId }: { tenantSlug: string; liffId
               key={reward.id}
               className="flex items-center gap-3 rounded-xl border border-line px-4 py-3"
             >
-              <span className="flex-1">
+              <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">{reward.name}</span>
                 <span className="block text-xs text-muted">{rewardDetail(reward)}</span>
               </span>

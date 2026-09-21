@@ -10,7 +10,6 @@ import {
   taxIdLooksValid,
 } from '@/lib/billing/identity';
 import { IntentError, createIntent } from '@/lib/billing/intent';
-import { PLATFORM_PAYEE } from '@/lib/billing/platform';
 import { MAX_MONTHS, MIN_MONTHS, listPayments } from '@/lib/billing/renew';
 import { slipCheckingEnabled } from '@/lib/billing/slip';
 import { BillingView } from '@/components/admin/billing-view';
@@ -140,7 +139,6 @@ export default async function BillingPage({
         status: p.status,
       }))}
       plans={plans}
-      payee={PLATFORM_PAYEE}
       notice={ok === 'identity' ? null : ok ? 'ok' : error === 'identity' ? null : error ? (error as 'invalid' | 'rejected' | 'slip') : null}
       slipReason={reason ? reason.slice(0, 200) : null}
       slipChecking={slipCheckingEnabled()}

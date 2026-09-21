@@ -80,7 +80,7 @@ export function ServiceStep({
                         </svg>
                       ) : null}
                     </span>
-                    <span className="flex-1">
+                    <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium">{service.name}</span>
                       <span className="mt-0.5 block text-xs text-muted">
                         {formatDuration(service.durationMin)}

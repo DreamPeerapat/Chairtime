@@ -20,7 +20,12 @@ import { schema } from '@/lib/db/client';
 import { withTenant } from '@/lib/db/tenant';
 import { decryptSecret } from '@/lib/crypto';
 import { createRichMenuApi, RichMenuError, type RichMenuArea } from './rich-menu-api';
-import { OWNER_MENU_CELLS, RICH_MENU_SIZE, ownerRichMenuImage } from './rich-menu';
+import {
+  OWNER_MENU_CELLS,
+  RICH_MENU_HEADER,
+  RICH_MENU_SIZE,
+  ownerRichMenuImage,
+} from './rich-menu';
 
 export interface OwnerMenuResult {
   ok: boolean;
@@ -167,13 +172,12 @@ export async function removeOwnerMenu(tenantId: string): Promise<OwnerMenuResult
  */
 function ownerAreas(base: string): RichMenuArea[] {
   const half = RICH_MENU_SIZE.width / 2;
-  const header = 180;
-  const rowHeight = (RICH_MENU_SIZE.height - header) / 2;
+  const rowHeight = (RICH_MENU_SIZE.height - RICH_MENU_HEADER) / 2;
 
   return OWNER_MENU_CELLS.map((cell, index) => ({
     bounds: {
       x: (index % 2) * half,
-      y: header + Math.floor(index / 2) * rowHeight,
+      y: RICH_MENU_HEADER + Math.floor(index / 2) * rowHeight,
       width: half,
       height: rowHeight,
     },

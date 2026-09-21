@@ -17,6 +17,7 @@ import { createTimeOff, deleteTimeOff, saveHours, saveResource } from '@/lib/adm
 import { thaiDayMonth } from '@/components/booking/format';
 import { AvatarPicker } from './avatar-picker';
 import { HoursTab } from './hours-tab';
+import { ResourceGroup } from './resource-group';
 import {
   ErrorText,
   WEEKDAYS,
@@ -105,14 +106,13 @@ function PeopleTab({ tenantId, resources, resourceTypes, services }: Props) {
 
   return (
     <div className="flex flex-col gap-5">
-      <Group
+      <ResourceGroup
         title="ช่าง"
         items={humans}
-        services={services}
         onEdit={setEditing}
         onAdd={() => setEditing('new')}
       />
-      <Group title="ที่นั่ง / เตียง / ห้อง" items={spaces} services={services} onEdit={setEditing} />
+      <ResourceGroup title="ที่นั่ง / เตียง / ห้อง" items={spaces} onEdit={setEditing} />
 
       {editing ? (
         <ResourceForm
@@ -128,71 +128,6 @@ function PeopleTab({ tenantId, resources, resourceTypes, services }: Props) {
         />
       ) : null}
     </div>
-  );
-}
-
-function Group({
-  title,
-  items,
-  services,
-  onEdit,
-  onAdd,
-}: {
-  title: string;
-  items: AdminResource[];
-  services: Array<{ id: string; name: string }>;
-  onEdit: (r: AdminResource) => void;
-  onAdd?: () => void;
-}) {
-  return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-muted">{title}</h2>
-        {onAdd ? (
-          <button type="button" onClick={onAdd} className="text-xs text-brand">
-            + เพิ่ม
-          </button>
-        ) : null}
-      </div>
-      <ul className="flex flex-col gap-2">
-        {items.map((resource) => (
-          <li key={resource.id}>
-            <button
-              type="button"
-              onClick={() => onEdit(resource)}
-              className={cn(
-                'w-full rounded-xl border px-4 py-3 text-left',
-                resource.isActive
-                  ? 'border-line'
-                  : 'border-dashed border-line opacity-60',
-              )}
-            >
-              <span className="block text-sm font-medium">
-                {resource.name}
-                {!resource.isActive ? <span className="ml-2 text-xs text-muted">ปิดอยู่</span> : null}
-                {resource.isHuman && !resource.isBookable ? (
-                  <span className="ml-2 text-xs text-muted">ลูกค้าเลือกไม่ได้</span>
-                ) : null}
-              </span>
-              {resource.isHuman ? (
-                <span className="mt-0.5 block text-xs text-muted">
-                  {resource.serviceIds.length === 0
-                    ? 'ยังไม่ได้กำหนดว่าทำบริการอะไรได้ — จะไม่ถูกจัดคิวให้'
-                    : `ทำได้ ${resource.serviceIds.length} บริการ`}
-                  {resource.hours.length > 0 ? ` · มีเวลาทำงานเฉพาะตัว` : ''}
-                </span>
-              ) : null}
-            </button>
-          </li>
-        ))}
-        {items.length === 0 ? (
-          <li className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
-            ยังไม่มีข้อมูล
-          </li>
-        ) : null}
-      </ul>
-      {services.length === 0 ? null : null}
-    </section>
   );
 }
 
