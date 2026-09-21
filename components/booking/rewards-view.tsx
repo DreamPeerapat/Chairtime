@@ -131,7 +131,7 @@ export function RewardsView({ tenantSlug, liffId }: { tenantSlug: string; liffId
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-line p-6 text-center">
         <p className="text-sm text-muted">แลกสำเร็จ</p>
         <p className="text-sm font-medium">{issued.rewardName}</p>
-        <p className="rounded-lg bg-teal-50 px-6 py-3 text-3xl font-semibold tracking-widest text-brand dark:bg-teal-950 dark:text-teal-300">
+        <p className="rounded-lg bg-brand-soft px-6 py-3 text-3xl font-semibold tracking-widest text-brand">
           {issued.code}
         </p>
         {issued.expiresAt ? (
@@ -155,7 +155,7 @@ export function RewardsView({ tenantSlug, liffId }: { tenantSlug: string; liffId
         href={`/${tenantSlug}/points`}
         className="rounded-2xl border border-line p-4 text-center"
       >
-        <p className="text-2xl font-semibold text-brand dark:text-teal-400">{balance}</p>
+        <p className="text-2xl font-semibold text-brand">{balance}</p>
         <p className="text-xs text-muted">แต้มคงเหลือ</p>
       </Link>
 

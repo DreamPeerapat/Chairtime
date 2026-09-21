@@ -37,7 +37,7 @@ export function AdminShopList({
         </p>
       </div>
 
-      <p className="rounded-xl bg-slate-100 px-4 py-2.5 text-xs text-muted dark:bg-slate-800">
+      <p className="rounded-xl bg-surface-muted px-4 py-2.5 text-xs text-muted">
         หน้านี้ไม่แสดงข้อมูลการชำระเงินของร้าน และเข้าหน้าแพ็กเกจของร้านอื่นไม่ได้
       </p>
 
@@ -51,13 +51,13 @@ export function AdminShopList({
             <li key={shop.tenantId}>
               <Link
                 href={`/admin/${shop.tenantId}`}
-                className="ct-press block rounded-xl border border-line px-4 py-3 hover:border-line dark:hover:border-slate-700"
+                className="ct-press block rounded-xl border border-line px-4 py-3 hover:border-line"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="flex min-w-0 items-center gap-2">
                     <span className="truncate text-sm font-medium">{shop.name}</span>
                     {shop.tenantId === currentTenantId ? (
-                      <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] text-muted dark:bg-slate-700">
+                      <span className="shrink-0 rounded-full bg-line px-2 py-0.5 text-[10px] text-muted">
                         ร้านของคุณ
                       </span>
                     ) : null}
@@ -80,7 +80,7 @@ export function AdminShopList({
                   <Fact label="LINE" value={shop.lineConnected ? 'เชื่อมแล้ว' : 'ยังไม่เชื่อม'} />
                 </dl>
 
-                <p className="mt-1.5 text-[11px] text-slate-400">
+                <p className="mt-1.5 text-[11px] text-muted">
                   สมัคร {short(shop.createdAt)}
                   {shop.lastBookingAt ? ` · จองล่าสุด ${short(shop.lastBookingAt)}` : ' · ยังไม่เคยมีคิว'}
                 </p>
@@ -97,7 +97,7 @@ function Fact({ label, value, warn }: { label: string; value: string; warn?: boo
   return (
     <span className="flex gap-1">
       <dt>{label}</dt>
-      <dd className={cn('font-medium', warn ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700')}>
+      <dd className={cn('font-medium', warn ? 'text-amber-600 dark:text-amber-400' : 'text-foreground')}>
         {value}
       </dd>
     </span>
@@ -123,7 +123,7 @@ function StatusChip({ status, onboarded }: { status: string; onboarded: boolean 
       className={cn(
         'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium',
         good
-          ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200'
+          ? 'bg-brand-soft text-brand-strong'
           : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200',
       )}
     >

@@ -39,7 +39,7 @@ export function PortfolioManager({
 
   if (photos.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-line px-4 py-10 text-center text-sm text-slate-400">
+      <p className="rounded-xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
         ยังไม่มีรูปผลงาน — กดปุ่มด้านบนเพื่อเพิ่มรูปแรก
       </p>
     );
@@ -65,7 +65,7 @@ export function PortfolioManager({
                 className="object-cover"
               />
               {!photo.isPublished ? (
-                <span className="absolute left-2 top-2 rounded-md bg-slate-900/80 px-1.5 py-0.5 text-[10px] text-white">
+                <span className="absolute left-2 top-2 rounded-md bg-[#14201f]/80 px-1.5 py-0.5 text-[10px] text-white">
                   ซ่อนอยู่
                 </span>
               ) : null}
@@ -75,7 +75,7 @@ export function PortfolioManager({
               <p className="truncate text-xs text-muted">
                 {photo.caption ?? 'ไม่มีคำอธิบาย'}
               </p>
-              <p className="truncate text-[11px] text-slate-400">
+              <p className="truncate text-[11px] text-muted">
                 {[photo.resourceName, photo.serviceName].filter(Boolean).join(' · ') || 'ยังไม่ระบุ'}
               </p>
 
@@ -162,7 +162,7 @@ function PortfolioEditor({
   }
 
   const field =
-    'w-full rounded-lg border border-line px-3 py-2 text-sm dark:bg-slate-900';
+    'w-full rounded-lg border border-line px-3 py-2 text-sm';
 
   return (
     <Modal onClose={onClose} labelledBy={MODAL_TITLE_ID}>
@@ -224,7 +224,7 @@ function PortfolioEditor({
               type="button"
               onClick={close}
               disabled={pending}
-              className="ct-press rounded-xl border border-line px-4 py-2.5 text-sm hover:bg-slate-50 disabled:opacity-50 dark:hover:bg-slate-800"
+              className="ct-press rounded-xl border border-line px-4 py-2.5 text-sm hover:bg-surface-muted disabled:opacity-50"
             >
               ยกเลิก
             </button>

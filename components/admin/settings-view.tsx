@@ -116,7 +116,7 @@ export function SettingsView(props: Props) {
         <div className="rounded-xl border border-line px-4 py-3 text-sm">
           {props.lineConnected ? (
             <>
-              <p className="text-brand dark:text-teal-400">เชื่อมต่อแล้ว</p>
+              <p className="text-brand">เชื่อมต่อแล้ว</p>
               <p className="mt-1 text-xs text-muted">
                 {props.liffId ? `LIFF ID: ${props.liffId}` : 'ยังไม่ได้ตั้ง LIFF ID'}
               </p>
@@ -152,7 +152,7 @@ export function SettingsView(props: Props) {
           </h2>
 
           {props.hasServices ? (
-            <p className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-muted dark:bg-slate-800">
+            <p className="rounded-lg bg-surface-muted px-3 py-2 text-xs text-muted">
               ร้านนี้มีบริการอยู่แล้ว เทมเพลตใช้ได้เฉพาะร้านที่ยังไม่มีบริการ
               เพื่อไม่ให้เมนูที่แก้ไว้แล้วซ้ำซ้อน
             </p>
@@ -164,7 +164,7 @@ export function SettingsView(props: Props) {
           )}
 
           {message ? (
-            <p className="rounded-lg bg-teal-50 px-3 py-2 text-sm text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
+            <p className="rounded-lg bg-brand-soft px-3 py-2 text-sm text-brand-strong">
               {message}
             </p>
           ) : null}

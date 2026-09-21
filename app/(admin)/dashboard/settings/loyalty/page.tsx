@@ -45,7 +45,7 @@ export default async function LoyaltySettingsPage({
       <h1 className="text-lg font-semibold">กติกาแต้มสะสม</h1>
 
       {ok ? (
-        <p className="rounded-lg bg-teal-50 px-3 py-2 text-sm text-brand dark:bg-teal-950 dark:text-teal-300">
+        <p className="rounded-lg bg-brand-soft px-3 py-2 text-sm text-brand">
           บันทึกแล้ว
         </p>
       ) : null}
@@ -63,7 +63,7 @@ export default async function LoyaltySettingsPage({
           <select
             name="rounding"
             defaultValue={rule?.rounding ?? 'floor'}
-            className="rounded-lg border border-line px-3 py-2 dark:bg-slate-900"
+            className="rounded-lg border border-line px-3 py-2"
           >
             <option value="floor">ปัดลง</option>
             <option value="round">ปัดใกล้เคียง</option>
@@ -118,7 +118,7 @@ function Field({
           step="any"
           min={0}
           defaultValue={defaultValue}
-          className="w-28 rounded-lg border border-line px-3 py-1.5 text-right text-sm dark:bg-slate-900"
+          className="w-28 rounded-lg border border-line px-3 py-1.5 text-right text-sm"
         />
         <span className="w-16 text-xs text-muted">{suffix}</span>
       </span>

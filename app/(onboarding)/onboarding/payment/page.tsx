@@ -90,7 +90,7 @@ export default async function OnboardingPaymentPage({
       </div>
 
       {qr ? (
-        <figure className="flex flex-col items-center gap-2 self-center rounded-xl bg-white p-4">
+        <figure className="flex flex-col items-center gap-2 self-center rounded-xl bg-surface p-4">
           {/*
             The markup is built on this request by `qrSvg` out of the payee id
             in the code and a numeric(10,2) column — no request data reaches
@@ -98,7 +98,7 @@ export default async function OnboardingPaymentPage({
             dependency wrote. Inline rather than a data URI so it stays crisp.
           */}
           <div dangerouslySetInnerHTML={{ __html: qr }} />
-          <figcaption className="text-center text-sm text-slate-700">
+          <figcaption className="text-center text-sm text-foreground">
             สแกนจ่ายพร้อมเพย์
             {tenant.priceMonthly ? (
               <span className="block font-medium">{formatBaht(tenant.priceMonthly)}</span>

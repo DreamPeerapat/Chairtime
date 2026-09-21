@@ -171,7 +171,7 @@ export function WalkInForm({
           <section className="mt-4">
             <h3 className="mb-2 text-xs font-medium text-muted">เวลา</h3>
             {loading ? (
-              <p className="text-sm text-slate-400">กำลังหาเวลาว่าง…</p>
+              <p className="text-sm text-muted">กำลังหาเวลาว่าง…</p>
             ) : slots.length === 0 ? (
               <p className="text-sm text-muted">ไม่มีเวลาว่างเหลือในวันนี้</p>
             ) : (
@@ -201,14 +201,14 @@ export function WalkInForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="ชื่อลูกค้า (ไม่ใส่ก็ได้)"
-            className="rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
+            className="rounded-lg border border-line px-3 py-2.5 text-sm"
           />
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             inputMode="tel"
             placeholder="เบอร์โทร (ไม่ใส่ก็ได้)"
-            className="rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
+            className="rounded-lg border border-line px-3 py-2.5 text-sm"
           />
         </section>
 

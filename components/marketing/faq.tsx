@@ -6,6 +6,10 @@
  *
  * Every answer here is true today. An FAQ that promises what the product will
  * do next quarter is the fastest way to lose the shop that believed it.
+ *
+ * Two columns from `lg`: the heading column carries the one thing worth
+ * saying about the whole section, and the questions get the full width of a
+ * readable measure instead of stretching across the page.
  */
 const QUESTIONS = [
   {
@@ -36,28 +40,32 @@ const QUESTIONS = [
 
 export function Faq() {
   return (
-    <section className="border-t border-line bg-surface-muted">
-      <div className="mx-auto max-w-3xl px-5 py-16 sm:py-20">
-        <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-          คำถามที่ถามกันบ่อย
-        </h2>
+    <section id="คำถาม" className="scroll-mt-16 border-t border-line bg-surface-muted">
+      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:py-20 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-16">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">คำถามบ่อย</p>
+          <h2 className="mt-3 text-3xl font-semibold sm:text-4xl">สิ่งที่ร้านมักถามก่อนสมัคร</h2>
+          <p className="mt-4 text-sm leading-[1.85] text-muted">
+            ทุกคำตอบในนี้เป็นสิ่งที่ระบบทำได้แล้ววันนี้ ไม่ใช่สิ่งที่กำลังจะทำ
+          </p>
+        </div>
 
-        <div className="mt-8 flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           {QUESTIONS.map((item) => (
             <details
               key={item.q}
-              className="group rounded-2xl border border-line bg-surface px-5 py-4 open:border-brand/40"
+              className="group rounded-2xl border border-line bg-surface px-6 py-5 open:border-brand/40"
             >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-medium">
                 {item.q}
                 <span
                   aria-hidden
-                  className="shrink-0 text-muted transition group-open:rotate-45"
+                  className="grid size-6 shrink-0 place-items-center rounded-full border border-line text-muted transition group-open:rotate-45 group-open:border-brand/40 group-open:text-brand"
                 >
                   +
                 </span>
               </summary>
-              <p className="mt-3 text-sm leading-relaxed text-muted">{item.a}</p>
+              <p className="mt-4 text-sm leading-[1.85] text-muted">{item.a}</p>
             </details>
           ))}
         </div>

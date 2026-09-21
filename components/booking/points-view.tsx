@@ -85,7 +85,7 @@ export function PointsView({ tenantSlug, liffId }: { tenantSlug: string; liffId:
     <div className="flex flex-col gap-4">
       <div className="rounded-2xl border border-line p-6 text-center">
         <p className="text-xs text-muted">{data.shopName}</p>
-        <p className="mt-2 text-4xl font-semibold text-brand dark:text-teal-400">{data.balance}</p>
+        <p className="mt-2 text-4xl font-semibold text-brand">{data.balance}</p>
         <p className="text-xs text-muted">แต้มคงเหลือ</p>
       </div>
 

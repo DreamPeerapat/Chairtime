@@ -240,8 +240,8 @@ function FilterChip({
       className={cn(
         'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition',
         active
-          ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900'
-          : 'border-line hover:border-slate-400',
+          ? 'border-brand bg-brand text-brand-contrast'
+          : 'border-line hover:border-muted',
       )}
     >
       {color ? (
@@ -249,7 +249,7 @@ function FilterChip({
       ) : null}
       {label}
       {typeof count === 'number' ? (
-        <span className={active ? 'opacity-70' : 'text-slate-400'}>{count}</span>
+        <span className={active ? 'opacity-70' : 'text-muted'}>{count}</span>
       ) : null}
     </button>
   );

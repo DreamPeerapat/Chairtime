@@ -77,7 +77,7 @@ export function RewardManager({ rewards, services }: { rewards: AdminReward[]; s
               <span className="flex-1">
                 <span className="block text-sm font-medium">
                   {reward.name}
-                  {!reward.isActive ? <span className="ml-2 text-xs text-slate-400">ปิดอยู่</span> : null}
+                  {!reward.isActive ? <span className="ml-2 text-xs text-muted">ปิดอยู่</span> : null}
                 </span>
                 <span className="mt-0.5 block text-xs text-muted">{rewardSubtitle(reward)}</span>
               </span>

@@ -47,7 +47,7 @@ export function StaffStep({
       {/* Said out loud rather than left to be noticed. A shorter list with no
           explanation reads as stylists being away today. */}
       {hiddenCount > 0 ? (
-        <p className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-muted dark:bg-slate-800">
+        <p className="rounded-lg bg-surface-muted px-3 py-2 text-xs text-muted">
           แสดงเฉพาะช่างที่ทำบริการที่คุณเลือกได้ — ช่างอีก {hiddenCount} คนไม่ได้ทำบริการนี้
         </p>
       ) : null}
@@ -98,7 +98,7 @@ export function StaffStep({
         })}
       </ul>
 
-      <div className="sticky bottom-0 -mx-5 mt-auto flex gap-2 border-t border-line bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:bg-slate-950/95">
+      <div className="sticky bottom-0 -mx-5 mt-auto flex gap-2 border-t border-line bg-surface/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur">
         <button
           type="button"
           onClick={onBack}
@@ -159,8 +159,8 @@ function Card({
       className={cn(
         'ct-press relative overflow-hidden rounded-2xl border',
         active
-          ? 'border-brand bg-teal-50 dark:border-teal-500 dark:bg-teal-950/40'
-          : 'border-line hover:border-line dark:hover:border-slate-700',
+          ? 'border-brand bg-brand-soft'
+          : 'border-line hover:border-line',
       )}
     >
       <button
@@ -201,8 +201,8 @@ function Avatar({
       className={cn(
         'grid size-11 shrink-0 place-items-center rounded-full text-sm font-medium',
         anyone
-          ? 'bg-slate-100 text-muted dark:bg-slate-800'
-          : 'bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200',
+          ? 'bg-surface-muted text-muted'
+          : 'bg-brand-soft text-brand-strong',
       )}
     >
       {anyone ? '✨' : initialOf(name)}
@@ -226,7 +226,7 @@ function Tick({ shown }: { shown: boolean }) {
       className={cn(
         'grid size-5 shrink-0 place-items-center rounded-full border text-[11px] leading-none',
         shown
-          ? 'border-brand bg-teal-600 text-white dark:border-teal-500 dark:bg-teal-500'
+          ? 'border-brand bg-brand text-brand-contrast'
           : 'border-line text-transparent',
       )}
     >
@@ -263,7 +263,7 @@ function PortfolioStrip({
             type="button"
             onClick={() => onOpen(index)}
             aria-label={`ดูผลงานของ${staffName} รูปที่ ${index + 1}`}
-            className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-slate-100 ring-1 ring-black/5 dark:bg-slate-800 dark:ring-white/10"
+            className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-surface-muted ring-1 ring-black/5 dark:ring-white/10"
           >
             <Image
               src={photo.imageUrl}
@@ -273,7 +273,7 @@ function PortfolioStrip({
               className="object-cover"
             />
             {hidden > 0 && index === shown.length - 1 ? (
-              <span className="absolute inset-0 grid place-items-center bg-slate-900/60 text-xs font-medium text-white">
+              <span className="absolute inset-0 grid place-items-center bg-[#14201f]/60 text-xs font-medium text-white">
                 +{hidden}
               </span>
             ) : null}

@@ -66,7 +66,7 @@ export function AvatarPicker({
           {value ? (
             <Image src={value} alt="" fill sizes="64px" className="object-cover" />
           ) : (
-            <span className="grid size-full place-items-center text-xs text-slate-400">
+            <span className="grid size-full place-items-center text-xs text-muted">
               ไม่มีรูป
             </span>
           )}

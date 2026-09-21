@@ -19,7 +19,7 @@ import { saveShopProfile } from '@/lib/admin/actions';
 import { ErrorText } from './ui';
 
 const field =
-  'rounded-lg border border-line px-3 py-2 text-sm dark:bg-slate-900';
+  'rounded-lg border border-line px-3 py-2 text-sm';
 
 export function ShopProfileForm({
   name,
@@ -112,7 +112,7 @@ export function ShopProfileForm({
           href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
           target="_blank"
           rel="noreferrer"
-          className="w-fit text-xs text-brand underline dark:text-teal-400"
+          className="w-fit text-xs text-brand underline"
         >
           ดูจุดที่บันทึกไว้บนแผนที่ — ตรวจว่าหมุดถูกที่
         </a>
@@ -124,7 +124,7 @@ export function ShopProfileForm({
       </p>
 
       {error ? <ErrorText>{error}</ErrorText> : null}
-      {saved ? <p className="text-xs text-brand dark:text-teal-400">บันทึกแล้ว</p> : null}
+      {saved ? <p className="text-xs text-brand">บันทึกแล้ว</p> : null}
 
       <button
         type="submit"

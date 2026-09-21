@@ -60,7 +60,7 @@ export function RevenueChart({
 
             const bar = (
               <>
-                <span className="text-[10px] tabular-nums text-slate-400">
+                <span className="text-[10px] tabular-nums text-muted">
                   {value > 0 ? compact(value) : ''}
                 </span>
                 <span
@@ -69,10 +69,10 @@ export function RevenueChart({
                   className={cn(
                     'w-full rounded-t transition-[height]',
                     value === 0
-                      ? 'bg-slate-200 dark:bg-slate-800'
+                      ? 'bg-line'
                       : index === best
-                        ? 'bg-teal-600 dark:bg-teal-400'
-                        : 'bg-teal-600/45 dark:bg-teal-500/45',
+                        ? 'bg-brand'
+                        : 'bg-brand/45',
                   )}
                 />
                 <span className="text-center text-[10px] leading-tight text-muted">
@@ -88,7 +88,7 @@ export function RevenueChart({
                     href={`/dashboard/summary?range=${bucket.drillTo}&at=${bucket.key}`}
                     title={label}
                     aria-label={label}
-                    className="ct-press flex w-full flex-col items-center gap-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                    className="ct-press flex w-full flex-col items-center gap-1 rounded-lg hover:bg-surface-muted"
                   >
                     {bar}
                   </Link>

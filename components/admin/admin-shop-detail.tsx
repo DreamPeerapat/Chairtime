@@ -139,7 +139,7 @@ export function AdminShopDetail({
         <form action={onOpen}>
           <button
             type="submit"
-            className="ct-press w-fit rounded-xl bg-slate-800 px-5 py-2.5 text-sm font-medium text-white dark:bg-slate-200 dark:text-slate-900"
+            className="ct-press w-fit rounded-xl bg-[#1b2827] px-5 py-2.5 text-sm font-medium text-white"
           >
             เปิดหลังบ้านของ {shop.name}
           </button>

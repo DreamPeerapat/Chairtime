@@ -100,7 +100,7 @@ export default async function OnboardingPlanPage({
             required
             maxLength={120}
             placeholder="เช่น Nail Bar อารีย์"
-            className="rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
+            className="rounded-lg border border-line px-3 py-2.5 text-sm"
           />
         </label>
 
@@ -110,7 +110,7 @@ export default async function OnboardingPlanPage({
             {templates.map((t, i) => (
               <label
                 key={t.businessType}
-                className="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-3 py-2.5 text-sm has-[:checked]:border-brand has-[:checked]:bg-teal-50 dark:has-[:checked]:bg-teal-950"
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-3 py-2.5 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-soft dark:has-[:checked]:bg-brand-soft"
               >
                 <input
                   type="radio"
@@ -131,7 +131,7 @@ export default async function OnboardingPlanPage({
             {plans.map((plan, i) => (
               <label
                 key={plan.code}
-                className="flex cursor-pointer items-start justify-between gap-3 rounded-lg border border-line px-3 py-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-teal-50 dark:has-[:checked]:bg-teal-950"
+                className="flex cursor-pointer items-start justify-between gap-3 rounded-lg border border-line px-3 py-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-soft dark:has-[:checked]:bg-brand-soft"
               >
                 <span className="flex items-start gap-2">
                   <input type="radio" name="planCode" value={plan.code} required defaultChecked={i === 0} className="mt-0.5" />

@@ -32,7 +32,7 @@ export function SlipConfirmForm({
       <button
         type="submit"
         disabled={slipRequired && !slipUrl}
-        className="ct-press w-full rounded-xl bg-brand  py-3  text-sm font-medium text-brand-contrast disabled:opacity-50"
+        className="ct-press w-full rounded-xl bg-brand py-3  text-sm font-medium text-brand-contrast disabled:opacity-50"
       >
         {slipRequired && !slipUrl ? 'แนบสลิปก่อนจึงจะยืนยันได้' : 'โอนแล้ว ตรวจสอบเลย'}
       </button>

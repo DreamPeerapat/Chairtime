@@ -102,7 +102,7 @@ export default async function OnboardingSetupPage({
               name="openTime"
               defaultValue="10:00"
               required
-              className="rounded-lg border border-line px-3 py-2 text-sm dark:bg-slate-900"
+              className="rounded-lg border border-line px-3 py-2 text-sm"
             />
             <span className="text-sm text-muted">ถึง</span>
             <input
@@ -110,7 +110,7 @@ export default async function OnboardingSetupPage({
               name="closeTime"
               defaultValue="20:00"
               required
-              className="rounded-lg border border-line px-3 py-2 text-sm dark:bg-slate-900"
+              className="rounded-lg border border-line px-3 py-2 text-sm"
             />
           </div>
         </fieldset>
@@ -132,7 +132,7 @@ export default async function OnboardingSetupPage({
               max="50"
               defaultValue={1}
               required
-              className="w-24 rounded-lg border border-line px-3 py-1.5 text-right text-sm dark:bg-slate-900"
+              className="w-24 rounded-lg border border-line px-3 py-1.5 text-right text-sm"
             />
           </div>
           <div className="flex items-center justify-between gap-3 text-sm">
@@ -145,10 +145,10 @@ export default async function OnboardingSetupPage({
               max="50"
               defaultValue={1}
               required
-              className="w-24 rounded-lg border border-line px-3 py-1.5 text-right text-sm dark:bg-slate-900"
+              className="w-24 rounded-lg border border-line px-3 py-1.5 text-right text-sm"
             />
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-muted">
             ใส่คร่าวๆ ก่อนได้ แก้ชื่อและเพิ่มลดทีหลังได้ในหลังบ้าน
           </p>
         </fieldset>
@@ -167,7 +167,7 @@ export default async function OnboardingSetupPage({
                   min="1"
                   defaultValue={Number(s.basePrice)}
                   required
-                  className="w-28 rounded-lg border border-line px-3 py-1.5 text-right text-sm dark:bg-slate-900"
+                  className="w-28 rounded-lg border border-line px-3 py-1.5 text-right text-sm"
                 />
               </div>
             ))}

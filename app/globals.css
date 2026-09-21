@@ -1,7 +1,19 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: 'IBM Plex Sans Thai', ui-sans-serif, system-ui, sans-serif;
+  /*
+   * Two faces, each with a job.
+   *
+   * The sans is what a shop reads all day — prices, names, times — and IBM
+   * Plex Sans Thai has the loops and the weights to stay legible at 12px on a
+   * phone. The serif is for headings only: a booking page for salons, nail
+   * bars and spas is selling taste as much as software, and a page set
+   * entirely in one UI sans reads like an invoice. Both are loaded in
+   * app/layout.tsx through next/font, which self-hosts them — until that was
+   * added this file named a font nobody had downloaded.
+   */
+  --font-sans: var(--font-plex-thai), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-serif-thai), Georgia, serif;
 }
 
 /*
@@ -15,38 +27,63 @@
  *
  * Teal is the brand, and the same teal the LINE messages use (lib/line/
  * messages.ts). If it changes it changes in both, or a shop sees two products.
+ *
+ * The ground is a warm ivory rather than white, and every card is white on
+ * top of it. That one degree of difference is what makes a card read as a
+ * raised thing without a heavy border or a stack of shadows — and it is the
+ * difference between "a web app" and "a place a salon would put its name on".
+ * The neutrals are warm to match (slate greys next to teal go blue and cold).
+ *
+ * Accent is a clay terracotta, used for at most one thing per screen: the
+ * recommended plan, a booking that needs an answer. It is the only colour
+ * here that is allowed to interrupt.
  */
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
+  --background: #fbf9f5;
+  --foreground: #14201f;
 
   /* raised against the page: cards, panels, the nav bar */
   --surface: #ffffff;
   /* recessed: code blocks, quiet rows, the strip behind a section */
-  --surface-muted: #f8fafc;
-  --border: #e2e8f0;
-  --muted: #64748b;
+  --surface-muted: #f5f2eb;
+  --border: #ece7de;
+  --muted: #5c6b6a;
 
   --brand: #0f766e;
   --brand-strong: #115e59;
-  --brand-soft: #f0fdfa;
+  --brand-soft: #eaf5f2;
   --brand-contrast: #ffffff;
+
+  /* the one interruption per screen */
+  --accent: #a2542f;
+  --accent-soft: #f6e9e1;
+
+  /* one soft shadow, two depths — never stacked */
+  --elevation-card: 0 1px 2px rgb(20 32 31 / 0.04);
+  --elevation-raised: 0 22px 46px -32px rgb(20 32 31 / 0.35);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b1220;
-    --foreground: #e2e8f0;
+    --background: #0b1412;
+    --foreground: #e7e3da;
 
-    --surface: #0f1729;
-    --surface-muted: #131c30;
-    --border: #1e293b;
-    --muted: #94a3b8;
+    --surface: #121d1b;
+    --surface-muted: #16201e;
+    --border: #24302e;
+    --muted: #9ba7a5;
 
     --brand: #14b8a6;
     --brand-strong: #0d9488;
-    --brand-soft: #042f2e;
+    --brand-soft: #0b2f2b;
     --brand-contrast: #04211f;
+
+    /* lightened to clear 4.5:1 on the dark ground; the light one does not */
+    --accent: #e0a47c;
+    --accent-soft: #2e211a;
+
+    --elevation-card: 0 1px 2px rgb(0 0 0 / 0.4);
+    --elevation-raised: 0 22px 46px -32px rgb(0 0 0 / 0.75);
   }
 }
 
@@ -60,11 +97,31 @@
   --color-brand-strong: var(--brand-strong);
   --color-brand-soft: var(--brand-soft);
   --color-brand-contrast: var(--brand-contrast);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+
+  --shadow-card: var(--elevation-card);
+  --shadow-raised: var(--elevation-raised);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/*
+ * Headings are the serif; body copy is not.
+ *
+ * Set here rather than on forty `font-display` classes, because the rule is
+ * "every heading", and a rule stated once cannot be applied inconsistently.
+ * The opt-out is `font-sans` on the heading itself — wanted in dense admin
+ * tables, where a serif at 13px is harder to scan than the sans.
+ */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
 }
 
 /*
@@ -232,7 +289,7 @@ body {
  * pulled into the app's own palette.
  */
 .chairtime-calendar {
-  --fc-border-color: #e2e8f0;
+  --fc-border-color: #ece7de;
   --fc-today-bg-color: rgb(15 118 110 / 0.03);
   --fc-now-indicator-color: #dc2626;
   --fc-event-border-color: transparent;
@@ -270,16 +327,16 @@ body {
 .chairtime-calendar .fc-timegrid-axis,
 .chairtime-calendar .fc-timegrid-slot-label {
   font-size: 0.75rem;
-  color: #64748b;
+  color: #5c6b6a;
 }
 
 @media (prefers-color-scheme: dark) {
   .chairtime-calendar {
-    --fc-border-color: #1e293b;
+    --fc-border-color: #24302e;
     --fc-today-bg-color: rgb(45 212 191 / 0.05);
   }
   .chairtime-calendar .fc-timegrid-axis,
   .chairtime-calendar .fc-timegrid-slot-label {
-    color: #94a3b8;
+    color: #9ba7a5;
   }
 }

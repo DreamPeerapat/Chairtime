@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BookingPreview } from './booking-preview';
 
 /**
  * The first screen.
@@ -11,52 +12,102 @@ import Link from 'next/link';
  * The claim is deliberately narrow. "จองคิวผ่าน LINE" is what a salon owner
  * already understands, and it is the thing they can picture their own
  * customers doing tonight; "แพลตฟอร์มบริหารร้าน" is what a brochure says.
+ *
+ * Two columns from `lg` up, with the phone carrying the proof. Centred text
+ * over a full-width column was symmetrical and said nothing — a picture of
+ * the screen the customer actually sees does more than another paragraph.
+ * Below `lg` the phone drops under the copy rather than disappearing: it is
+ * the reason a shop keeps reading.
  */
+const PROMISES = ['ไม่ต้องผูกบัตรเครดิต', 'ตั้งร้านเสร็จใน 10 นาที', 'ยกเลิกเมื่อไรก็ได้'];
+
 export function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-line">
       {/* A wash of brand colour behind the fold, and nothing that moves. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-40 h-80 bg-[radial-gradient(60%_100%_at_50%_100%,var(--brand-soft),transparent)]"
+        className="pointer-events-none absolute -top-56 -right-40 h-[44rem] w-[44rem] rounded-full bg-[radial-gradient(closest-side,var(--brand-soft),transparent)]"
       />
 
-      <div className="relative mx-auto max-w-6xl px-5 py-16 sm:py-24">
-        <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted">
+      <div className="relative mx-auto grid max-w-6xl items-start gap-14 px-5 py-16 sm:py-20 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16">
+        <div className="lg:pt-6">
+          <span className="inline-flex items-center gap-2 rounded-full border border-line bg-brand-soft px-3.5 py-1.5 text-xs font-medium text-brand-strong">
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-3.5"
+            >
+              <path d="M12 2 4 6v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6z" />
+            </svg>
             สำหรับร้านผม ร้านเล็บ ร้านนวด สปา และคลินิก
           </span>
 
-          <h1 className="mt-5 text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            ให้ลูกค้าจองคิวเองผ่าน LINE
-            <br className="hidden sm:block" /> ร้านไม่ต้องตอบแชททีละคน
+          <h1 className="mt-6 text-4xl leading-[1.2] font-semibold sm:text-5xl lg:text-[3.4rem]">
+            ให้ลูกค้าจองคิวเอง
+            <br className="hidden sm:block" /> ผ่าน LINE
           </h1>
 
-          <p className="mt-5 text-base text-muted sm:text-lg">
-            ลูกค้าเลือกบริการ ช่าง และเวลาว่างเองได้ตลอด 24 ชั่วโมง
-            ระบบกันคิวชนให้อัตโนมัติ เตือนก่อนถึงคิว และเก็บประวัติลูกค้าให้ครบ
-            โดยที่ร้านไม่ต้องจดสมุดอีก
+          <p className="mt-6 max-w-xl text-base leading-[1.85] text-muted sm:text-lg">
+            ร้านไม่ต้องตอบแชททีละคน ลูกค้าเลือกบริการ ช่าง และเวลาว่างเองได้ตลอด 24 ชั่วโมง
+            ระบบกันคิวชนให้อัตโนมัติ เตือนก่อนถึงคิว และเก็บประวัติลูกค้าไว้ให้ครบ
           </p>
 
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/auth/start?provider=line"
-              className="ct-press w-full rounded-xl bg-brand px-6 py-3.5 text-sm font-medium text-brand-contrast hover:bg-brand-strong sm:w-auto"
+              className="ct-press inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-brand px-7 py-4 text-sm font-medium text-brand-contrast shadow-raised hover:bg-brand-strong sm:w-auto"
             >
               เริ่มทดลองฟรี 15 วัน
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-4"
+              >
+                <path d="M5 12h13" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
             </Link>
             <Link
               href="#วิธีใช้"
-              className="ct-press w-full rounded-xl border border-line bg-surface px-6 py-3.5 text-sm font-medium hover:bg-surface-muted sm:w-auto"
+              className="ct-press inline-flex w-full items-center justify-center rounded-2xl border border-line bg-surface px-7 py-4 text-sm font-medium hover:bg-surface-muted sm:w-auto"
             >
               ดูว่าทำงานอย่างไร
             </Link>
           </div>
 
-          <p className="mt-4 text-xs text-muted">
-            ไม่ต้องผูกบัตรเครดิต · ตั้งร้านเสร็จใน 10 นาที · ยกเลิกเมื่อไรก็ได้
-          </p>
+          <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted">
+            {PROMISES.map((promise) => (
+              <li key={promise} className="flex items-center gap-2">
+                <svg
+                  aria-hidden
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-3.5 text-brand"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                {promise}
+              </li>
+            ))}
+          </ul>
         </div>
+
+        <BookingPreview />
       </div>
     </section>
   );

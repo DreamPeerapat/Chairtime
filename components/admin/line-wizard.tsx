@@ -198,5 +198,5 @@ export function Steps({ children }: { children: React.ReactNode }) {
 }
 
 export function Term({ children }: { children: React.ReactNode }) {
-  return <span className="font-medium text-slate-700 dark:text-slate-200">{children}</span>;
+  return <span className="font-medium text-foreground">{children}</span>;
 }

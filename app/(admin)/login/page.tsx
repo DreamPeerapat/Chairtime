@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { currentSession } from '@/lib/auth';
 import { providerIsConfigured } from '@/lib/auth/oauth';
@@ -29,11 +30,18 @@ export default async function LoginPage({
   const message = error ? (ERROR_MESSAGES[error] ?? ERROR_MESSAGES.oauth) : null;
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-5">
-      <div className="flex w-full max-w-sm flex-col gap-4">
+    // A door, not a form: three lines of text floating in the middle of an
+    // empty page looked like something half-loaded. The card gives the two
+    // buttons somewhere to stand, and the mark says which product this is to
+    // a shop owner who followed a link from LINE.
+    <main className="flex min-h-screen items-center justify-center px-5 py-12">
+      <div className="flex w-full max-w-sm flex-col gap-5 rounded-3xl border border-line bg-surface p-8 shadow-card">
         <div>
-          <h1 className="text-xl font-semibold">Chairtime</h1>
-          <p className="mt-1 text-sm text-muted">เข้าสู่ระบบหลังร้าน</p>
+          <span className="relative block size-11 overflow-hidden rounded-2xl bg-[#0b1220]">
+            <Image src="/logo-mark.png" alt="" fill sizes="44px" className="object-cover" priority />
+          </span>
+          <h1 className="mt-5 text-2xl font-semibold">Chairtime</h1>
+          <p className="mt-1.5 text-sm text-muted">เข้าสู่ระบบหลังร้าน</p>
         </div>
 
         {message ? (
@@ -45,7 +53,7 @@ export default async function LoginPage({
         {lineReady ? (
           <a
             href="/auth/start?provider=line"
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#06C755] py-3 text-sm font-medium text-white"
+            className="ct-press flex items-center justify-center gap-2 rounded-2xl bg-[#06C755] py-3.5 text-sm font-medium text-white"
           >
             เข้าสู่ระบบด้วย LINE
           </a>
@@ -54,7 +62,7 @@ export default async function LoginPage({
         {googleReady ? (
           <a
             href="/auth/start?provider=google"
-            className="flex items-center justify-center gap-2 rounded-xl border border-line py-3 text-sm font-medium text-slate-800 dark:text-slate-100"
+            className="ct-press flex items-center justify-center gap-2 rounded-2xl border border-line py-3.5 text-sm font-medium text-foreground hover:bg-surface-muted"
           >
             เข้าสู่ระบบด้วย Google
           </a>
@@ -66,7 +74,7 @@ export default async function LoginPage({
           </p>
         ) : null}
 
-        <p className="text-center text-xs text-slate-400">
+        <p className="text-center text-xs text-muted">
           ยังไม่มีร้าน?{' '}
           <a
             href={`/auth/start?provider=${lineReady ? 'line' : 'google'}`}

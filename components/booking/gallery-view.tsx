@@ -29,7 +29,7 @@ export function GalleryView({ photos, shopName }: { photos: PortfolioPhoto[]; sh
 
   if (photos.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-line px-4 py-12 text-center text-sm text-slate-400">
+      <p className="rounded-xl border border-dashed border-line px-4 py-12 text-center text-sm text-muted">
         ร้านยังไม่ได้ลงรูปผลงาน
       </p>
     );

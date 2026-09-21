@@ -38,22 +38,22 @@ export function DayView({
             type="button"
             onClick={() => move(-1)}
             aria-label="วันก่อนหน้า"
-            className="rounded-lg border border-line px-2.5 py-1.5 text-sm"
+            className="ct-press grid size-11 place-items-center rounded-xl border border-line bg-surface text-base hover:bg-surface-muted"
           >
             ‹
           </button>
           <div>
-            <h1 className="text-lg font-semibold">
+            <h1 className="text-xl font-semibold sm:text-2xl">
               {thaiDateFull(day)}
-              {isToday ? <span className="ml-2 text-xs text-brand">วันนี้</span> : null}
+              {isToday ? <span className="ml-2 align-middle text-xs text-brand">วันนี้</span> : null}
             </h1>
-            <p className="text-xs text-muted">{shopName}</p>
+            <p className="mt-0.5 text-xs text-muted">{shopName}</p>
           </div>
           <button
             type="button"
             onClick={() => move(1)}
             aria-label="วันถัดไป"
-            className="rounded-lg border border-line px-2.5 py-1.5 text-sm"
+            className="ct-press grid size-11 place-items-center rounded-xl border border-line bg-surface text-base hover:bg-surface-muted"
           >
             ›
           </button>
@@ -61,7 +61,7 @@ export function DayView({
             <button
               type="button"
               onClick={() => router.push('/dashboard')}
-              className="rounded-lg border border-line px-2.5 py-1.5 text-xs"
+              className="ct-press h-11 rounded-xl border border-line bg-surface px-4 text-xs hover:bg-surface-muted"
             >
               วันนี้
             </button>
@@ -71,13 +71,13 @@ export function DayView({
         <button
           type="button"
           onClick={() => setWalkInOpen(true)}
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-contrast"
+          className="ct-press h-11 rounded-xl bg-brand px-5 text-sm font-medium text-brand-contrast hover:bg-brand-strong"
         >
           + Walk-in
         </button>
       </div>
 
-      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <Stat label="คิววันนี้" value={String(stats.total)} />
         <Stat label="รอมา" value={String(stats.upcoming)} />
         <Stat label="เสร็จแล้ว" value={String(stats.completed)} />
@@ -86,7 +86,7 @@ export function DayView({
       </dl>
 
       {calendar.openWindows.length === 0 ? (
-        <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-muted dark:bg-slate-800">
+        <p className="rounded-lg bg-surface-muted px-3 py-2 text-sm text-muted">
           วันนี้ร้านปิด
         </p>
       ) : null}
@@ -116,9 +116,13 @@ export function DayView({
 function Stat({ label, value, tone }: { label: string; value: string; tone?: 'warn' }) {
   const currency = value.startsWith('฿');
   return (
-    <div className="rounded-xl border border-line bg-slate-50/50 px-3 py-2 transition-colors duration-200 hover:border-line dark:bg-slate-900/40 dark:hover:border-slate-700">
+    <div className="rounded-2xl border border-line bg-surface px-4 py-3 shadow-card">
       <dt className="text-xs text-muted">{label}</dt>
-      <dd className={`text-lg font-semibold ${tone === 'warn' ? 'text-red-600' : ''}`}>
+      <dd
+        className={`mt-1.5 font-display text-2xl leading-none font-semibold ${
+          tone === 'warn' ? 'text-red-600' : ''
+        }`}
+      >
         {currency ? (
           <>
             <span className="mr-0.5">฿</span>

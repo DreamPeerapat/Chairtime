@@ -97,7 +97,7 @@ export function Modal({
   return createPortal(
     <div
       className={cn(
-        'fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 backdrop-blur-[2px] sm:items-center sm:p-4',
+        'fixed inset-0 z-50 flex items-end justify-center bg-[#14201f]/55 p-0 backdrop-blur-[2px] sm:items-center sm:p-4',
         leaving ? 'ct-backdrop-out' : 'ct-backdrop-in',
       )}
       role="dialog"
@@ -113,7 +113,7 @@ export function Modal({
         ref={panelRef}
         tabIndex={-1}
         className={cn(
-          'max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl outline-none dark:bg-slate-900 sm:rounded-2xl',
+          'max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-surface p-5 shadow-xl outline-none sm:rounded-2xl',
           leaving ? 'ct-panel-out' : 'ct-panel-in',
           className,
         )}

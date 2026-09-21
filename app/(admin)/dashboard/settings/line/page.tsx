@@ -246,7 +246,7 @@ export default async function LineConnectPage({
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`https://line.me/R/ti/p/${state.oaBasicId}`)}`}
                   width={180}
                   height={180}
-                  className="rounded-xl border border-line bg-white p-2"
+                  className="rounded-xl border border-line bg-surface p-2"
                 />
               </div>
             ) : null}

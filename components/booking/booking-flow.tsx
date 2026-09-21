@@ -273,10 +273,10 @@ function StepIndicator({ current, disabled }: { current: number; disabled: numbe
                 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-medium',
                 'transition-[background-color,color,transform] duration-200',
                 index === current
-                  ? 'scale-110 bg-brand text-brand-contrast shadow-sm shadow-teal-700/30'
+                  ? 'scale-110 bg-brand text-brand-contrast shadow-sm shadow-brand/30'
                   : index < current
-                    ? 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200'
-                    : 'bg-slate-100 text-slate-400 dark:bg-slate-800',
+                    ? 'bg-brand-soft text-brand-strong'
+                    : 'bg-surface-muted text-muted',
                 skipped && 'opacity-40',
               )}
             >
@@ -304,7 +304,7 @@ function StepIndicator({ current, disabled }: { current: number; disabled: numbe
                   ? 'font-medium'
                   : index < current
                     ? 'text-muted'
-                    : 'text-slate-400',
+                    : 'text-muted',
               )}
             >
               {label}

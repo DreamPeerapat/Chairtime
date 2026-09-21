@@ -61,13 +61,13 @@ export function TimeStep({
                 className={cn(
                   'ct-press flex w-14 shrink-0 flex-col items-center rounded-xl border py-2 text-xs',
                   active
-                    ? 'border-brand bg-brand text-brand-contrast shadow-sm shadow-teal-700/30'
-                    : 'border-line hover:border-line dark:hover:border-slate-600',
+                    ? 'border-brand bg-brand text-brand-contrast shadow-sm shadow-brand/30'
+                    : 'border-line hover:border-line',
                 )}
               >
-                <span className={active ? 'text-teal-100' : 'text-slate-400'}>{dayName}</span>
+                <span className={active ? 'text-brand-contrast/80' : 'text-muted'}>{dayName}</span>
                 <span className="text-base font-semibold">{dayNum}</span>
-                <span className={active ? 'text-teal-100' : 'text-slate-400'}>{month}</span>
+                <span className={active ? 'text-brand-contrast/80' : 'text-muted'}>{month}</span>
               </button>
             );
           })}
@@ -113,7 +113,7 @@ export function TimeStep({
       ) : slots.length === 0 ? (
         <div className="rounded-xl border border-dashed border-line py-8 text-center">
           <p className="text-sm text-muted">วันนี้ไม่มีเวลาว่าง</p>
-          <p className="mt-1 text-xs text-slate-400">ลองเลือกวันอื่น หรือเปลี่ยนช่างดูนะคะ</p>
+          <p className="mt-1 text-xs text-muted">ลองเลือกวันอื่น หรือเปลี่ยนช่างดูนะคะ</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -133,8 +133,8 @@ export function TimeStep({
                         className={cn(
                           'ct-press rounded-lg border py-2 text-sm tabular-nums',
                           active
-                            ? 'border-brand bg-brand text-brand-contrast shadow-sm shadow-teal-700/30'
-                            : 'border-line hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-950/40',
+                            ? 'border-brand bg-brand text-brand-contrast shadow-sm shadow-brand/30'
+                            : 'border-line hover:border-brand hover:bg-brand-soft',
                         )}
                       >
                         {DateTime.fromISO(slot.startsAt).setZone(timezone).toFormat('HH:mm')}
@@ -148,7 +148,7 @@ export function TimeStep({
         </div>
       )}
 
-      <div className="sticky bottom-0 -mx-5 mt-auto flex gap-2 border-t border-line bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:bg-slate-950/95">
+      <div className="sticky bottom-0 -mx-5 mt-auto flex gap-2 border-t border-line bg-surface/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur">
         <button
           type="button"
           onClick={onBack}

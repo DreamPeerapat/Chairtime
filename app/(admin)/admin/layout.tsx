@@ -20,17 +20,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b border-slate-700 bg-slate-900 text-slate-100">
+      <header className="sticky top-0 z-40 border-b border-[#26332f] bg-[#14201f] text-[#f4f1ea]">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2.5">
           <Link href="/admin" className="text-sm font-semibold">
             Chairtime · แอดมินระบบ
           </Link>
           <div className="flex items-center gap-3 text-xs">
-            <Link href="/dashboard" className="text-slate-300 hover:text-white">
+            <Link href="/dashboard" className="text-[#a8b4b2] hover:text-white">
               ร้านของฉัน
             </Link>
             <form action={logout}>
-              <button type="submit" className="text-slate-400 hover:text-white">
+              <button type="submit" className="text-[#a8b4b2] hover:text-white">
                 ออกจากระบบ
               </button>
             </form>

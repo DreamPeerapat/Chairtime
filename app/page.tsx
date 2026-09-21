@@ -3,6 +3,7 @@ import { Faq } from '@/components/marketing/faq';
 import { Features } from '@/components/marketing/features';
 import { Hero } from '@/components/marketing/hero';
 import { Pricing } from '@/components/marketing/pricing';
+import { ProofStrip } from '@/components/marketing/proof-strip';
 import { SiteFooter } from '@/components/marketing/site-footer';
 import { SiteNav } from '@/components/marketing/site-nav';
 import { Steps } from '@/components/marketing/steps';
@@ -38,6 +39,7 @@ export default function Home() {
       <SiteNav />
       <main>
         <Hero />
+        <ProofStrip />
         <Features />
         <Steps />
         <Pricing />

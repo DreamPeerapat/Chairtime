@@ -108,7 +108,7 @@ export function HoursTab({
 
       <ul className="flex flex-col gap-3">
         {days.map((day) => (
-          <li key={day.weekday} className="flex flex-col gap-2 border-b border-slate-100 pb-3 last:border-0">
+          <li key={day.weekday} className="flex flex-col gap-2 border-b border-line pb-3 last:border-0">
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -118,7 +118,7 @@ export function HoursTab({
               />
               {WEEKDAYS[day.weekday]}
               {day.open && day.ranges.length > 1 ? (
-                <span className="text-xs text-slate-400">({day.ranges.length} ช่วง)</span>
+                <span className="text-xs text-muted">({day.ranges.length} ช่วง)</span>
               ) : null}
             </label>
 
@@ -139,7 +139,7 @@ export function HoursTab({
                   }
                   className={cn(inputClass, 'w-28')}
                 />
-                <span className="text-slate-400">–</span>
+                <span className="text-muted">–</span>
                 <input
                   type="time"
                   value={range.closeTime}
@@ -191,7 +191,7 @@ export function HoursTab({
         ))}
       </ul>
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-muted">
         ร้านที่พักกลางวันให้เพิ่มช่วงที่สอง เช่น 10:00–13:00 และ 14:00–20:00
       </p>
 

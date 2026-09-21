@@ -116,7 +116,7 @@ export function SummaryView({
               ›
             </Link>
           ) : (
-            <span className="rounded-lg border border-transparent px-2.5 py-1.5 text-slate-300 dark:text-slate-700">
+            <span className="rounded-lg border border-transparent px-2.5 py-1.5 text-[#a8b4b2]">
               ›
             </span>
           )}

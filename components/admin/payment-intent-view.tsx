@@ -82,7 +82,7 @@ export function PaymentIntentView({
             </p>
             <PaymentCountdown expiresAt={intent.expiresAt} />
 
-            <div className="rounded-xl bg-white p-3">
+            <div className="rounded-xl bg-surface p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`/api/admin/billing/promptpay?reference=${encodeURIComponent(intent.reference)}`}
@@ -187,7 +187,7 @@ function PaidPanel({ intent }: { intent: PaymentIntentForView }) {
           href={intent.receiptUrl}
           target="_blank"
           rel="noreferrer"
-          className="ct-press rounded-xl bg-brand  px-5 py-2.5 text-sm font-medium text-brand-contrast"
+          className="ct-press rounded-xl bg-brand px-5 py-2.5 text-sm font-medium text-brand-contrast"
         >
           เปิดใบเสร็จ {intent.receiptNumber ?? ''}
         </a>
@@ -211,7 +211,7 @@ function ClosedPanel({ status }: { status: string }) {
       </p>
       <Link
         href="/dashboard/billing"
-        className="ct-press rounded-xl bg-brand  px-5 py-2.5 text-sm font-medium text-brand-contrast"
+        className="ct-press rounded-xl bg-brand px-5 py-2.5 text-sm font-medium text-brand-contrast"
       >
         สร้างรายการใหม่
       </Link>

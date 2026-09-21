@@ -120,9 +120,9 @@ export function ConfirmStep({
             and reminders will reach them on LINE. Asking for a name as well
             is a field for its own sake. */}
         {viaLine ? (
-          <p className="rounded-lg bg-teal-50 px-3 py-2.5 text-xs text-teal-900 dark:bg-teal-950/40 dark:text-teal-200">
+          <p className="rounded-lg bg-brand-soft px-3 py-2.5 text-xs text-brand-strong">
             จองในนาม <span className="font-medium">{liffName ?? 'บัญชี LINE ของคุณ'}</span>
-            <span className="mt-0.5 block text-teal-800/80 dark:text-teal-300/80">
+            <span className="mt-0.5 block text-brand-strong/80">
               ร้านจะส่งคำยืนยันและติดต่อกลับทาง LINE นี้
             </span>
           </p>
@@ -132,7 +132,7 @@ export function ConfirmStep({
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
-              className="w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
+              className="w-full rounded-lg border border-line px-3 py-2.5 text-sm"
               placeholder="ชื่อที่ให้ร้านเรียก"
             />
           </Field>
@@ -143,7 +143,7 @@ export function ConfirmStep({
             onChange={(e) => setPhone(e.target.value)}
             inputMode="tel"
             autoComplete="tel"
-            className="w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
+            className="w-full rounded-lg border border-line px-3 py-2.5 text-sm"
             placeholder="08xxxxxxxx"
           />
         </Field>
@@ -159,7 +159,7 @@ export function ConfirmStep({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={2}
-            className="w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
+            className="w-full rounded-lg border border-line px-3 py-2.5 text-sm"
             placeholder="เช่น แพ้น้ำยาบางชนิด, ขอที่จอดรถ"
           />
         </Field>
@@ -171,7 +171,7 @@ export function ConfirmStep({
         </p>
       ) : null}
 
-      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-line bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:bg-slate-950/95">
+      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-line bg-surface/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur">
         {showMissing ? (
           <p className="mb-2 text-xs text-muted">ยังขาด {missing.join(' และ ')}</p>
         ) : null}
@@ -202,7 +202,7 @@ export function ConfirmStep({
 function Row({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
   const { symbol, digits } = splitBaht(value);
   return (
-    <div className="flex justify-between gap-4 border-b border-slate-100 py-2 last:border-0/60">
+    <div className="flex justify-between gap-4 border-b border-line py-2 last:border-0/60">
       <dt className="shrink-0 text-muted">{label}</dt>
       <dd className={emphasis ? 'font-semibold' : 'text-right'}>
         {symbol ? <span className="mr-0.5">{symbol}</span> : null}

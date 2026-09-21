@@ -37,7 +37,7 @@ export function RewardCheckin() {
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           placeholder="กรอกโค้ด 6 หลัก"
           autoCapitalize="characters"
-          className="flex-1 rounded-lg border border-line px-3 py-3 text-center text-lg font-medium tracking-widest dark:bg-slate-900"
+          className="flex-1 rounded-lg border border-line px-3 py-3 text-center text-lg font-medium tracking-widest"
         />
         <button
           type="submit"
@@ -53,9 +53,9 @@ export function RewardCheckin() {
       ) : null}
 
       {result ? (
-        <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm dark:border-teal-900 dark:bg-teal-950">
-          <p className="font-medium text-teal-800 dark:text-teal-300">ใช้โค้ดสำเร็จ</p>
-          <p className="mt-1 text-brand dark:text-teal-400">
+        <div className="rounded-xl border border-brand/30 bg-brand-soft px-4 py-3 text-sm">
+          <p className="font-medium text-brand-strong">ใช้โค้ดสำเร็จ</p>
+          <p className="mt-1 text-brand">
             {result.rewardName} — {result.customerName}
           </p>
         </div>

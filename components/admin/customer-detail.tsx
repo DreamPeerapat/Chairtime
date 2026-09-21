@@ -98,7 +98,7 @@ export function CustomerDetail({
           }}
           rows={3}
           placeholder="เช่น แพ้น้ำยา X, ชอบช่างแนน, ผมบาง"
-          className="w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900"
+          className="w-full rounded-lg border border-line px-3 py-2.5 text-sm"
         />
         <div className="flex items-center gap-3">
           <button
@@ -116,7 +116,7 @@ export function CustomerDetail({
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-muted">ประวัติการมา</h2>
         {visits.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-slate-400">
+          <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
             ยังไม่มีประวัติ
           </p>
         ) : (

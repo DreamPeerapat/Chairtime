@@ -52,8 +52,8 @@ export function ServiceStep({
                     className={cn(
                       'ct-press flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left',
                       isSelected
-                        ? 'border-brand bg-teal-50 dark:border-teal-500 dark:bg-teal-950/40'
-                        : 'border-line hover:border-line hover:bg-slate-50 dark:hover:border-slate-700 dark:hover:bg-slate-900',
+                        ? 'border-brand bg-brand-soft'
+                        : 'border-line hover:border-line hover:bg-surface-muted',
                     )}
                   >
                     {/* A tick, not just a tinted border: on a dark screen the
@@ -64,8 +64,8 @@ export function ServiceStep({
                       className={cn(
                         'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border transition',
                         isSelected
-                          ? 'border-brand bg-teal-600 text-white dark:border-teal-500 dark:bg-teal-500'
-                          : 'border-line dark:border-slate-600',
+                          ? 'border-brand bg-brand text-brand-contrast'
+                          : 'border-line',
                       )}
                     >
                       {isSelected ? (
@@ -87,7 +87,7 @@ export function ServiceStep({
                         {service.hasPassiveSegment ? ' · มีช่วงพักระหว่างทำ' : ''}
                       </span>
                       {service.description ? (
-                        <span className="mt-1 block text-xs text-slate-400">{service.description}</span>
+                        <span className="mt-1 block text-xs text-muted">{service.description}</span>
                       ) : null}
                     </span>
                     <span className="shrink-0 text-sm font-medium tabular-nums">
@@ -101,12 +101,12 @@ export function ServiceStep({
         </section>
       ))}
 
-      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-line bg-white/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur dark:bg-slate-950/95">
+      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-line bg-surface/95 px-5 pb-[env(safe-area-inset-bottom)] pt-3 backdrop-blur">
         {/* "เลือกแล้ว 0 รายการ · 0 นาที ฿0" is three noughts telling the
             customer nothing. Before the first pick, say what to do instead. */}
         <div className="mb-2 flex items-baseline justify-between gap-3 text-sm">
           {selected.length === 0 ? (
-            <span className="text-slate-400">เลือกบริการที่ต้องการ เลือกได้มากกว่าหนึ่งอย่าง</span>
+            <span className="text-muted">เลือกบริการที่ต้องการ เลือกได้มากกว่าหนึ่งอย่าง</span>
           ) : (
             <>
               <span className="text-muted">

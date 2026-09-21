@@ -18,11 +18,16 @@ export default async function BookingLayout({
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col">
-      <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+      {/* The shop's name, at the size a shop's name deserves. This page is the
+          first thing that shop's customers see of it, and a 14px line above a
+          form said "system generated". The header sits on the bright surface
+          so the flow below it reads as the page and this reads as the sign
+          over the door. */}
+      <header className="flex items-start justify-between gap-3 border-b border-line bg-surface px-5 py-5">
         <div className="min-w-0">
-          <h1 className="text-lg font-semibold">{tenant.name}</h1>
+          <h1 className="truncate text-xl font-semibold">{tenant.name}</h1>
           {tenant.address ? (
-            <p className="mt-0.5 text-xs text-muted">{tenant.address}</p>
+            <p className="mt-1 truncate text-xs text-muted">{tenant.address}</p>
           ) : null}
         </div>
 
@@ -33,7 +38,7 @@ export default async function BookingLayout({
           {tenant.phone ? (
             <a
               href={`tel:${tenant.phone}`}
-              className="ct-press rounded-lg border border-line px-3 py-1.5 text-xs whitespace-nowrap hover:bg-surface-muted"
+              className="ct-press inline-flex h-11 items-center rounded-xl border border-line px-3.5 text-xs whitespace-nowrap hover:bg-surface-muted"
             >
               โทรหาร้าน
             </a>
@@ -44,7 +49,7 @@ export default async function BookingLayout({
           {hasPortfolio ? (
             <Link
               href={`/${tenantSlug}/gallery`}
-              className="ct-press rounded-lg border border-line px-3 py-1.5 text-xs whitespace-nowrap hover:bg-surface-muted"
+              className="ct-press inline-flex h-11 items-center rounded-xl border border-line px-3.5 text-xs whitespace-nowrap hover:bg-surface-muted"
             >
               ดูผลงาน
             </Link>
@@ -52,7 +57,7 @@ export default async function BookingLayout({
         </div>
       </header>
       <main className="flex flex-1 flex-col px-5 py-5">{children}</main>
-      <footer className="px-5 py-6 text-center text-xs text-slate-400">
+      <footer className="px-5 py-6 text-center text-xs text-muted">
         จองคิวด้วย Chairtime
       </footer>
     </div>

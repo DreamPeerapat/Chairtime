@@ -15,7 +15,7 @@ export function ImpersonationBanner({
   onLeave: () => Promise<void>;
 }) {
   return (
-    <div className="border-b border-slate-700 bg-slate-800 text-slate-100 dark:border-slate-600 dark:bg-slate-700">
+    <div className="border-b border-[#26332f] bg-[#1b2827] text-[#f4f1ea]">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-xs">
         <p>
           <span className="font-medium">โหมดแอดมินระบบ</span> — กำลังดูหลังบ้านของ{' '}
@@ -24,7 +24,7 @@ export function ImpersonationBanner({
         <form action={onLeave}>
           <button
             type="submit"
-            className="ct-press shrink-0 rounded-lg bg-slate-100 px-3 py-1.5 font-medium text-slate-900"
+            className="ct-press shrink-0 rounded-lg bg-[#f4f1ea] px-3 py-1.5 font-medium text-[#14201f]"
           >
             ออกจากโหมดแอดมิน
           </button>

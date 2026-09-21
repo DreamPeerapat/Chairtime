@@ -92,7 +92,7 @@ export function ReferenceUploader({
               type="button"
               onClick={() => onChange(images.filter((i) => i.pathname !== image.pathname))}
               aria-label="เอารูปนี้ออก"
-              className="absolute top-1 right-1 grid size-6 place-items-center rounded-full bg-slate-900/70 text-xs text-white"
+              className="absolute top-1 right-1 grid size-6 place-items-center rounded-full bg-[#14201f]/70 text-xs text-white"
             >
               ✕
             </button>

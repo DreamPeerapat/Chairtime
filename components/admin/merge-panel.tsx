@@ -50,7 +50,7 @@ export function MergePanel({ duplicates }: { duplicates: DuplicateGroup[] }) {
       ) : null}
 
       {groups.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-line px-4 py-8 text-center text-sm text-slate-400">
+        <p className="rounded-xl border border-dashed border-line px-4 py-8 text-center text-sm text-muted">
           ไม่พบรายชื่อซ้ำ
         </p>
       ) : (
@@ -66,10 +66,10 @@ export function MergePanel({ duplicates }: { duplicates: DuplicateGroup[] }) {
                 <ul className="flex flex-col gap-1.5">
                   {group.ids.map((id, index) => (
                     <li key={id} className="flex items-center justify-between gap-3 text-xs">
-                      <span className={done.includes(id) ? 'text-slate-400 line-through' : ''}>
+                      <span className={done.includes(id) ? 'text-muted line-through' : ''}>
                         {group.phones[index] ?? 'ไม่มีเบอร์'} · มา {group.visits[index] ?? 0} ครั้ง
                         {index === 0 ? (
-                          <span className="ml-2 rounded bg-teal-100 px-1.5 py-0.5 text-teal-800">
+                          <span className="ml-2 rounded bg-brand-soft px-1.5 py-0.5 text-brand-strong">
                             เก็บอันนี้
                           </span>
                         ) : null}

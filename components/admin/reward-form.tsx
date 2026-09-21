@@ -165,7 +165,7 @@ export function RewardForm({
 }
 
 const inputClass =
-  'w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900 disabled:opacity-50';
+  'w-full rounded-lg border border-line px-3 py-2.5 text-sm disabled:opacity-50';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

@@ -207,7 +207,7 @@ function ServiceForm({
           </div>
 
           {multiSegment ? (
-            <p className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-muted dark:bg-slate-800">
+            <p className="rounded-lg bg-surface-muted px-3 py-2 text-xs text-muted">
               บริการนี้แบ่งเป็น {service!.segments.length} ช่วง (เช่น ลงสี → รอสีติด → สระ)
               แก้เวลาแต่ละช่วงต้องทำผ่านผู้ดูแลระบบ เพื่อไม่ให้ตารางช่างเพี้ยน
             </p>
@@ -276,7 +276,7 @@ function ServiceForm({
 }
 
 const inputClass =
-  'w-full rounded-lg border border-line px-3 py-2.5 text-sm dark:bg-slate-900 disabled:opacity-50';
+  'w-full rounded-lg border border-line px-3 py-2.5 text-sm disabled:opacity-50';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

@@ -80,8 +80,8 @@ export function ResourceManager(props: Props) {
             className={cn(
               'rounded-lg px-3 py-1.5 text-sm',
               tab === key
-                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
-                : 'text-muted hover:bg-slate-100 dark:hover:bg-slate-800',
+                ? 'bg-[#14201f] text-white'
+                : 'text-muted hover:bg-surface-muted',
             )}
           >
             {label}
@@ -149,7 +149,7 @@ function Group({
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-muted">{title}</h2>
         {onAdd ? (
-          <button type="button" onClick={onAdd} className="text-xs text-brand dark:text-teal-400">
+          <button type="button" onClick={onAdd} className="text-xs text-brand">
             + เพิ่ม
           </button>
         ) : null}
@@ -169,9 +169,9 @@ function Group({
             >
               <span className="block text-sm font-medium">
                 {resource.name}
-                {!resource.isActive ? <span className="ml-2 text-xs text-slate-400">ปิดอยู่</span> : null}
+                {!resource.isActive ? <span className="ml-2 text-xs text-muted">ปิดอยู่</span> : null}
                 {resource.isHuman && !resource.isBookable ? (
-                  <span className="ml-2 text-xs text-slate-400">ลูกค้าเลือกไม่ได้</span>
+                  <span className="ml-2 text-xs text-muted">ลูกค้าเลือกไม่ได้</span>
                 ) : null}
               </span>
               {resource.isHuman ? (
@@ -186,7 +186,7 @@ function Group({
           </li>
         ))}
         {items.length === 0 ? (
-          <li className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-slate-400">
+          <li className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
             ยังไม่มีข้อมูล
           </li>
         ) : null}
@@ -442,7 +442,7 @@ function TimeOffTab({ resources, timeOff, timezone }: Props) {
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-muted">ที่กำหนดไว้</h2>
         {timeOff.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-slate-400">
+          <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
             ยังไม่มีวันลา
           </p>
         ) : (
