@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { SESSION_COOKIE, requireSession } from '@/lib/auth';
 import { db, schema } from '@/lib/db/client';
 import { DashboardNav } from '@/components/admin/dashboard-nav';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { BillingBanner } from '@/components/admin/billing-banner';
 import { ImpersonationBanner } from '@/components/admin/impersonation-banner';
 import { loadBillingState } from '@/lib/billing/access';
@@ -62,14 +63,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </span>
           </div>
 
-          <form action={logout}>
-            <button
-              type="submit"
-              className="ct-press rounded-lg border border-line px-3 py-2 text-xs text-muted hover:bg-surface-muted hover:text-foreground"
-            >
-              ออกจากระบบ
-            </button>
-          </form>
+          <div className="flex shrink-0 items-center gap-2">
+            <ThemeToggle />
+
+            <form action={logout}>
+              <button
+                type="submit"
+                className="ct-press h-11 rounded-xl border border-line px-3.5 text-xs text-muted hover:bg-surface-muted hover:text-foreground"
+              >
+                ออกจากระบบ
+              </button>
+            </form>
+          </div>
         </div>
 
         <DashboardNav

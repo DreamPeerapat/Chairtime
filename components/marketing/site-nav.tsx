@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 /**
  * The bar across the top of the public pages.
@@ -33,7 +34,11 @@ export function SiteNav() {
           <span className="relative size-9 shrink-0 overflow-hidden rounded-xl bg-[#0b1220]">
             <Image src="/logo-mark.png" alt="" fill sizes="36px" className="object-cover" priority />
           </span>
-          <span className="text-base font-semibold tracking-tight">Chairtime</span>
+          {/* The wordmark goes below `sm`. With the theme switch in the row,
+              the logo, the name, the login link and the trial button no
+              longer fit in 375px — and of those four the name is the one the
+              mark beside it already says. */}
+          <span className="hidden text-base font-semibold tracking-tight sm:inline">Chairtime</span>
         </Link>
 
         <div className="flex items-center gap-1">
@@ -47,9 +52,11 @@ export function SiteNav() {
             </Link>
           ))}
 
+          <ThemeToggle className="ml-1" />
+
           <Link
             href="/login"
-            className="ml-1 rounded-lg px-3 py-2 text-sm whitespace-nowrap text-muted hover:text-foreground"
+            className="rounded-lg px-2.5 py-2 text-sm whitespace-nowrap text-muted hover:text-foreground sm:px-3"
           >
             เข้าสู่ระบบ
           </Link>

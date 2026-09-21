@@ -96,13 +96,13 @@ export function Features() {
         </p>
       </div>
 
-      <div className="mt-11 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="ct-stagger mt-11 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURES.map((feature) => (
           <article
             key={feature.title}
-            className="rounded-2xl border border-line bg-surface p-6 shadow-card transition hover:border-brand/40"
+            className="ct-reveal ct-lift rounded-2xl border border-line bg-surface p-6 shadow-card hover:border-brand/40"
           >
-            <span className="grid size-11 place-items-center rounded-xl bg-brand-soft">
+            <span className="ct-lift-mark grid size-11 place-items-center rounded-xl bg-brand-soft">
               <svg
                 aria-hidden
                 viewBox="0 0 24 24"

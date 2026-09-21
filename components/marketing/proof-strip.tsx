@@ -17,9 +17,9 @@ const FACTS = [
 export function ProofStrip() {
   return (
     <section className="border-b border-line bg-surface">
-      <div className="mx-auto grid max-w-6xl gap-x-8 gap-y-7 px-5 py-8 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-line">
+      <div className="ct-stagger mx-auto grid max-w-6xl gap-x-8 gap-y-7 px-5 py-8 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-line">
         {FACTS.map((fact, index) => (
-          <div key={fact.headline} className={index === 0 ? 'lg:pr-8' : 'lg:px-8 lg:last:pr-0'}>
+          <div key={fact.headline} className={index === 0 ? 'ct-reveal lg:pr-8' : 'ct-reveal lg:px-8 lg:last:pr-0'}>
             <p className="text-lg font-semibold text-brand">{fact.headline}</p>
             <p className="mt-1 text-sm text-muted">{fact.detail}</p>
           </div>

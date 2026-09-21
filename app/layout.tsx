@@ -34,9 +34,37 @@ export const metadata: Metadata = {
   description: 'ระบบจองคิวและสะสมแต้มสำหรับร้านบริการ',
 };
 
+/**
+ * Applies a stored theme choice before the first paint.
+ *
+ * Without this the page renders in the OS theme, hydrates, and then flips —
+ * a white flash on every navigation for anybody who chose dark. It has to be
+ * inline and it has to be in <head>, so it is a string rather than a module:
+ * an external file would be a round trip, and the flash is exactly as long
+ * as that round trip.
+ *
+ * Nothing here can throw. Storage access alone throws in a private window,
+ * and an exception in this script would leave the page unstyled.
+ *
+ * Keep the key and the values in step with components/ui/theme-toggle.tsx.
+ */
+const THEME_SCRIPT = `try{var t=localStorage.getItem('chairtime-theme');if(t==='dark'||t==='light'){document.documentElement.dataset.theme=t}}catch(e){}`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="th" className={`${plexThai.variable} ${serifThai.variable}`}>
+    // suppressHydrationWarning is for THEME_SCRIPT below and nothing else: it
+    // adds `data-theme` to this element before React sees the page, and React
+    // would otherwise report the attribute it did not render as a mismatch.
+    // It suppresses warnings for this element's own attributes only, not for
+    // anything inside it.
+    <html
+      lang="th"
+      suppressHydrationWarning
+      className={`${plexThai.variable} ${serifThai.variable}`}
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-screen font-sans antialiased">{children}</body>
     </html>
   );

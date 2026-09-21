@@ -36,9 +36,9 @@ export default async function LoginPage({
     // a shop owner who followed a link from LINE.
     <main className="flex min-h-screen items-center justify-center px-5 py-12">
       <div className="flex w-full max-w-sm flex-col gap-5 rounded-3xl border border-line bg-surface p-8 shadow-card">
-        <div>
-          <span className="relative block size-11 overflow-hidden rounded-2xl bg-[#0b1220]">
-            <Image src="/logo-mark.png" alt="" fill sizes="44px" className="object-cover" priority />
+        <div className="text-center">
+          <span className="relative mx-auto block size-12 overflow-hidden rounded-2xl bg-[#0b1220]">
+            <Image src="/logo-mark.png" alt="" fill sizes="48px" className="object-cover" priority />
           </span>
           <h1 className="mt-5 text-2xl font-semibold">Chairtime</h1>
           <p className="mt-1.5 text-sm text-muted">เข้าสู่ระบบหลังร้าน</p>

@@ -20,13 +20,18 @@ const DAYS = [
 
 export function BookingPreview() {
   return (
-    <div aria-hidden className="relative mx-auto w-full max-w-[320px] select-none">
+    <div aria-hidden className="ct-phone relative mx-auto w-full max-w-[320px] select-none">
       {/* The tinted plate behind the phone: it stops the device floating on
           the page unattached to anything. */}
       <div className="absolute inset-x-[-14%] top-10 bottom-16 rounded-[2.5rem] bg-brand-soft" />
 
-      <div className="relative rounded-[2.4rem] bg-[#14201f] p-2.5 shadow-raised">
-        <div className="flex h-[36rem] flex-col overflow-hidden rounded-[1.9rem] bg-surface">
+      <div className="ct-phone-body relative">
+        {/* The far side of the case. Sitting twelve pixels back, it is what
+            the turn exposes down the right edge. */}
+        <div className="ct-phone-back absolute inset-0 rounded-[2.4rem] bg-[#0b1412]" />
+
+        <div className="relative rounded-[2.4rem] bg-[#14201f] p-2.5 shadow-[0_46px_80px_-44px_rgb(20_32_31/0.65)] ring-1 ring-white/10">
+          <div className="flex h-[36rem] flex-col overflow-hidden rounded-[1.9rem] bg-surface">
           <div className="shrink-0 border-b border-line px-4 pt-4 pb-3.5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -96,6 +101,7 @@ export function BookingPreview() {
             <div className="rounded-xl bg-brand py-3 text-center text-[13px] font-medium text-brand-contrast">
               ยืนยันการจอง
             </div>
+          </div>
           </div>
         </div>
       </div>

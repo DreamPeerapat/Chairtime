@@ -18,7 +18,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-5 py-12 sm:py-16">
         <div className="flex flex-col items-start gap-8 rounded-3xl bg-brand px-8 py-11 text-brand-contrast shadow-raised sm:px-12 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-xl">
-            <h2 className="text-2xl font-semibold sm:text-3xl">ลองดูก่อน 15 วัน ไม่ต้องใส่บัตร</h2>
+            <h2 className="text-2xl font-semibold sm:text-3xl">ทดลองใช้งานได้ทันที 15 วัน</h2>
             <p className="mt-3 text-sm leading-[1.85] opacity-90">
               ตั้งร้านเสร็จภายในสิบนาที ถ้าไม่ใช่ก็เลิกได้ ไม่มีอะไรผูกไว้
             </p>

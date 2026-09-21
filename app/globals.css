@@ -1,5 +1,31 @@
 @import 'tailwindcss';
 
+/*
+ * What "dark" means, stated once for Tailwind.
+ *
+ * The palette below flips on two conditions — the OS asked for dark, or the
+ * person pressed the switch — and `dark:red-950` on an error panel has to
+ * flip on exactly the same two, or a shop that presses the switch gets dark
+ * cards with light-mode error banners inside them. Tailwind's built-in
+ * variant only knows the OS, so it is redefined here to know both.
+ *
+ * `[data-theme]` is written by the switch (components/theme-toggle.tsx) and,
+ * before first paint, by the inline script in app/layout.tsx. With no script
+ * and no stored choice the media query still decides, which is why the OS
+ * rule is guarded by `:not([data-theme='light'])` rather than replaced.
+ */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme='light']), :root:not([data-theme='light']) *) {
+      @slot;
+    }
+  }
+
+  &:where(:root[data-theme='dark'], :root[data-theme='dark'] *) {
+    @slot;
+  }
+}
+
 @theme {
   /*
    * Two faces, each with a job.
@@ -63,8 +89,16 @@
   --elevation-raised: 0 22px 46px -32px rgb(20 32 31 / 0.35);
 }
 
+/*
+ * The dark values, written twice against the two ways of asking for them.
+ *
+ * CSS has no way to hand one declaration block to a selector inside a media
+ * query and a selector outside it, so this is a duplicate on purpose. Change
+ * one and change the other — or the switch and the OS setting drift into two
+ * different dark modes.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --background: #0b1412;
     --foreground: #e7e3da;
 
@@ -87,6 +121,50 @@
   }
 }
 
+:root[data-theme='dark'] {
+  --background: #0b1412;
+  --foreground: #e7e3da;
+
+  --surface: #121d1b;
+  --surface-muted: #16201e;
+  --border: #24302e;
+  --muted: #9ba7a5;
+
+  --brand: #14b8a6;
+  --brand-strong: #0d9488;
+  --brand-soft: #0b2f2b;
+  --brand-contrast: #04211f;
+
+  --accent: #e0a47c;
+  --accent-soft: #2e211a;
+
+  --elevation-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  --elevation-raised: 0 22px 46px -32px rgb(0 0 0 / 0.75);
+}
+
+/*
+ * The browser's own widgets — form controls, the scrollbar, the space past
+ * the end of a short page — follow this, not the palette above, so it has to
+ * be told too or a dark page keeps a white scrollbar down its edge.
+ */
+:root {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
 /* So Tailwind utilities can reach them: bg-surface, border-line, text-muted. */
 @theme inline {
   --color-surface: var(--surface);
@@ -102,6 +180,18 @@
 
   --shadow-card: var(--elevation-card);
   --shadow-raised: var(--elevation-raised);
+}
+
+/*
+ * Jumping to a section from the nav bar glides rather than cuts.
+ *
+ * A hash link that teleports leaves a shop owner on a page that looks like a
+ * different page; watching it travel is how they keep their place. Every
+ * target already carries `scroll-mt-16` for the sticky bar. Turned off under
+ * reduced-motion with the rest of the animation, at the bottom of this file.
+ */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -218,6 +308,131 @@ h3 {
   animation: ct-panel-out 130ms ease-in both;
 }
 
+/*
+ * The phone on the front page, given thickness.
+ *
+ * Flat-on, the preview read as a screenshot in a rounded box; turned a few
+ * degrees it reads as a device somebody is holding, which is the whole point
+ * of putting it there — a shop owner should picture their customer doing
+ * this. The depth is real rather than drawn: `preserve-3d` lets the back
+ * plate sit twelve pixels behind the shell, so the turn exposes an actual
+ * edge on the right instead of a painted-on gradient.
+ *
+ * Only from `lg`. Below that the phone is most of the screen's width and
+ * every degree of turn is a degree of squint; there it stays square on.
+ */
+@media (min-width: 64rem) {
+  .ct-phone {
+    perspective: 1600px;
+  }
+
+  .ct-phone-body {
+    transform: rotateY(-15deg) rotateX(5deg) rotate(1.2deg);
+    transform-style: preserve-3d;
+    transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Straightens under the pointer: the detail on the screen is the reason
+     the phone is there, and the turn costs a little of it. */
+  .ct-phone:hover .ct-phone-body {
+    transform: rotateY(-5deg) rotateX(2deg) rotate(0.4deg);
+  }
+
+  .ct-phone-back {
+    transform: translateZ(-12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ct-phone-body {
+    transition: none;
+  }
+}
+
+/*
+ * Cards arriving as the page is scrolled, and lifting under the pointer.
+ *
+ * Driven by a view-progress timeline, so there is no observer, no state and
+ * no client component: a card animates against its own position in the
+ * viewport, which means it also animates *backwards* when the page is
+ * scrolled back up, and it costs nothing on a page that is never scrolled.
+ *
+ * The rise is written with the independent `translate` and `scale`
+ * properties rather than `transform`, and that is load-bearing, not style.
+ * A running animation suppresses transitions on the properties it animates,
+ * so while this animation held `transform` the hover lift below could not
+ * move the card at all — measured, not guessed: the card matched :hover, the
+ * transition was declared, and no CSSTransition was ever created. Splitting
+ * them means the reveal owns `translate`/`scale`/`opacity`, the hover owns
+ * `transform`, and the two compose instead of fighting.
+ *
+ * `backwards` and not `both`, so a card that has been scrolled past keeps no
+ * animated values at all and is left entirely to its own styles.
+ *
+ * The whole thing sits behind @supports because the fallback has to be
+ * "visible", never "stuck at opacity 0": in a browser without view
+ * timelines an unsupported `animation-timeline` would otherwise leave every
+ * card on the page invisible.
+ */
+@keyframes ct-reveal-in {
+  from {
+    opacity: 0;
+    translate: 0 20px;
+    scale: 0.985;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ct-reveal {
+      animation: ct-reveal-in linear backwards;
+      animation-timeline: view();
+      animation-range: entry 4% cover 24%;
+    }
+
+    /*
+     * A row of cards should not land as one slab. Scroll timelines ignore
+     * `animation-delay` — progress is a position, not a clock — so the
+     * cascade is made by starting each column's range a little later. The
+     * cycle is three because that is the widest grid on the page; a fourth
+     * card is the next row's first, which is already later by being lower.
+     */
+    .ct-stagger > *:nth-child(3n + 2) {
+      animation-range: entry 9% cover 29%;
+    }
+
+    .ct-stagger > *:nth-child(3n + 3) {
+      animation-range: entry 14% cover 34%;
+    }
+  }
+}
+
+/*
+ * The lift. Shadow and border carry it as much as the four pixels do — a
+ * card that only moves reads as a glitch, one that also gains depth reads as
+ * a card being picked up.
+ */
+.ct-lift {
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 240ms ease,
+    border-color 200ms ease;
+}
+
+.ct-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--elevation-raised);
+}
+
+/* Anything inside a card that should answer the same hover. */
+.ct-lift-mark {
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ct-lift:hover .ct-lift-mark {
+  transform: scale(1.07);
+}
+
 /* Anything clickable. Kept to transform + colour so it never triggers layout. */
 .ct-press {
   transition:
@@ -277,6 +492,22 @@ h3 {
 
   .ct-press:active {
     transform: none;
+  }
+
+  /* The reveal is already behind a no-preference query; this is the hover
+     lift, which has to give up its movement but may keep its depth. */
+  .ct-lift,
+  .ct-lift-mark {
+    transition: box-shadow 240ms ease, border-color 200ms ease;
+  }
+
+  .ct-lift:hover,
+  .ct-lift:hover .ct-lift-mark {
+    transform: none;
+  }
+
+  html {
+    scroll-behavior: auto;
   }
 }
 

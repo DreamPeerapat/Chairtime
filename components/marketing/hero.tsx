@@ -32,23 +32,7 @@ export function Hero() {
 
       <div className="relative mx-auto grid max-w-6xl items-start gap-14 px-5 py-16 sm:py-20 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16">
         <div className="lg:pt-6">
-          <span className="inline-flex items-center gap-2 rounded-full border border-line bg-brand-soft px-3.5 py-1.5 text-xs font-medium text-brand-strong">
-            <svg
-              aria-hidden
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="size-3.5"
-            >
-              <path d="M12 2 4 6v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6z" />
-            </svg>
-            สำหรับร้านผม ร้านเล็บ ร้านนวด สปา และคลินิก
-          </span>
-
-          <h1 className="mt-6 text-4xl leading-[1.2] font-semibold sm:text-5xl lg:text-[3.4rem]">
+          <h1 className="text-4xl leading-[1.2] font-semibold sm:text-5xl lg:text-[3.4rem]">
             ให้ลูกค้าจองคิวเอง
             <br className="hidden sm:block" /> ผ่าน LINE
           </h1>

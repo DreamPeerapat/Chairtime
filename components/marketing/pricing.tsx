@@ -26,16 +26,12 @@ export function Pricing() {
     <section id="ราคา" className="scroll-mt-16">
       <div className="mx-auto max-w-6xl px-5 py-16 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">ราคา</p>
-          <h2 className="mt-3 text-3xl font-semibold sm:text-4xl">ตรงไปตรงมา ไม่มีค่าแรกเข้า</h2>
-          <p className="mt-4 text-muted">
-            จ่ายรายเดือนหรือรายปีก็ได้ ไม่มีค่าติดตั้ง ไม่มีค่าแรกเข้า ไม่มีสัญญาผูกมัด
-          </p>
+          <h2 className="text-3xl font-semibold sm:text-4xl">ราคา</h2>
         </div>
 
         <TermSwitch term={term} onChange={setTerm} />
 
-        <div className="mt-9 grid items-start gap-5 lg:grid-cols-3">
+        <div className="ct-stagger mt-9 grid items-start gap-5 lg:grid-cols-3">
           {PLANS.map((plan) => {
             const yearly = term === 'yearly' && plan.priceYearly;
             const price = yearly ? plan.priceYearly! : plan.priceMonthly;
@@ -44,7 +40,7 @@ export function Pricing() {
             return (
               <article
                 key={plan.code}
-                className={`relative flex h-full flex-col rounded-3xl border bg-surface p-7 ${
+                className={`ct-reveal ct-lift relative flex h-full flex-col rounded-3xl border bg-surface p-7 ${
                   plan.recommended
                     ? 'border-[1.5px] border-brand shadow-raised'
                     : 'border-line shadow-card'

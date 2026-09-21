@@ -43,18 +43,17 @@ export function Faq() {
     <section id="คำถาม" className="scroll-mt-16 border-t border-line bg-surface-muted">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:py-20 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-16">
         <div>
-          <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">คำถามบ่อย</p>
-          <h2 className="mt-3 text-3xl font-semibold sm:text-4xl">สิ่งที่ร้านมักถามก่อนสมัคร</h2>
+          <h2 className="text-3xl font-semibold sm:text-4xl">คำถามบ่อย</h2>
           <p className="mt-4 text-sm leading-[1.85] text-muted">
             ทุกคำตอบในนี้เป็นสิ่งที่ระบบทำได้แล้ววันนี้ ไม่ใช่สิ่งที่กำลังจะทำ
           </p>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="ct-stagger flex flex-col gap-3">
           {QUESTIONS.map((item) => (
             <details
               key={item.q}
-              className="group rounded-2xl border border-line bg-surface px-6 py-5 open:border-brand/40"
+              className="ct-reveal group rounded-2xl border border-line bg-surface px-6 py-5 open:border-brand/40"
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-medium">
                 {item.q}

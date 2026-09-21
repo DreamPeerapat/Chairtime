@@ -50,7 +50,7 @@ export function Steps() {
           </p>
         </div>
 
-        <ol className="mt-11 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ol className="ct-stagger mt-11 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, index) => {
             const last = index === STEPS.length - 1;
 
@@ -59,15 +59,15 @@ export function Steps() {
                 key={step.title}
                 className={
                   last
-                    ? 'rounded-2xl border border-[#2f4a44] bg-[#16302c] p-6'
-                    : 'rounded-2xl border border-[#26332f] bg-[#1b2827] p-6'
+                    ? 'ct-reveal ct-lift rounded-2xl border border-[#2f4a44] bg-[#16302c] p-6'
+                    : 'ct-reveal ct-lift rounded-2xl border border-[#26332f] bg-[#1b2827] p-6'
                 }
               >
                 <span
                   className={
                     last
-                      ? 'grid size-9 place-items-center rounded-full bg-[#5eead4] text-sm font-semibold text-[#0b1f1c]'
-                      : 'grid size-9 place-items-center rounded-full bg-[#0f766e] text-sm font-semibold text-white'
+                      ? 'ct-lift-mark grid size-9 place-items-center rounded-full bg-[#5eead4] text-sm font-semibold text-[#0b1f1c]'
+                      : 'ct-lift-mark grid size-9 place-items-center rounded-full bg-[#0f766e] text-sm font-semibold text-white'
                   }
                 >
                   {index + 1}
