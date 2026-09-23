@@ -167,6 +167,19 @@ export function LineLaunchSteps({
                 ลูกค้ายังเห็นเมนูจองคิวเหมือนเดิม
               </p>
 
+              {/* The picture this deployment draws today, which is not
+                  necessarily the one on the phone: LINE keeps serving a menu
+                  until it is replaced, so after a redesign the two differ
+                  until somebody presses "สร้างใหม่". */}
+              <a
+                href="/dashboard/settings/line/owner-menu.png"
+                target="_blank"
+                rel="noreferrer"
+                className="w-fit text-xs text-muted underline"
+              >
+                ดูรูปเมนูแบบล่าสุด
+              </a>
+
               {ownerMenu.installed ? (
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <span className="text-sm text-brand">ติดตั้งแล้ว</span>

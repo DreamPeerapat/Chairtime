@@ -42,6 +42,15 @@ export interface WebhookContext {
 export interface HandledEvent {
   replyToken: string;
   messages: LineMessage[];
+  /**
+   * The owner just proved this phone is theirs by sending the pairing code.
+   *
+   * A flag rather than the work itself: installing the owner's rich menu is
+   * four LINE API calls and a 2500x1686 render, which has no business
+   * happening between a webhook arriving and its reply going out. The route
+   * handler picks this up and does it after the response has been sent.
+   */
+  ownerJustLinked?: true;
 }
 
 const ACTIVE_STATUSES = ['pending', 'confirmed', 'in_progress'];
@@ -93,10 +102,11 @@ export async function handleEvent(
     if (claimed) {
       return {
         replyToken: event.replyToken,
+        ownerJustLinked: true,
         messages: [
           {
             type: 'text',
-            text: `เชื่อมบัญชีเจ้าของร้านเรียบร้อยแล้วค่ะ\nต่อไปนี้ถ้าลูกค้าจองคิวใหม่หรือยกเลิกคิวเอง ระบบจะแจ้งมาที่ LINE นี้`,
+            text: `เชื่อมบัญชีเจ้าของร้านเรียบร้อยแล้วค่ะ\nอีกสักครู่เมนูลัดหลังร้านจะขึ้นใต้ห้องแชทนี้ให้เอง\nต่อไปนี้ถ้าลูกค้าจองคิวใหม่หรือยกเลิกคิวเอง ระบบจะแจ้งมาที่ LINE นี้`,
           },
         ],
       };

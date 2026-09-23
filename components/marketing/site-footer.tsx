@@ -23,7 +23,9 @@ export function SiteFooter() {
               ตั้งร้านเสร็จภายในสิบนาที ถ้าไม่ใช่ก็เลิกได้ ไม่มีอะไรผูกไว้
             </p>
           </div>
-          <Link
+          {/* Plain <a>, not <Link> — see the note in hero.tsx: this route redirects off-origin and <Link> fails CORS. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a
             href="/auth/start?provider=line"
             className="ct-press inline-flex shrink-0 items-center gap-2.5 rounded-2xl bg-surface px-7 py-4 text-sm font-semibold text-brand-strong hover:bg-surface-muted"
           >
@@ -41,7 +43,7 @@ export function SiteFooter() {
               <path d="M5 12h13" />
               <path d="m12 5 7 7-7 7" />
             </svg>
-          </Link>
+          </a>
         </div>
 
         <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-line pt-8 text-xs text-muted sm:flex-row sm:items-center">

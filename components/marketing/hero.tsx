@@ -43,7 +43,14 @@ export function Hero() {
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link
+            {/* A plain <a>, not <Link>, everywhere this route is linked. It
+                leaves the origin — /auth/start 307s to access.line.me — and
+                <Link> navigates by fetching the route as RSC, so the browser
+                follows that redirect cross-origin and it fails CORS. Prefetch
+                fires it on load, which filled the console with ERR_FAILED
+                before anyone had clicked. OAuth wants a full page load. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a
               href="/auth/start?provider=line"
               className="ct-press inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-brand px-7 py-4 text-sm font-medium text-brand-contrast shadow-raised hover:bg-brand-strong sm:w-auto"
             >
@@ -61,7 +68,7 @@ export function Hero() {
                 <path d="M5 12h13" />
                 <path d="m12 5 7 7-7 7" />
               </svg>
-            </Link>
+            </a>
             <Link
               href="#วิธีใช้"
               className="ct-press inline-flex w-full items-center justify-center rounded-2xl border border-line bg-surface px-7 py-4 text-sm font-medium hover:bg-surface-muted sm:w-auto"

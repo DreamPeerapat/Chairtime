@@ -60,13 +60,15 @@ export function SiteNav() {
           >
             เข้าสู่ระบบ
           </Link>
-          <Link
+          {/* Plain <a>, not <Link> — see the note in hero.tsx: this route redirects off-origin and <Link> fails CORS. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a
             href="/auth/start?provider=line"
             className="ct-press rounded-xl bg-brand px-4 py-2.5 text-sm font-medium whitespace-nowrap text-brand-contrast hover:bg-brand-strong"
           >
             {/* The length matters at 375px, where the full label wraps to two lines. */}
             ทดลองฟรี<span className="hidden sm:inline"> 15 วัน</span>
-          </Link>
+          </a>
         </div>
       </nav>
     </header>

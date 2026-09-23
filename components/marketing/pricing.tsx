@@ -31,7 +31,21 @@ export function Pricing() {
 
         <TermSwitch term={term} onChange={setTerm} />
 
-        <div className="ct-stagger mt-9 grid items-start gap-5 lg:grid-cols-3">
+        {/*
+          A swipe on a phone, a grid from `lg`.
+
+          Stacked, the three plans were a 2,000px column: the shop scrolled
+          past Basic to find Pro and never saw them side by side, which is the
+          one thing a price list has to let you do. Below `lg` they lie in a
+          snapping row instead — the fourth of the next card left showing at
+          the edge is what says there is more to swipe to.
+
+          `ct-stagger` is dropped here: the reveal animates on vertical scroll
+          position, and in a horizontal strip the offscreen cards would sit at
+          opacity 0 until the page scrolled past, which for a sideways strip
+          is never.
+        */}
+        <div className="ct-scroll-x -mx-5 flex snap-x snap-mandatory items-stretch gap-4 overflow-x-auto px-5 pb-2 lg:mx-0 lg:grid lg:grid-cols-3 lg:items-start lg:gap-5 lg:overflow-visible lg:px-0">
           {PLANS.map((plan) => {
             const yearly = term === 'yearly' && plan.priceYearly;
             const price = yearly ? plan.priceYearly! : plan.priceMonthly;
@@ -40,7 +54,7 @@ export function Pricing() {
             return (
               <article
                 key={plan.code}
-                className={`ct-reveal ct-lift relative flex h-full flex-col rounded-3xl border bg-surface p-7 ${
+                className={`ct-lift relative flex w-[85vw] max-w-sm shrink-0 snap-start flex-col rounded-3xl border bg-surface p-7 lg:h-full lg:w-auto lg:max-w-none lg:shrink ${
                   plan.recommended
                     ? 'border-[1.5px] border-brand shadow-raised'
                     : 'border-line shadow-card'
@@ -78,7 +92,9 @@ export function Pricing() {
                   </p>
                 )}
 
-                <Link
+                {/* Plain <a>, not <Link> — see the note in hero.tsx: this route redirects off-origin and <Link> fails CORS. */}
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+                <a
                   href="/auth/start?provider=line"
                   className={`ct-press mt-7 rounded-2xl px-5 py-3.5 text-center text-sm font-medium ${
                     plan.recommended
@@ -87,7 +103,7 @@ export function Pricing() {
                   }`}
                 >
                   {plan.trialDays > 0 ? 'เริ่มทดลองฟรี' : `เลือก ${plan.name}`}
-                </Link>
+                </a>
 
                 <ul className="mt-7 flex flex-col gap-3 text-sm">
                   {plan.features.map((feature) => (
