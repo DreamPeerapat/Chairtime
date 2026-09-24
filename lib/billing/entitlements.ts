@@ -44,10 +44,30 @@ export function entitlementsForPlanCode(code: string | null | undefined): Entitl
  */
 export async function entitlementsFor(tenantId: string): Promise<Entitlements> {
   const [row] = await db
-    .select({ code: schema.subscriptionPlan.code })
+    .select({
+      code: schema.subscriptionPlan.code,
+      paidUntil: schema.tenant.paidUntil,
+      trialEndsAt: schema.tenant.trialEndsAt,
+    })
     .from(schema.tenant)
     .leftJoin(schema.subscriptionPlan, eq(schema.subscriptionPlan.id, schema.tenant.planId))
     .where(eq(schema.tenant.id, tenantId));
 
-  return entitlementsForPlanCode(row?.code ?? null);
+  if (!row) return entitlementsForPlanCode(null);
+  return entitlementsForTenant(row);
+}
+
+/**
+ * A shop that has picked a plan but not paid for it yet is on a trial, and a
+ * trial is Basic — the catalogue promises "ทุกฟีเจอร์ของ Basic", and a signup
+ * that picks Pro starts on a trial like any other. Once anything has been
+ * paid, `paid_until` is set and the plan's own code decides.
+ */
+export function entitlementsForTenant(row: {
+  code: string | null;
+  paidUntil: Date | null;
+  trialEndsAt: Date | null;
+}): Entitlements {
+  const onTrial = row.paidUntil === null && row.trialEndsAt !== null;
+  return entitlementsForPlanCode(onTrial ? 'trial' : row.code);
 }

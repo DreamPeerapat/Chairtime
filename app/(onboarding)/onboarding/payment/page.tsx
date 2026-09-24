@@ -10,19 +10,18 @@ import {
   mintSessionToken,
   requirePendingStaffUserId,
 } from '@/lib/auth';
-import { activatePaidTenant } from '@/lib/onboarding/create-tenant';
-import { formatBaht } from '@/lib/billing/amount';
-import { PLATFORM_PAYEE } from '@/lib/billing/platform';
-import { promptPayFor } from '@/lib/billing/promptpay';
-import { qrSvg } from '@/lib/billing/qr';
+import { startTrialForPendingTenant } from '@/lib/onboarding/create-tenant';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * A paid plan is not activated by any automated slip check yet
- * (docs/roadmap.md Phase 2.5: "แนบสลิปธรรมดาไปก่อน ยังไม่ต้อง SlipOK") — the
- * owner transfers, then confirms, and the shop goes live immediately. Real
- * verification (SlipOK/Slip2Go) is Phase 8 work.
+ * Where a shop left at `pending_payment` by the old paid signup lands.
+ *
+ * This page used to take the owner's word for a transfer: "ยืนยันว่าโอนเงินแล้ว"
+ * turned the shop on with no end date, which the expiry cron never touches.
+ * New signups no longer come here — every one starts on a trial — so all that
+ * is left is to give a shop that stopped halfway the same trial, and send it
+ * to the billing page to pay, where the slip is checked.
  */
 export default async function OnboardingPaymentPage({
   searchParams,
@@ -43,10 +42,7 @@ export default async function OnboardingPaymentPage({
       name: schema.tenant.name,
       businessType: schema.tenant.businessType,
       status: schema.tenant.status,
-      // The first month is what this page is asking for, so the QR can carry
-      // the exact figure — unlike the renewal page, nothing here is chosen yet.
       planName: schema.subscriptionPlan.name,
-      priceMonthly: schema.subscriptionPlan.priceMonthly,
     })
     .from(schema.tenant)
     .leftJoin(schema.subscriptionPlan, eq(schema.subscriptionPlan.id, schema.tenant.planId))
@@ -54,16 +50,13 @@ export default async function OnboardingPaymentPage({
   if (!tenant) redirect('/onboarding/plan');
   if (tenant.status === 'active') redirect('/onboarding/setup');
 
-  const payload = promptPayFor(PLATFORM_PAYEE.promptPayId, tenant.priceMonthly);
-  const qr = payload ? qrSvg(payload, { width: 220 }) : null;
-
-  async function confirm() {
+  async function start() {
     'use server';
     const currentStaffUserId = await requirePendingStaffUserId();
     const owns = await verifyOwnership(tenantId!, currentStaffUserId);
     if (!owns) redirect('/onboarding/plan');
 
-    await activatePaidTenant(tenantId!, tenant!.businessType);
+    await startTrialForPendingTenant(tenantId!, tenant!.businessType);
 
     const token = await mintSessionToken(currentStaffUserId, {
       tenantId: tenant!.id,
@@ -85,38 +78,16 @@ export default async function OnboardingPaymentPage({
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-5 py-10">
       <div>
-        <h1 className="text-xl font-semibold">ชำระเงินเพื่อเริ่มใช้งาน {tenant.name}</h1>
-        <p className="mt-1 text-sm text-muted">โอนเงินตามช่องทางด้านล่าง แล้วกดยืนยัน ระบบจะเปิดใช้งานร้านทันที</p>
+        <h1 className="text-xl font-semibold">เริ่มใช้งาน {tenant.name}</h1>
+        <p className="mt-1 text-sm text-muted">
+          เริ่มจากทดลองใช้ฟรีก่อน ยังไม่ต้องโอนเงินตอนนี้
+          {tenant.planName ? ` เมื่อพร้อมแล้วชำระแพ็กเกจ ${tenant.planName} ได้ที่หน้า "แพ็กเกจ" ในหลังบ้าน` : null}
+        </p>
       </div>
 
-      {qr ? (
-        <figure className="flex flex-col items-center gap-2 self-center rounded-xl bg-surface p-4">
-          {/*
-            The markup is built on this request by `qrSvg` out of the payee id
-            in the code and a numeric(10,2) column — no request data reaches
-            it, and every character it emits is a digit or a tag this file's
-            dependency wrote. Inline rather than a data URI so it stays crisp.
-          */}
-          <div dangerouslySetInnerHTML={{ __html: qr }} />
-          <figcaption className="text-center text-sm text-foreground">
-            สแกนจ่ายพร้อมเพย์
-            {tenant.priceMonthly ? (
-              <span className="block font-medium">{formatBaht(tenant.priceMonthly)}</span>
-            ) : null}
-          </figcaption>
-        </figure>
-      ) : null}
-
-      <div className="rounded-xl border border-line p-4 text-sm">
-        <p className="text-xs text-muted">หรือโอนเข้าบัญชี</p>
-        <p className="mt-1 font-medium">{PLATFORM_PAYEE.bank}</p>
-        <p className="text-muted">เลขบัญชี {PLATFORM_PAYEE.accountNumber}</p>
-        <p className="text-muted">ชื่อบัญชี {PLATFORM_PAYEE.accountName}</p>
-      </div>
-
-      <form action={confirm}>
+      <form action={start}>
         <button type="submit" className="w-full ct-press rounded-xl bg-brand py-3 text-sm font-medium text-brand-contrast hover:bg-brand-strong active:bg-brand-strong">
-          ยืนยันว่าโอนเงินแล้ว
+          เริ่มทดลองใช้
         </button>
       </form>
     </main>
