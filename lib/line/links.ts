@@ -47,3 +47,9 @@ export function dashboardLoginUrl(): string | null {
   const base = appBase();
   return base ? `${base}/login` : null;
 }
+
+/** The shop's billing page. Owner-only, like the login link above. */
+export function billingUrl(): string | null {
+  const base = appBase();
+  return base ? `${base}/dashboard/billing` : null;
+}

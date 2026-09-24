@@ -10,6 +10,8 @@ export const NOTIFICATION_TEMPLATES = [
   // Also aimed at the shop: its own subscription payment went through, and the
   // receipt งานเข้า issued for it travels as a link because LINE carries no files.
   'receipt_issued',
+  // To the shop as well: its trial or paid period ends in a week, or tomorrow.
+  'plan_expiring',
   'reminder_24h',
   'reminder_2h',
   'points_earned',
@@ -39,7 +41,7 @@ export const REMINDER_OFFSETS: Partial<Record<NotificationTemplate, { minutesBef
  */
 export function dedupeKey(
   template: NotificationTemplate,
-  entity: 'booking' | 'customer' | 'lot' | 'payment',
+  entity: 'booking' | 'customer' | 'lot' | 'payment' | 'tenant',
   entityId: string,
   discriminator?: string,
 ): string {
