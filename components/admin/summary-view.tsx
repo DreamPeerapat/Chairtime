@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 import { RevenueChart } from './revenue-chart';
+import { SummaryPeriodNav } from './summary-period-nav';
 import { Card, EmptyState, PageBody, PageHeader, Rows, Stat } from '@/components/ui/page';
 import type { Bucket, ServiceSales, StaffSales, StatsRange } from '@/lib/admin/stats';
 
@@ -15,12 +15,6 @@ export interface SummaryStats {
   staff: StaffSales[];
   buckets: Bucket[];
 }
-
-const RANGE_LABELS: Array<{ value: StatsRange; label: string }> = [
-  { value: 'week', label: 'รายสัปดาห์' },
-  { value: 'month', label: 'รายเดือน' },
-  { value: 'year', label: 'รายปี' },
-];
 
 /**
  * The numbers a shop owner asks for out loud: what came in, and from what.
@@ -80,48 +74,13 @@ export function SummaryView({
         </div>
       ) : null}
 
-      <div className={cn('flex flex-wrap items-center justify-between gap-3', !reports && 'hidden')}>
-        <div className="flex gap-1">
-          {RANGE_LABELS.map((option) => (
-            <Link
-              key={option.value}
-              href={`/dashboard/summary?range=${option.value}`}
-              className={cn(
-                'ct-press rounded-lg px-3 py-1.5 text-sm',
-                range === option.value
-                  ? 'bg-brand font-medium text-brand-contrast'
-                  : 'border border-line text-muted',
-              )}
-            >
-              {option.label}
-            </Link>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2 text-sm">
-          <Link
-            href={`/dashboard/summary?range=${range}&at=${previousAt}`}
-            aria-label="ช่วงก่อนหน้า"
-            className="ct-press rounded-lg border border-line px-2.5 py-1.5"
-          >
-            ‹
-          </Link>
-          <span className="min-w-40 text-center font-medium">{stats.periodLabel}</span>
-          {nextAt ? (
-            <Link
-              href={`/dashboard/summary?range=${range}&at=${nextAt}`}
-              aria-label="ช่วงถัดไป"
-              className="ct-press rounded-lg border border-line px-2.5 py-1.5"
-            >
-              ›
-            </Link>
-          ) : (
-            <span className="rounded-lg border border-transparent px-2.5 py-1.5 text-[#a8b4b2]">
-              ›
-            </span>
-          )}
-        </div>
-      </div>
+      <SummaryPeriodNav
+        range={range}
+        periodLabel={stats.periodLabel}
+        previousAt={previousAt}
+        nextAt={nextAt}
+        reports={reports}
+      />
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="รายได้" value={formatBaht(stats.revenue)} tone="brand" />
