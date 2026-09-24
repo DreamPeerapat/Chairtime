@@ -22,13 +22,14 @@ import { createBookingInTx, toSatang, fromSatang } from '@/lib/booking/create';
 import { resolveCustomer, mergeCustomers } from '@/lib/customer/upsert';
 import { cancelBookingNotifications, enqueueBookingConfirmation } from '@/lib/notifications/queue';
 import { findTemplate } from './templates';
-import { isExclusionViolation } from '@/lib/booking/errors';
+import { findSqlState, isExclusionViolation } from '@/lib/booking/errors';
 import { earnPointsForBooking } from '@/lib/loyalty/earn';
 import { redeemPoints } from '@/lib/loyalty/redeem';
-import { pointRuleFormSchema, rewardFormSchema } from '@/lib/loyalty/validation';
+import { pointRuleFormSchema, rewardFormSchema, tierFormSchema } from '@/lib/loyalty/validation';
 import { useRewardCode } from '@/lib/loyalty/rewards';
 import { RewardCodeAlreadyUsedError, RewardCodeExpiredError, RewardCodeNotFoundError } from '@/lib/loyalty/errors';
 import { validateHourRows } from './hours';
+import { segmentsSchema, toSegmentRows } from './service-segments';
 import { resolveMapLocation, type MapLocation } from '@/lib/geo/map-link';
 
 export interface ActionResult {
@@ -382,7 +383,7 @@ const serviceSchema = z.object({
   basePrice: z.coerce.number().min(0).max(1_000_000),
   bufferBeforeMin: z.coerce.number().int().min(0).max(240),
   bufferAfterMin: z.coerce.number().int().min(0).max(240),
-  durationMin: z.coerce.number().int().min(5).max(600),
+  segments: segmentsSchema,
   isActive: z.boolean().default(true),
 });
 
@@ -393,9 +394,9 @@ export async function saveService(input: unknown): Promise<ActionResult> {
 
   const data = parsed.data;
 
-  await withTenant(session.tenantId, async (tx) => {
+  const saved = await withTenant(session.tenantId, async (tx) => {
     if (data.id) {
-      await tx
+      const updated = await tx
         .update(schema.service)
         .set({
           name: data.name,
@@ -405,22 +406,17 @@ export async function saveService(input: unknown): Promise<ActionResult> {
           bufferAfterMin: data.bufferAfterMin,
           isActive: data.isActive,
         })
-        .where(and(eq(schema.service.tenantId, session.tenantId), eq(schema.service.id, data.id)));
+        .where(and(eq(schema.service.tenantId, session.tenantId), eq(schema.service.id, data.id)))
+        .returning({ id: schema.service.id });
+      if (updated.length === 0) return false;
 
-      // A service with segments already (a colour, say) keeps its shape; only a
-      // plain single-segment service has its duration edited here.
-      const segments = await tx
-        .select()
-        .from(schema.serviceSegment)
-        .where(eq(schema.serviceSegment.serviceId, data.id));
-
-      if (segments.length === 1) {
-        await tx
-          .update(schema.serviceSegment)
-          .set({ durationMin: data.durationMin })
-          .where(eq(schema.serviceSegment.id, segments[0]!.id));
-      }
-      return;
+      // Replaced whole rather than patched row by row: seq is UNIQUE per
+      // service, so reordering in place would collide with itself, and nothing
+      // references a segment by id — a booking already made keeps its own
+      // resource_allocation rows and is not moved by this.
+      await tx.delete(schema.serviceSegment).where(eq(schema.serviceSegment.serviceId, data.id));
+      await tx.insert(schema.serviceSegment).values(toSegmentRows(data.id, data.segments));
+      return true;
     }
 
     const [created] = await tx
@@ -436,12 +432,7 @@ export async function saveService(input: unknown): Promise<ActionResult> {
       })
       .returning({ id: schema.service.id });
 
-    await tx.insert(schema.serviceSegment).values({
-      serviceId: created!.id,
-      seq: 1,
-      kind: 'active',
-      durationMin: data.durationMin,
-    });
+    await tx.insert(schema.serviceSegment).values(toSegmentRows(created!.id, data.segments));
 
     // Every service needs its resource requirements or it can never be booked.
     const types = await tx
@@ -457,7 +448,9 @@ export async function saveService(input: unknown): Promise<ActionResult> {
         holdScope: type.isHuman ? ('active_only' as const) : ('whole' as const),
       })),
     );
+    return true;
   });
+  if (!saved) return fail('ไม่พบบริการนี้');
 
   revalidatePath('/dashboard/services');
   return ok;
@@ -1000,6 +993,89 @@ export async function savePointRule(input: unknown): Promise<ActionResult> {
   );
 
   revalidatePath('/dashboard/settings/loyalty');
+  return ok;
+}
+
+// ---------------------------------------------------------------------
+// Membership tiers — docs/logic.md ข้อ 3.5
+// ---------------------------------------------------------------------
+
+const tierInputSchema = tierFormSchema.extend({ id: z.uuid().optional() });
+
+/**
+ * Owner only, like the point rule: a tier's multiplier changes what every
+ * future completed booking earns. Customers are moved between tiers by the
+ * nightly run in lib/loyalty/tier.ts, not here — saving a tier re-sorts
+ * nobody until then.
+ */
+export async function saveTier(input: unknown): Promise<ActionResult> {
+  const session = await requireSession('owner');
+  const parsed = tierInputSchema.safeParse(input);
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'ข้อมูลไม่ถูกต้อง');
+  const { id, ...data } = parsed.data;
+
+  const values = {
+    name: data.name,
+    level: data.level,
+    qualifySpend: data.qualifySpend.toFixed(2),
+    qualifyVisits: data.qualifyVisits,
+    qualifyWindowMonths: data.qualifyWindowMonths,
+    pointMultiplier: data.pointMultiplier.toFixed(2),
+  };
+
+  try {
+    const found = await withTenant(session.tenantId, async (tx) => {
+      if (id) {
+        const rows = await tx
+          .update(schema.membershipTier)
+          .set(values)
+          .where(and(eq(schema.membershipTier.tenantId, session.tenantId), eq(schema.membershipTier.id, id)))
+          .returning({ id: schema.membershipTier.id });
+        return rows.length > 0;
+      }
+      await tx.insert(schema.membershipTier).values({ tenantId: session.tenantId, ...values });
+      return true;
+    });
+    if (!found) return fail('ไม่พบระดับสมาชิกนี้');
+  } catch (error) {
+    // (tenant_id, level) is UNIQUE — two tiers at one level would leave
+    // tier.ts to pick between them by whatever order the rows came back in.
+    if (findSqlState(error) === '23505') return fail(`มีระดับลำดับที่ ${data.level} อยู่แล้ว`);
+    throw error;
+  }
+
+  revalidatePath('/dashboard/settings/loyalty/tiers');
+  return ok;
+}
+
+/**
+ * Only a tier nobody holds. `customer_tier.tier_id` has no cascade, and
+ * deciding for the shop where its Gold members should go is not this
+ * action's call — it says how many are there instead.
+ */
+export async function deleteTier(id: unknown): Promise<ActionResult> {
+  const session = await requireSession('owner');
+  const parsed = z.uuid().safeParse(id);
+  if (!parsed.success) return fail('ข้อมูลไม่ถูกต้อง');
+
+  const result = await withTenant(session.tenantId, async (tx) => {
+    const [held] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(schema.customerTier)
+      .where(eq(schema.customerTier.tierId, parsed.data));
+    if ((held?.n ?? 0) > 0) return { held: held!.n };
+
+    const rows = await tx
+      .delete(schema.membershipTier)
+      .where(and(eq(schema.membershipTier.tenantId, session.tenantId), eq(schema.membershipTier.id, parsed.data)))
+      .returning({ id: schema.membershipTier.id });
+    return { deleted: rows.length > 0 };
+  });
+
+  if ('held' in result) return fail(`ยังมีลูกค้า ${result.held} คนอยู่ในระดับนี้ ลบไม่ได้`);
+  if (!result.deleted) return fail('ไม่พบระดับสมาชิกนี้');
+
+  revalidatePath('/dashboard/settings/loyalty/tiers');
   return ok;
 }
 

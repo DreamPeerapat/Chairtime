@@ -61,3 +61,38 @@ export const rewardFormSchema = z
   });
 
 export type RewardFormInput = z.infer<typeof rewardFormSchema>;
+
+/** At most `places` decimal places — what a numeric(p, places) column holds. */
+function withinPlaces(places: number) {
+  const factor = 10 ** places;
+  return (n: number) => Math.abs(Math.round(n * factor) - n * factor) < 1e-6;
+}
+
+/**
+ * A membership tier as the shop edits it. Only the fields lib/loyalty acts on:
+ * `discount_percent` and `priority_booking_days` exist in the schema but
+ * nothing reads them yet, and a setting that does nothing is worse than none.
+ */
+export const tierFormSchema = z.object({
+  name: z.string().trim().min(1, 'ต้องมีชื่อระดับ').max(40, 'ชื่อระดับยาวได้ไม่เกิน 40 ตัวอักษร'),
+  // 0 is what tier.ts calls "no tier", so a real tier starts at 1.
+  level: z.coerce.number().int('ลำดับต้องเป็นจำนวนเต็ม').min(1, 'ลำดับเริ่มที่ 1').max(20, 'ลำดับได้ไม่เกิน 20'),
+  qualifySpend: z.coerce
+    .number()
+    .min(0, 'ยอดใช้จ่ายต้องไม่ติดลบ')
+    .max(10_000_000, 'ยอดใช้จ่ายสูงเกินไป')
+    .refine(withinPlaces(2), 'ยอดใช้จ่ายมีทศนิยมได้ไม่เกิน 2 ตำแหน่ง'),
+  qualifyVisits: z.coerce.number().int('จำนวนครั้งต้องเป็นจำนวนเต็ม').min(0, 'จำนวนครั้งต้องไม่ติดลบ').max(1000),
+  qualifyWindowMonths: z.coerce
+    .number()
+    .int('จำนวนเดือนต้องเป็นจำนวนเต็ม')
+    .min(1, 'นับย้อนหลังอย่างน้อย 1 เดือน')
+    .max(60, 'นับย้อนหลังได้ไม่เกิน 60 เดือน'),
+  pointMultiplier: z.coerce
+    .number()
+    .positive('ตัวคูณแต้มต้องมากกว่า 0')
+    .max(10, 'ตัวคูณแต้มได้ไม่เกิน 10')
+    .refine(withinPlaces(2), 'ตัวคูณแต้มมีทศนิยมได้ไม่เกิน 2 ตำแหน่ง'),
+});
+
+export type TierFormInput = z.infer<typeof tierFormSchema>;
