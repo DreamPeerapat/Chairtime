@@ -20,7 +20,7 @@ const DAYS = [
 
 export function BookingPreview() {
   return (
-    <div aria-hidden className="ct-phone relative mx-auto w-full max-w-[320px] select-none">
+    <div aria-hidden className="ct-phone ct-float relative mx-auto w-full max-w-[320px] select-none">
       {/* The tinted plate behind the phone: it stops the device floating on
           the page unattached to anything. */}
       <div className="absolute inset-x-[-14%] top-10 bottom-16 rounded-[2.5rem] bg-brand-soft" />

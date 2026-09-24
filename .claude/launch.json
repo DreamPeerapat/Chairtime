@@ -4,8 +4,12 @@
     {
       "name": "chairtime",
       "runtimeExecutable": "corepack",
-      "runtimeArgs": ["pnpm", "dev"],
-      "port": 3000
+      "runtimeArgs": [
+        "pnpm",
+        "dev"
+      ],
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

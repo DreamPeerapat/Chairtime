@@ -37,8 +37,14 @@ export const metadata: Metadata = {
 /**
  * Applies a stored theme choice before the first paint.
  *
- * Without this the page renders in the OS theme, hydrates, and then flips —
- * a white flash on every navigation for anybody who chose dark. It has to be
+ * The default is light: <html> is rendered with data-theme="light", so a page
+ * with no stored choice — or no JavaScript — is light whatever the OS says.
+ * This script only changes that for someone who chose dark, or chose to
+ * follow the device ('system', which removes the attribute and hands the
+ * decision back to the prefers-color-scheme rule in globals.css).
+ *
+ * Without it the page renders light, hydrates, and then flips — a white
+ * flash on every navigation for anybody who chose dark. It has to be
  * inline and it has to be in <head>, so it is a string rather than a module:
  * an external file would be a round trip, and the flash is exactly as long
  * as that round trip.
@@ -48,17 +54,18 @@ export const metadata: Metadata = {
  *
  * Keep the key and the values in step with components/ui/theme-toggle.tsx.
  */
-const THEME_SCRIPT = `try{var t=localStorage.getItem('chairtime-theme');if(t==='dark'||t==='light'){document.documentElement.dataset.theme=t}}catch(e){}`;
+const THEME_SCRIPT = `try{var t=localStorage.getItem('chairtime-theme'),r=document.documentElement;if(t==='dark'){r.dataset.theme='dark'}else if(t==='system'){r.removeAttribute('data-theme')}}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // suppressHydrationWarning is for THEME_SCRIPT below and nothing else: it
-    // adds `data-theme` to this element before React sees the page, and React
-    // would otherwise report the attribute it did not render as a mismatch.
+    // changes `data-theme` on this element before React sees the page, and React
+    // would otherwise report the attribute value it did not render as a mismatch.
     // It suppresses warnings for this element's own attributes only, not for
     // anything inside it.
     <html
       lang="th"
+      data-theme="light"
       suppressHydrationWarning
       className={`${plexThai.variable} ${serifThai.variable}`}
     >

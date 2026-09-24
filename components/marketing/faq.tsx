@@ -42,7 +42,7 @@ export function Faq() {
   return (
     <section id="คำถาม" className="scroll-mt-16 border-t border-line bg-surface-muted">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:py-20 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-16">
-        <div>
+        <div className="ct-heading">
           <h2 className="text-3xl font-semibold sm:text-4xl">คำถามบ่อย</h2>
           <p className="mt-4 text-sm leading-[1.85] text-muted">
             ทุกคำตอบในนี้เป็นสิ่งที่ระบบทำได้แล้ววันนี้ ไม่ใช่สิ่งที่กำลังจะทำ

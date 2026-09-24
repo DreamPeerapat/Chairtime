@@ -36,7 +36,7 @@ export function Steps() {
   return (
     <section id="วิธีใช้" className="scroll-mt-16 bg-[#14201f] text-[#f4f1ea]">
       <div className="mx-auto max-w-6xl px-5 py-16 sm:py-20">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="ct-heading flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold tracking-[0.14em] text-[#5eead4] uppercase">
               สี่ขั้น
@@ -66,8 +66,8 @@ export function Steps() {
                 <span
                   className={
                     last
-                      ? 'ct-lift-mark grid size-9 place-items-center rounded-full bg-[#5eead4] text-sm font-semibold text-[#0b1f1c]'
-                      : 'ct-lift-mark grid size-9 place-items-center rounded-full bg-[#0f766e] text-sm font-semibold text-white'
+                      ? 'ct-pop ct-lift-mark grid size-9 place-items-center rounded-full bg-[#5eead4] text-sm font-semibold text-[#0b1f1c]'
+                      : 'ct-pop ct-lift-mark grid size-9 place-items-center rounded-full bg-[#0f766e] text-sm font-semibold text-white'
                   }
                 >
                   {index + 1}
