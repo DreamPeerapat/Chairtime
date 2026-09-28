@@ -552,3 +552,35 @@ export async function listRewardsForAdmin(tenantId: string) {
       .orderBy(asc(schema.reward.pointCost)),
   );
 }
+
+export interface AdminTier {
+  id: string;
+  name: string;
+  level: number;
+  qualifySpend: string;
+  qualifyVisits: number;
+  qualifyWindowMonths: number;
+  pointMultiplier: string;
+  /** customers holding this tier right now */
+  members: number;
+}
+
+/** Membership tiers, lowest first, with how many customers hold each. */
+export async function listTiersForAdmin(tenantId: string): Promise<AdminTier[]> {
+  return withTenant(tenantId, (tx) =>
+    tx
+      .select({
+        id: schema.membershipTier.id,
+        name: schema.membershipTier.name,
+        level: schema.membershipTier.level,
+        qualifySpend: schema.membershipTier.qualifySpend,
+        qualifyVisits: schema.membershipTier.qualifyVisits,
+        qualifyWindowMonths: schema.membershipTier.qualifyWindowMonths,
+        pointMultiplier: schema.membershipTier.pointMultiplier,
+        members: sql<number>`(select count(*)::int from ${schema.customerTier} where ${schema.customerTier.tierId} = ${schema.membershipTier.id})`,
+      })
+      .from(schema.membershipTier)
+      .where(eq(schema.membershipTier.tenantId, tenantId))
+      .orderBy(asc(schema.membershipTier.level)),
+  );
+}

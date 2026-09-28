@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { LOYALTY_ENABLED } from '@/lib/features';
 import { notFound, redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
@@ -42,7 +43,12 @@ export default async function LoyaltySettingsPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-lg font-semibold">กติกาแต้มสะสม</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-lg font-semibold">กติกาแต้มสะสม</h1>
+        <Link href="/dashboard/settings/loyalty/tiers" className="text-sm font-medium text-brand">
+          ระดับสมาชิก ›
+        </Link>
+      </div>
 
       {ok ? (
         <p className="rounded-lg bg-brand-soft px-3 py-2 text-sm text-brand">

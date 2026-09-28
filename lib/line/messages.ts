@@ -171,6 +171,88 @@ export function bookingCreatedForShopMessage(
   };
 }
 
+export interface PlanExpiringMessageData {
+  shopName: string;
+  /** when the trial or paid period runs out, already zoned */
+  periodEnd: DateTime;
+  /** calendar days in the shop's zone; 0 = ends today */
+  daysLeft: number;
+  onTrial: boolean;
+  billingUrl: string | null;
+}
+
+/**
+ * Sent to the shop a week before its plan runs out, and again the day before.
+ *
+ * What stops at the end is new bookings — the calendar stays readable — so
+ * that is what the message says, rather than a vaguer "your account expires".
+ */
+export function planExpiringMessage(data: PlanExpiringMessageData): LineFlexMessage {
+  const what = data.onTrial ? 'ช่วงทดลองใช้' : 'แพ็กเกจ';
+  const when = data.daysLeft <= 0 ? 'วันนี้' : `ในอีก ${data.daysLeft} วัน`;
+  const button = data.billingUrl
+    ? {
+        footer: {
+          type: 'box' as const,
+          layout: 'vertical' as const,
+          paddingAll: '16px',
+          contents: [
+            {
+              type: 'button' as const,
+              style: 'primary' as const,
+              height: 'sm' as const,
+              color: BRAND,
+              action: { type: 'uri' as const, label: 'ต่ออายุ', uri: data.billingUrl },
+            },
+          ],
+        },
+      }
+    : {};
+
+  return {
+    type: 'flex',
+    altText: `${what}ของ ${data.shopName} จะหมด${when}`,
+    contents: {
+      type: 'bubble',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        paddingAll: '16px',
+        backgroundColor: BRAND,
+        contents: [
+          { type: 'text', text: `${what}จะหมด${when}`, color: '#ffffff', weight: 'bold', size: 'lg', wrap: true },
+          { type: 'text', text: data.shopName, color: '#e2e8f0', size: 'sm', margin: 'xs' },
+        ],
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'md',
+        paddingAll: '16px',
+        contents: [
+          {
+            type: 'box',
+            layout: 'baseline',
+            spacing: 'sm',
+            contents: [
+              { type: 'text', text: 'ใช้ได้ถึง', color: MUTED, size: 'sm', flex: 2 },
+              { type: 'text', text: formatThaiDate(data.periodEnd), wrap: true, size: 'sm', flex: 5 },
+            ],
+          },
+          {
+            type: 'text',
+            text: 'หลังจากนั้นจะรับจองคิวใหม่ไม่ได้ คิวที่จองไว้แล้วยังจัดการได้ตามปกติ',
+            wrap: true,
+            size: 'sm',
+            color: MUTED,
+          },
+        ],
+      },
+      ...button,
+    },
+  };
+}
+
 export interface ReceiptMessageData {
   shopName: string;
   receiptNumber: string;

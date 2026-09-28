@@ -17,6 +17,7 @@ import {
   bookingConfirmedMessage,
   bookingCreatedForShopMessage,
   pointsEarnedMessage,
+  planExpiringMessage,
   pointsExpiringMessage,
   receiptIssuedMessage,
   reminder24hMessage,
@@ -26,7 +27,8 @@ import {
   type BookingMessageData,
 } from '@/lib/line/messages';
 import type { LineClient, LineMessage } from '@/lib/line/types';
-import { manageBookingUrl } from '@/lib/line/links';
+import { billingUrl, manageBookingUrl } from '@/lib/line/links';
+import { describe as describeBilling } from '@/lib/billing/access';
 import { ownerLineUserId } from '@/lib/line/owner-link';
 import {
   claimDueNotifications,
@@ -132,6 +134,7 @@ async function render(
   }
 
   if (item.template === 'receipt_issued') return renderReceiptMessage(tx, tenantId, item);
+  if (item.template === 'plan_expiring') return renderPlanExpiringMessage(tx, tenantId, item);
 
   const bookingId = typeof item.payload.bookingId === 'string' ? item.payload.bookingId : null;
   if (!bookingId) return null;
@@ -211,6 +214,50 @@ async function renderReceiptMessage(
       periodEnd: DateTime.fromISO(typeof periodEnd === 'string' ? periodEnd : '', {
         zone: tenantRow.timezone,
       }),
+    }),
+  };
+}
+
+/**
+ * The shop's plan is about to run out.
+ *
+ * Read afresh rather than trusted from the payload: a shop that renewed
+ * between the cron queueing this and the worker sending it has a different
+ * end date now, and must not be told to pay for what it already paid for.
+ */
+async function renderPlanExpiringMessage(
+  tx: TenantTx,
+  tenantId: string,
+  item: DueNotification,
+): Promise<Rendered | null> {
+  const owner = await ownerLineUserId(tx, tenantId);
+  if (!owner) return null;
+
+  const [row] = await tx
+    .select({
+      status: schema.tenant.status,
+      shopName: schema.tenant.name,
+      trialEndsAt: schema.tenant.trialEndsAt,
+      paidUntil: schema.tenant.paidUntil,
+      timezone: schema.tenant.timezone,
+    })
+    .from(schema.tenant)
+    .where(eq(schema.tenant.id, tenantId));
+  if (!row) return null;
+
+  const state = describeBilling({ ...row, planCode: null, planName: null, priceMonthly: null });
+  const queuedFor = typeof item.payload.periodEnd === 'string' ? DateTime.fromISO(item.payload.periodEnd) : null;
+  if (!state.periodEnd || state.daysLeft === null || state.daysLeft < 0 || !queuedFor?.isValid) return null;
+  if (state.periodEnd.toMillis() !== queuedFor.toMillis()) return null;
+
+  return {
+    lineUserId: owner,
+    message: planExpiringMessage({
+      shopName: row.shopName,
+      periodEnd: state.periodEnd,
+      daysLeft: state.daysLeft,
+      onTrial: state.onTrial,
+      billingUrl: billingUrl(),
     }),
   };
 }

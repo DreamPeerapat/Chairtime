@@ -571,3 +571,142 @@ h3 {
     color: #9ba7a5;
   }
 }
+
+/*
+ * The front page, moving.
+ *
+ * Three kinds of motion, each with one job:
+ *
+ * - `ct-intro-*` plays once on load, on a clock, for the first screen only:
+ *   the headline, then what it means, then what to press, then the phone. A
+ *   first screen that lands as one slab has nothing to read first.
+ * - `ct-float` / `ct-drift` are slow and endless, and only on things that
+ *   carry no text — the phone and the wash behind it — so nothing anyone is
+ *   reading ever moves under their eyes.
+ * - `ct-heading` and `ct-pop` are scroll-driven like `.ct-reveal` above, so
+ *   each section's heading arrives as the section does rather than all of
+ *   them at once on load, and plays backwards on the way up.
+ *
+ * Everything clock-driven is behind prefers-reduced-motion; everything
+ * scroll-driven is also behind @supports, for the reason given at
+ * `.ct-reveal`: the fallback must be "visible", never "stuck at opacity 0".
+ */
+@keyframes ct-intro-in {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+  }
+}
+
+@keyframes ct-float {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 0 -10px;
+  }
+}
+
+@keyframes ct-drift {
+  from {
+    translate: 0 0;
+    scale: 1;
+  }
+  to {
+    translate: -4rem 3rem;
+    scale: 1.08;
+  }
+}
+
+@keyframes ct-heading-in {
+  from {
+    opacity: 0;
+    translate: 0 28px;
+    filter: blur(6px);
+  }
+}
+
+@keyframes ct-pop-in {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}
+
+/*
+ * A pricing card on a phone, as it slides past the middle of the row. The one
+ * in the centre is the one being read; the neighbours stay in view, a little
+ * smaller and quieter, so it is obvious there is more to either side.
+ */
+@keyframes ct-snap-focus {
+  0%,
+  100% {
+    opacity: 0.55;
+    scale: 0.92;
+  }
+  50% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ct-intro-1,
+  .ct-intro-2,
+  .ct-intro-3,
+  .ct-intro-4,
+  .ct-intro-5 {
+    animation: ct-intro-in 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .ct-intro-2 {
+    animation-delay: 90ms;
+  }
+  .ct-intro-3 {
+    animation-delay: 180ms;
+  }
+  .ct-intro-4 {
+    animation-delay: 270ms;
+  }
+  .ct-intro-5 {
+    animation-delay: 360ms;
+    animation-duration: 1000ms;
+  }
+
+  .ct-float {
+    animation: ct-float 4.2s ease-in-out infinite alternate;
+  }
+
+  .ct-drift {
+    animation: ct-drift 18s ease-in-out infinite alternate;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ct-heading {
+      animation: ct-heading-in linear backwards;
+      animation-timeline: view();
+      animation-range: entry 0% cover 28%;
+    }
+
+    .ct-pop {
+      animation: ct-pop-in linear backwards;
+      animation-timeline: view();
+      animation-range: entry 20% cover 36%;
+    }
+
+    /*
+     * Below `lg` the pricing row scrolls sideways, so a card's own timeline is
+     * the row's inline axis, not the page: `.ct-reveal`'s vertical rise is
+     * swapped for the focus above. Written after `.ct-stagger` so it wins the
+     * tie on specificity.
+     */
+    @media (max-width: 63.99rem) {
+      .ct-carousel > .ct-reveal {
+        animation: ct-snap-focus linear both;
+        animation-timeline: view(inline);
+        animation-range: cover 0% cover 100%;
+      }
+    }
+  }
+}

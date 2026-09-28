@@ -8,15 +8,20 @@
  * itself from POST /api/bookings, so the rules live on the server where the
  * database can enforce them.
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { DateTime } from 'luxon';
-import { cn } from '@/lib/utils';
 import type { ServiceListItem, StaffListItem } from '@/lib/booking/queries';
 import type { PortfolioPhoto } from '@/lib/portfolio/queries';
 import { ServiceStep } from './service-step';
 import { StaffStep } from './staff-step';
 import { TimeStep } from './time-step';
 import { ConfirmStep } from './confirm-step';
+import { SlotTakenNotice } from './slot-taken-notice';
+import { STEPS, StepIndicator } from './step-indicator';
+import { useAvailabilitySlots } from './use-availability-slots';
+import { useEligibleStaff } from './use-eligible-staff';
+
+export type { Slot } from './use-availability-slots';
 
 export interface BookingFlowProps {
   tenantId: string;
@@ -33,26 +38,11 @@ export interface BookingFlowProps {
   liffId: string | null;
 }
 
-export interface Slot {
-  startsAt: string;
-  endsAt: string;
-  durationMin: number;
-  staffResourceId: string | null;
-}
-
-const STEPS = ['บริการ', 'ช่าง', 'เวลา', 'ยืนยัน'] as const;
-
 export function BookingFlow(props: BookingFlowProps) {
   const [step, setStep] = useState(0);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [pickedStaffId, setStaffId] = useState<string | null>(null);
   const [date, setDate] = useState(() => DateTime.now().setZone(props.timezone).toISODate()!);
-  const [slots, setSlots] = useState<Slot[]>([]);
-  /** The shop has no staff/seats or no hours — no day will ever have a slot. */
-  const [setupIncomplete, setSetupIncomplete] = useState(false);
-  const [slot, setSlot] = useState<Slot | null>(null);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   /**
    * Somebody took the slot while this customer was filling in the form.
@@ -68,68 +58,19 @@ export function BookingFlow(props: BookingFlowProps) {
   // With staff selection turned off, the shop assigns whoever is free.
   const staffStepEnabled = props.allowCustomerPickStaff && props.staff.length > 0;
 
-  /**
-   * Only the stylists who can do everything in the basket.
-   *
-   * This used to return the whole list — the name said "eligible" and the body
-   * said otherwise. A customer who picked a colour and then a stylist who only
-   * cuts reached the time step, found no times at all, and had nothing to tell
-   * them why. One person handles the whole visit, so the test is that they
-   * hold every skill, not any of them.
-   */
-  const eligibleStaff = useMemo(
-    () =>
-      selectedServiceIds.length === 0
-        ? props.staff
-        : props.staff.filter((person) =>
-            selectedServiceIds.every((id) => person.serviceIds.includes(id)),
-          ),
-    [props.staff, selectedServiceIds],
+  // Narrowed to who can do the whole basket; a pick that no longer can reads as none.
+  const { eligibleStaff, staffId } = useEligibleStaff(
+    props.staff,
+    selectedServiceIds,
+    pickedStaffId,
   );
 
-  /**
-   * The chosen stylist stops being able to do the job when the basket changes
-   * under them — picking a stylist, going back, and adding a service.
-   *
-   * Derived rather than corrected in an effect: writing state during an effect
-   * costs a second render pass and, worse, leaves one render in which the
-   * time step asks for a stylist who cannot serve the basket. Reading through
-   * this constant means the invalid combination never exists.
-   */
-  const staffId =
-    pickedStaffId && eligibleStaff.some((person) => person.id === pickedStaffId)
-      ? pickedStaffId
-      : null;
-
-  const loadSlots = useCallback(
-    async (forDate: string) => {
-      if (selectedServiceIds.length === 0) return;
-      setLoadingSlots(true);
-      setError(null);
-      setSlot(null);
-      try {
-        const params = new URLSearchParams({
-          tenantId: props.tenantId,
-          date: forDate,
-          serviceIds: selectedServiceIds.join(','),
-        });
-        if (staffId) params.set('resourceId', staffId);
-
-        const response = await fetch(`/api/availability?${params}`);
-        if (!response.ok) throw new Error('load failed');
-        const body = (await response.json()) as { slots: Slot[]; setupIncomplete?: boolean };
-        setSlots(body.slots);
-        setSetupIncomplete(Boolean(body.setupIncomplete));
-      } catch {
-        setError('โหลดเวลาว่างไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
-        setSlots([]);
-        setSetupIncomplete(false);
-      } finally {
-        setLoadingSlots(false);
-      }
-    },
-    [props.tenantId, selectedServiceIds, staffId],
-  );
+  const { slots, setupIncomplete, slot, setSlot, loadingSlots, error, loadSlots } =
+    useAvailabilitySlots({
+      tenantId: props.tenantId,
+      serviceIds: selectedServiceIds,
+      staffId,
+    });
 
   // Slots are fetched from the interaction that needs them, not from an effect:
   // the trigger is always a user action (entering the step, or changing the
@@ -159,29 +100,13 @@ export function BookingFlow(props: BookingFlowProps) {
       ) : null}
 
       {slotTaken ? (
-        <div
-          role="alert"
-          className="rounded-lg bg-amber-50 px-3 py-2.5 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200"
-        >
-          <p className="font-medium">ช่วงเวลานี้เพิ่งถูกจองไปเมื่อสักครู่</p>
-          <p className="mt-0.5">
-            {staffStepEnabled
-              ? 'กรุณาเลือกเวลาอื่นจากรายการด้านล่าง หรือเลือกช่างคนอื่นที่ยังว่างในเวลาเดิม'
-              : 'กรุณาเลือกเวลาอื่นจากรายการด้านล่าง'}
-          </p>
-          {staffStepEnabled ? (
-            <button
-              type="button"
-              onClick={() => {
-                setSlotTaken(false);
-                setStep(1);
-              }}
-              className="mt-2 rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-medium dark:border-amber-800"
-            >
-              เลือกช่างคนอื่น
-            </button>
-          ) : null}
-        </div>
+        <SlotTakenNotice
+          staffStepEnabled={staffStepEnabled}
+          onPickOtherStaff={() => {
+            setSlotTaken(false);
+            setStep(1);
+          }}
+        />
       ) : null}
 
       {/* Keyed on the step so React remounts on every move, which replays
@@ -258,60 +183,5 @@ export function BookingFlow(props: BookingFlowProps) {
         ) : null}
       </div>
     </div>
-  );
-}
-
-function StepIndicator({ current, disabled }: { current: number; disabled: number[] }) {
-  return (
-    <ol className="flex items-center gap-1.5 text-xs">
-      {STEPS.map((label, index) => {
-        const skipped = disabled.includes(index);
-        return (
-          <li key={label} className="flex min-w-0 flex-1 items-center gap-1.5">
-            <span
-              className={cn(
-                'flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-medium',
-                'transition-[background-color,color,transform] duration-200',
-                index === current
-                  ? 'scale-110 bg-brand text-brand-contrast shadow-sm shadow-brand/30'
-                  : index < current
-                    ? 'bg-brand-soft text-brand-strong'
-                    : 'bg-surface-muted text-muted',
-                skipped && 'opacity-40',
-              )}
-            >
-              {/* A finished step says so, rather than repeating its number —
-                  but a step that was skipped (no staff to pick) was never
-                  done, so it keeps its number rather than claiming a tick. */}
-              {index < current && !skipped ? (
-                <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5">
-                  <path
-                    d="m4.5 10.5 3.5 3.5 7.5-8"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              ) : (
-                index + 1
-              )}
-            </span>
-            <span
-              className={cn(
-                'truncate transition-colors duration-200',
-                index === current
-                  ? 'font-medium'
-                  : index < current
-                    ? 'text-muted'
-                    : 'text-muted',
-              )}
-            >
-              {label}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
   );
 }

@@ -11,16 +11,9 @@
 import { MODAL_TITLE_ID, Modal } from '@/components/ui/modal';
 import { useState, useTransition } from 'react';
 import { DateTime } from 'luxon';
-import { cn } from '@/lib/utils';
 import type { DayCalendar } from '@/lib/admin/queries';
 import { createWalkIn } from '@/lib/admin/actions';
-
-interface Slot {
-  startsAt: string;
-  endsAt: string;
-  durationMin: number;
-  staffResourceId: string | null;
-}
+import { WalkInChoices, type Slot } from './walk-in-choices';
 
 export function WalkInForm({
   calendar,
@@ -111,90 +104,19 @@ export function WalkInForm({
           สร้างคิว Walk-in
         </h2>
 
-        <section className="mt-4">
-          <h3 className="mb-2 text-xs font-medium text-muted">บริการ</h3>
-          <div className="flex flex-wrap gap-1.5">
-            {services.map((service) => (
-              <button
-                key={service.id}
-                type="button"
-                onClick={() => pickService(service.id)}
-                className={cn(
-                  'rounded-lg border px-3 py-1.5 text-xs',
-                  serviceId === service.id
-                    ? 'border-brand bg-brand text-brand-contrast'
-                    : 'border-line',
-                )}
-              >
-                {service.name}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {serviceId ? (
-          <section className="mt-4">
-            <h3 className="mb-2 text-xs font-medium text-muted">ช่าง</h3>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => pickStaff(null)}
-                className={cn(
-                  'rounded-lg border px-3 py-1.5 text-xs',
-                  staffId === null
-                    ? 'border-brand bg-brand text-brand-contrast'
-                    : 'border-line',
-                )}
-              >
-                ใครก็ได้
-              </button>
-              {staff.map((person) => (
-                <button
-                  key={person.id}
-                  type="button"
-                  onClick={() => pickStaff(person.id)}
-                  className={cn(
-                    'rounded-lg border px-3 py-1.5 text-xs',
-                    staffId === person.id
-                      ? 'border-brand bg-brand text-brand-contrast'
-                      : 'border-line',
-                  )}
-                >
-                  {person.name}
-                </button>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {serviceId ? (
-          <section className="mt-4">
-            <h3 className="mb-2 text-xs font-medium text-muted">เวลา</h3>
-            {loading ? (
-              <p className="text-sm text-muted">กำลังหาเวลาว่าง…</p>
-            ) : slots.length === 0 ? (
-              <p className="text-sm text-muted">ไม่มีเวลาว่างเหลือในวันนี้</p>
-            ) : (
-              <div className="grid grid-cols-4 gap-1.5">
-                {slots.slice(0, 16).map((option) => (
-                  <button
-                    key={option.startsAt}
-                    type="button"
-                    onClick={() => setSlot(option)}
-                    className={cn(
-                      'rounded-lg border py-1.5 text-xs tabular-nums',
-                      slot?.startsAt === option.startsAt
-                        ? 'border-brand bg-brand text-brand-contrast'
-                        : 'border-line',
-                    )}
-                  >
-                    {DateTime.fromISO(option.startsAt).setZone(calendar.timezone).toFormat('HH:mm')}
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-        ) : null}
+        <WalkInChoices
+          services={services}
+          staff={staff}
+          timezone={calendar.timezone}
+          serviceId={serviceId}
+          staffId={staffId}
+          slots={slots}
+          slot={slot}
+          loading={loading}
+          onPickService={pickService}
+          onPickStaff={pickStaff}
+          onPickSlot={setSlot}
+        />
 
         <section className="mt-4 flex flex-col gap-2">
           <input

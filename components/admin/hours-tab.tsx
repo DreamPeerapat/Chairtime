@@ -16,15 +16,15 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { saveHours } from '@/lib/admin/actions';
 import {
-  MAX_RANGES_PER_DAY,
   groupByWeekday,
   toRows,
   validateHourRows,
   type HourRow,
   type WeekdayHours,
 } from '@/lib/admin/hours';
+import { HoursDayRow } from './hours-day-row';
 import type { AdminResource } from './resource-manager';
-import { ErrorText, WEEKDAYS, activeChip, idleChip, inputClass, primaryButton } from './ui';
+import { ErrorText, activeChip, idleChip, primaryButton } from './ui';
 
 export function HoursTab({
   resources,
@@ -108,86 +108,11 @@ export function HoursTab({
 
       <ul className="flex flex-col gap-3">
         {days.map((day) => (
-          <li key={day.weekday} className="flex flex-col gap-2 border-b border-line pb-3 last:border-0">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={day.open}
-                onChange={(e) => update(day.weekday, (d) => ({ ...d, open: e.target.checked }))}
-                className="h-4 w-4"
-              />
-              {WEEKDAYS[day.weekday]}
-              {day.open && day.ranges.length > 1 ? (
-                <span className="text-xs text-muted">({day.ranges.length} ช่วง)</span>
-              ) : null}
-            </label>
-
-            {day.ranges.map((range, index) => (
-              <div key={index} className="flex items-center gap-2 ps-6">
-                <input
-                  type="time"
-                  value={range.openTime}
-                  disabled={!day.open}
-                  aria-label={`${WEEKDAYS[day.weekday]} ช่วงที่ ${index + 1} เวลาเปิด`}
-                  onChange={(e) =>
-                    update(day.weekday, (d) => ({
-                      ...d,
-                      ranges: d.ranges.map((r, i) =>
-                        i === index ? { ...r, openTime: e.target.value } : r,
-                      ),
-                    }))
-                  }
-                  className={cn(inputClass, 'w-28')}
-                />
-                <span className="text-muted">–</span>
-                <input
-                  type="time"
-                  value={range.closeTime}
-                  disabled={!day.open}
-                  aria-label={`${WEEKDAYS[day.weekday]} ช่วงที่ ${index + 1} เวลาปิด`}
-                  onChange={(e) =>
-                    update(day.weekday, (d) => ({
-                      ...d,
-                      ranges: d.ranges.map((r, i) =>
-                        i === index ? { ...r, closeTime: e.target.value } : r,
-                      ),
-                    }))
-                  }
-                  className={cn(inputClass, 'w-28')}
-                />
-                {day.open && day.ranges.length > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      update(day.weekday, (d) => ({
-                        ...d,
-                        ranges: d.ranges.filter((_, i) => i !== index),
-                      }))
-                    }
-                    aria-label={`ลบช่วงที่ ${index + 1} ของวัน${WEEKDAYS[day.weekday]}`}
-                    className="rounded-lg border border-line px-2 py-1 text-xs text-muted"
-                  >
-                    ลบ
-                  </button>
-                ) : null}
-              </div>
-            ))}
-
-            {day.open && day.ranges.length < MAX_RANGES_PER_DAY ? (
-              <button
-                type="button"
-                onClick={() =>
-                  update(day.weekday, (d) => ({
-                    ...d,
-                    ranges: [...d.ranges, { openTime: '14:00', closeTime: '20:00' }],
-                  }))
-                }
-                className="ms-6 w-fit rounded-lg border border-line px-2.5 py-1 text-xs"
-              >
-                + เพิ่มช่วง
-              </button>
-            ) : null}
-          </li>
+          <HoursDayRow
+            key={day.weekday}
+            day={day}
+            onUpdate={(change) => update(day.weekday, change)}
+          />
         ))}
       </ul>
 

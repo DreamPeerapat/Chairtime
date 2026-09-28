@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { DateTime } from 'luxon';
 import { useRouter } from 'next/navigation';
 import type { ServiceListItem, StaffListItem } from '@/lib/booking/queries';
 import type { Slot } from './booking-flow';
-import { formatBaht, formatDuration, splitBaht, thaiDateFull, thaiTimeRange } from './format';
+import { BookingSummary } from './booking-summary';
+import { Field } from './form-field';
 import { useLiffIdentity } from './use-liff-identity';
 import { ReferenceUploader, type ReferenceImage } from './reference-uploader';
 
@@ -39,10 +39,6 @@ export function ConfirmStep({
   const [references, setReferences] = useState<ReferenceImage[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const start = DateTime.fromISO(slot.startsAt).setZone(timezone);
-  const end = DateTime.fromISO(slot.endsAt).setZone(timezone);
-  const total = services.reduce((sum, s) => sum + Math.round(Number(s.price) * 100), 0) / 100;
 
   async function submit() {
     setSubmitting(true);
@@ -106,14 +102,7 @@ export function ConfirmStep({
     <div className="flex flex-1 flex-col gap-4">
       <h2 className="text-base font-semibold">ยืนยันการจอง</h2>
 
-      <dl className="rounded-xl border border-line px-4 py-3 text-sm">
-        <Row label="วันที่" value={thaiDateFull(start)} />
-        <Row label="เวลา" value={thaiTimeRange(start, end)} />
-        <Row label="ใช้เวลา" value={formatDuration(slot.durationMin)} />
-        <Row label="บริการ" value={services.map((s) => s.name).join(', ')} />
-        {staff ? <Row label="ช่าง" value={staff.name} /> : null}
-        <Row label="รวม" value={formatBaht(total)} emphasis />
-      </dl>
+      <BookingSummary timezone={timezone} services={services} staff={staff} slot={slot} />
 
       <div className="flex flex-col gap-3">
         {/* In LIFF the shop already knows who this is, and the confirmation
@@ -196,38 +185,5 @@ export function ConfirmStep({
         </div>
       </div>
     </div>
-  );
-}
-
-function Row({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
-  const { symbol, digits } = splitBaht(value);
-  return (
-    <div className="flex justify-between gap-4 border-b border-line py-2 last:border-0/60">
-      <dt className="shrink-0 text-muted">{label}</dt>
-      <dd className={emphasis ? 'font-semibold' : 'text-right'}>
-        {symbol ? <span className="mr-0.5">{symbol}</span> : null}
-        <span className={emphasis ? 'tabular-nums' : ''}>{digits}</span>
-      </dd>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-muted">
-        {label}
-        {required ? <span className="ml-0.5 text-red-500">*</span> : null}
-      </span>
-      {children}
-    </label>
   );
 }

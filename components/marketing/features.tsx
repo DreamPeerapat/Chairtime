@@ -84,7 +84,7 @@ const FEATURES = [
 export function Features() {
   return (
     <section className="mx-auto max-w-6xl px-5 py-16 sm:py-20">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+      <div className="ct-heading flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">
             สิ่งที่ร้านได้

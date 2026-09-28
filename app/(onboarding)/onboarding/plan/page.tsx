@@ -38,6 +38,9 @@ export default async function OnboardingPlanPage({
       .orderBy(asc(schema.subscriptionPlan.priceMonthly)),
     db.select().from(schema.businessTypeTemplate),
   ]);
+  // Every signup starts on a trial (lib/onboarding/create-tenant.ts), so a paid
+  // plan is chosen now and paid for before the trial ends — say so here.
+  const trialDays = plans.find((p) => p.trialDays > 0)?.trialDays ?? 0;
 
   async function submit(formData: FormData) {
     'use server';
@@ -56,10 +59,6 @@ export default async function OnboardingPlanPage({
     } catch (err) {
       if (err instanceof InvalidPlanError) redirect('/onboarding/plan?error=invalid');
       throw err;
-    }
-
-    if (result.needsPayment) {
-      redirect(`/onboarding/payment?tenant=${result.tenantId}`);
     }
 
     const token = await mintSessionToken(staffUserId, {
@@ -142,6 +141,7 @@ export default async function OnboardingPlanPage({
                     ) : (
                       <span className="block text-xs text-muted">
                         {plan.priceMonthly ? `${Number(plan.priceMonthly).toLocaleString('th-TH')} บาท/เดือน` : 'ติดต่อฝ่ายขาย'}
+                        {trialDays > 0 ? ` · ทดลองใช้ฟรี ${trialDays} วันก่อน แล้วค่อยชำระในหน้าแพ็กเกจ` : null}
                       </span>
                     )}
                   </span>

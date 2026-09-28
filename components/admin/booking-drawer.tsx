@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import type { CalendarBooking } from '@/lib/admin/queries';
 import { setBookingStatus } from '@/lib/admin/actions';
 import { formatBaht, statusLabel, thaiTimeRange } from '@/components/booking/format';
+import { Row, sourceLabel } from './booking-drawer-details';
 
 /**
  * What staff can do to a booking that is still live.
@@ -177,36 +178,4 @@ export function BookingDrawer({
       )}
     </Modal>
   );
-}
-
-function Row({ label, value, href }: { label: string; value: string; href?: string }) {
-  return (
-    <div className="flex justify-between gap-4">
-      <dt className="shrink-0 text-muted">{label}</dt>
-      <dd className="text-right">
-        {href ? (
-          <a href={href} className="text-brand underline">
-            {value}
-          </a>
-        ) : (
-          value
-        )}
-      </dd>
-    </div>
-  );
-}
-
-function sourceLabel(source: string): string {
-  switch (source) {
-    case 'online':
-      return 'จองออนไลน์';
-    case 'walk_in':
-      return 'Walk-in';
-    case 'phone':
-      return 'โทรจอง';
-    case 'admin':
-      return 'ร้านสร้างเอง';
-    default:
-      return source;
-  }
 }

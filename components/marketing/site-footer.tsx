@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 /**
  * The last thing on the page: one more way in, and who is behind this.
  *

@@ -258,11 +258,12 @@ test.describe('services', () => {
     await expect(page.getByRole('heading', { name: 'บริการ' })).toBeVisible();
     await expect(page.getByText('ย้อมผม')).toBeVisible();
 
-    // A multi-segment service must not offer a single duration field to edit.
+    // A multi-segment service opens with each of its steps editable, the
+    // waiting one marked as time the stylist is free.
     await page.getByRole('button', { name: /ย้อมผม/ }).click();
     const dialog = page.getByRole('dialog');
-    await expect(dialog.getByText(/แบ่งเป็น 3 ช่วง/)).toBeVisible();
-    await expect(dialog.getByLabel('ใช้เวลา (นาที)')).toBeDisabled();
+    await expect(dialog.getByLabel(/นาทีของขั้นตอนที่/)).toHaveCount(3);
+    await expect(dialog.getByLabel('ช่างทำอะไรในขั้นตอนที่ 2')).toHaveValue('passive');
   });
 
   test('edits a price and shows it on the list', async ({ page }) => {

@@ -1,19 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
 import type { PortfolioPhoto } from '@/lib/portfolio/queries';
 import type { StaffListItem } from '@/lib/booking/queries';
-import { initialOf } from './format';
 import { PhotoViewer } from './photo-viewer';
-
-/**
- * Four, because a 375px phone fits four 64px thumbnails inside the card and
- * clips the fifth — and the fifth is the one carrying the "+N" badge, so five
- * would hide the very thing that says there is more to see.
- */
-const THUMBS_SHOWN = 4;
+import { PortfolioStrip } from './portfolio-strip';
+import { Avatar, Card, Text, Tick } from './staff-card';
 
 export function StaffStep({
   staff,
@@ -124,162 +116,6 @@ export function StaffStep({
           onClose={() => setViewing(null)}
         />
       ) : null}
-    </div>
-  );
-}
-
-/**
- * One person: the tap target and their work, in the same box.
- *
- * The photos used to sit under the card, edge to edge, which read as a strip
- * belonging to nobody — or worse, to the person listed below. They belong
- * inside, but a button cannot contain another button: the browser drops the
- * inner one. So the selection button stretches its own hit area across the
- * whole card with `after:inset-0`, and the thumbnails sit above it on z-10.
- *
- * `ct-press` goes on the card rather than the button because its :active
- * transform would make the button the containing block, shrinking the
- * stretched overlay away from under the finger mid-press.
- */
-function Card({
-  active,
-  onSelect,
-  label,
-  children,
-  below,
-}: {
-  active: boolean;
-  onSelect: () => void;
-  label?: string;
-  children: React.ReactNode;
-  below?: React.ReactNode;
-}) {
-  return (
-    <div
-      className={cn(
-        'ct-press relative overflow-hidden rounded-2xl border',
-        active
-          ? 'border-brand bg-brand-soft'
-          : 'border-line hover:border-line',
-      )}
-    >
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-pressed={active}
-        aria-label={label}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left after:absolute after:inset-0"
-      >
-        {children}
-      </button>
-      {below}
-    </div>
-  );
-}
-
-/** Their face if the shop uploaded one, their initial if not. */
-function Avatar({
-  name,
-  photoUrl,
-  anyone,
-}: {
-  name: string;
-  photoUrl: string | null;
-  anyone?: boolean;
-}) {
-  if (photoUrl) {
-    return (
-      <span className="relative size-11 shrink-0 overflow-hidden rounded-full bg-surface-muted">
-        <Image src={photoUrl} alt="" fill sizes="44px" className="object-cover" />
-      </span>
-    );
-  }
-
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        'grid size-11 shrink-0 place-items-center rounded-full text-sm font-medium',
-        anyone
-          ? 'bg-surface-muted text-muted'
-          : 'bg-brand-soft text-brand-strong',
-      )}
-    >
-      {anyone ? '✨' : initialOf(name)}
-    </span>
-  );
-}
-
-function Text({ name, hint }: { name: string; hint: string | null }) {
-  return (
-    <span className="min-w-0 flex-1">
-      <span className="block truncate text-sm font-medium">{name}</span>
-      {hint ? <span className="mt-0.5 block text-xs text-muted">{hint}</span> : null}
-    </span>
-  );
-}
-
-function Tick({ shown }: { shown: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        'grid size-5 shrink-0 place-items-center rounded-full border text-[11px] leading-none',
-        shown
-          ? 'border-brand bg-brand text-brand-contrast'
-          : 'border-line text-transparent',
-      )}
-    >
-      ✓
-    </span>
-  );
-}
-
-/**
- * The strip of work, captioned.
- *
- * A thumbnail this size cannot show whether the work is any good, which is the
- * question this screen exists to answer — so each one opens full size.
- */
-function PortfolioStrip({
-  photos,
-  staffName,
-  onOpen,
-}: {
-  photos: PortfolioPhoto[];
-  staffName: string;
-  onOpen: (index: number) => void;
-}) {
-  const shown = photos.slice(0, THUMBS_SHOWN);
-  const hidden = photos.length - shown.length;
-
-  return (
-    <div className="relative z-10 px-4 pb-3">
-      <p className="mb-1.5 text-[11px] text-muted">ผลงานของ{staffName}</p>
-      <div className="ct-scroll-x flex gap-2 overflow-x-auto">
-        {shown.map((photo, index) => (
-          <button
-            key={photo.id}
-            type="button"
-            onClick={() => onOpen(index)}
-            aria-label={`ดูผลงานของ${staffName} รูปที่ ${index + 1}`}
-            className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-surface-muted ring-1 ring-black/5 dark:ring-white/10"
-          >
-            <Image
-              src={photo.imageUrl}
-              alt={photo.caption ?? `ผลงานของ${staffName}`}
-              fill
-              sizes="64px"
-              className="object-cover"
-            />
-            {hidden > 0 && index === shown.length - 1 ? (
-              <span className="absolute inset-0 grid place-items-center bg-[#14201f]/60 text-xs font-medium text-white">
-                +{hidden}
-              </span>
-            ) : null}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }
