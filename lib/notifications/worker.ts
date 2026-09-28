@@ -30,6 +30,7 @@ import type { LineClient, LineMessage } from '@/lib/line/types';
 import { billingUrl, manageBookingUrl } from '@/lib/line/links';
 import { describe as describeBilling } from '@/lib/billing/access';
 import { ownerLineUserId } from '@/lib/line/owner-link';
+import { ownerPlatformLineUserId, platformOaClient } from '@/lib/line/platform-oa';
 import {
   claimDueNotifications,
   markFailed,
@@ -50,6 +51,8 @@ export interface RunOptions {
   limit?: number;
   /** injected by the tests; production builds one per tenant from stored credentials */
   clientFactory?: (tenantId: string) => Promise<LineClient | null>;
+  /** injected by the tests; production reads LINE_PLATFORM_OA_TOKEN */
+  platformClient?: LineClient | null;
 }
 
 /** Drain every active tenant's queue. */
@@ -65,6 +68,17 @@ export async function runNotificationWorker(options: RunOptions = {}): Promise<W
   return total;
 }
 
+/**
+ * Which templates leave by ChairTime's own OA rather than the shop's.
+ *
+ * A list rather than a column on the queue: it is a property of the template,
+ * not of the row, so storing it per row would be a fact that could disagree
+ * with itself.
+ */
+function viaPlatform(template: string): boolean {
+  return template === 'receipt_issued_platform';
+}
+
 export async function processTenant(
   tenantId: string,
   options: RunOptions = {},
@@ -77,19 +91,38 @@ export async function processTenant(
     result.claimed = due.length;
     if (due.length === 0) return;
 
-    const client = options.clientFactory
+    const shopClient = options.clientFactory
       ? await options.clientFactory(tenantId)
       : await defaultClientFactory(tx, tenantId);
 
-    if (!client) {
-      // No channel configured. Leave the rows pending — the shop may connect
-      // its LINE OA later, and a reminder that arrives late still beats one
-      // that was thrown away.
+    /*
+     * Two channels now, chosen per message rather than per shop.
+     *
+     * It used to be one: no shop channel meant every row was left pending and
+     * this function returned. That is still right for anything addressed to a
+     * customer — it is the shop's own OA or nothing — but it would also have
+     * parked the platform receipt, which exists precisely because a shop that
+     * has just paid has no channel of its own yet.
+     */
+    const platformClient = options.platformClient ?? platformOaClient();
+
+    if (!shopClient && !platformClient) {
+      // Nowhere to send anything. Leave the rows pending — the shop may
+      // connect its LINE OA later, and a reminder that arrives late still
+      // beats one that was thrown away.
       result.skipped = due.length;
       return;
     }
 
     for (const item of due) {
+      const client = viaPlatform(item.template) ? platformClient : shopClient;
+      if (!client) {
+        // The other channel is up but this message's one is not. Left pending
+        // for the same reason as above, and deliberately not counted as sent.
+        result.skipped += 1;
+        continue;
+      }
+
       try {
         const rendered = await render(tx, tenantId, item);
         if (!rendered) {
@@ -134,6 +167,8 @@ async function render(
   }
 
   if (item.template === 'receipt_issued') return renderReceiptMessage(tx, tenantId, item);
+  if (item.template === 'receipt_issued_platform')
+    return renderReceiptMessage(tx, tenantId, item, 'platform');
   if (item.template === 'plan_expiring') return renderPlanExpiringMessage(tx, tenantId, item);
 
   const bookingId = typeof item.payload.bookingId === 'string' ? item.payload.bookingId : null;
@@ -191,8 +226,20 @@ async function renderReceiptMessage(
   tx: TenantTx,
   tenantId: string,
   item: DueNotification,
+  channel: 'shop' | 'platform' = 'shop',
 ): Promise<Rendered | null> {
-  const owner = await ownerLineUserId(tx, tenantId);
+  /*
+   * Same receipt, two different ids for the same human.
+   *
+   * A LINE user id is scoped to the provider that issued it, so the owner is
+   * one id on the shop's channel (claimed with the pairing code) and another
+   * on ChairTime's (the `sub` kept at login). Sending either id down the
+   * wrong channel is a 400, not a wrong recipient, which is at least loud.
+   */
+  const owner =
+    channel === 'platform'
+      ? await ownerPlatformLineUserId(tx, tenantId)
+      : await ownerLineUserId(tx, tenantId);
   if (!owner) return null;
 
   const { receiptNumber, receiptUrl, amount, periodEnd } = item.payload as Record<string, unknown>;

@@ -10,6 +10,12 @@ export const NOTIFICATION_TEMPLATES = [
   // Also aimed at the shop: its own subscription payment went through, and the
   // receipt งานเข้า issued for it travels as a link because LINE carries no files.
   'receipt_issued',
+  // The same receipt, sent from ChairTime's own OA instead of the shop's.
+  // Both go out: the shop's OA is where the owner already reads everything
+  // about their shop, and ours is the only one that works on the day they
+  // pay — before their own channel exists. A duplicate for a shop that has
+  // both is a cheaper problem than a receipt nobody receives.
+  'receipt_issued_platform',
   // To the shop as well: its trial or paid period ends in a week, or tomorrow.
   'plan_expiring',
   'reminder_24h',

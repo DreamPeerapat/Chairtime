@@ -176,6 +176,32 @@ export async function issueReceiptFor(
       },
       dedupeKey: dedupeKey('receipt_issued', 'payment', paymentId),
     });
+
+    /*
+     * The same receipt again, down ChairTime's own OA.
+     *
+     * Two rows rather than one that fans out, because the queue's unit of
+     * retry is the row: a shop whose own channel is broken should not hold up
+     * the copy we can deliver, and vice versa. Its own dedupe key for the
+     * same reason — they succeed and fail independently.
+     *
+     * This is the copy that works on the day a shop pays, before it has set
+     * up a channel of its own. A shop that has both gets the receipt twice,
+     * which beats the shop that had neither getting it never.
+     */
+    await enqueue(tx, {
+      tenantId,
+      customerId: null,
+      template: 'receipt_issued_platform',
+      scheduledAt: DateTime.now(),
+      payload: {
+        receiptNumber: issued.number,
+        receiptUrl: issued.downloadUrl,
+        amount: formatBaht(details.amount).replace(' บาท', ''),
+        periodEnd: periodEnd.toISO(),
+      },
+      dedupeKey: dedupeKey('receipt_issued_platform', 'payment', paymentId),
+    });
   });
 
   return { number: issued.number, url: issued.downloadUrl, issuedAt };

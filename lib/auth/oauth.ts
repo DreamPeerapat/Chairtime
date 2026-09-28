@@ -96,6 +96,26 @@ export function buildAuthorizeUrl(
     url.searchParams.set('redirect_uri', params.redirectUri);
     url.searchParams.set('state', params.state);
     url.searchParams.set('scope', 'profile openid email');
+
+    /*
+     * Offer ChairTime's own LINE OA on the consent screen.
+     *
+     * A shop that has just signed up has no way for us to reach it: its own
+     * OA is not set up yet, and until it is, the receipt for the money it just
+     * paid goes nowhere (lib/notifications/worker.ts drops it). Adding our OA
+     * at login is the one moment the shop is already in LINE and already
+     * saying yes to something.
+     *
+     * `normal` rather than `aggressive`: the option appears on the consent
+     * screen with the box ticked, and a shop that does not want it unticks it
+     * and carries on. LINE has no way to require this, and gating signup on it
+     * would cost more shops than the channel is worth.
+     *
+     * Ignored by LINE unless a LINE OA is linked to this Login channel in the
+     * console, so it is safe to send before that is configured — it simply
+     * does nothing. See .env.example for the two steps.
+     */
+    url.searchParams.set('bot_prompt', 'normal');
     return url.toString();
   }
 
