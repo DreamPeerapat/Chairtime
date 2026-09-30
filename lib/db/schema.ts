@@ -154,6 +154,16 @@ export const tenantBookingPolicy = pgTable('tenant_booking_policy', {
   depositPercent: numeric('deposit_percent', { precision: 5, scale: 2 }).default('0'),
   autoConfirm: boolean('auto_confirm').notNull().default(true),
   noShowFee: numeric('no_show_fee', { precision: 10, scale: 2 }).default('0'),
+  /**
+   * Whether to ask the customer how it went after a visit.
+   *
+   * Off by default, and per shop, because the question is a push message —
+   * there is no incoming message to reply to — and push counts against the
+   * shop's own LINE quota. A shop already spends three pushes on a booking
+   * (confirmation and two reminders); this is a fourth, and that is the
+   * shop's money to spend, not ours to spend for them.
+   */
+  feedbackEnabled: boolean('feedback_enabled').notNull().default(false),
 });
 
 // =====================================================================
@@ -937,6 +947,62 @@ export const portfolioItem = pgTable(
   (t) => [
     index('portfolio_item_tenant_id_display_order_index').on(t.tenantId, t.displayOrder),
     index('portfolio_item_resource_id_index').on(t.resourceId),
+  ],
+);
+
+/**
+ * How the visit went, in the customer's words.
+ *
+ * One row per booking — the unique index is what makes a second tap on the
+ * rating link an update rather than a pile of duplicates, and what stops a
+ * shared link being used to stuff the average.
+ *
+ * `is_published` exists because these are shown to other customers. A shop
+ * that cannot take down an abusive or mistaken review would be worse off for
+ * having the feature, so it can hide one; hidden rows stay in the dashboard
+ * and stay out of the average, and nothing deletes a customer's words on
+ * their behalf.
+ *
+ * ON DELETE CASCADE from the booking, SET NULL from the customer: the review
+ * belongs to the visit, and a customer record being merged away must not take
+ * the shop's ratings with it.
+ */
+export const bookingFeedback = pgTable(
+  'booking_feedback',
+  {
+    id: id(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenant.id, { onDelete: 'cascade' }),
+    bookingId: uuid('booking_id')
+      .notNull()
+      .references(() => booking.id, { onDelete: 'cascade' }),
+    customerId: uuid('customer_id').references(() => customer.id, { onDelete: 'set null' }),
+    /** 1–5; the check constraint is the one that survives a bad caller */
+    score: integer('score').notNull(),
+    /**
+     * The person who did the work, rated separately — null when there was
+     * nobody to rate.
+     *
+     * Nullable rather than defaulted, because "no one was assigned to this
+     * booking" and "they were rated 0" are different facts and only one of
+     * them is possible. A shop that books rooms rather than people never
+     * writes this column at all, and it must not drag an average down.
+     */
+    staffScore: integer('staff_score'),
+    comment: text('comment'),
+    isPublished: boolean('is_published').notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }),
+  },
+  (t) => [
+    unique().on(t.bookingId),
+    check('booking_feedback_score_check', sql`${t.score} between 1 and 5`),
+    check(
+      'booking_feedback_staff_score_check',
+      sql`${t.staffScore} is null or ${t.staffScore} between 1 and 5`,
+    ),
+    index('booking_feedback_tenant_id_created_at_index').on(t.tenantId, t.createdAt),
   ],
 );
 

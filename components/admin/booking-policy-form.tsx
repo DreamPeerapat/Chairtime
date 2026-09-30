@@ -25,6 +25,7 @@ export interface BookingPolicy {
   maxAdvanceDays: number;
   cancelCutoffMin: number;
   allowCustomerPickStaff: boolean;
+  feedbackEnabled: boolean;
 }
 
 export function BookingPolicyForm({ policy }: { policy: BookingPolicy }) {
@@ -125,6 +126,24 @@ export function BookingPolicyForm({ policy }: { policy: BookingPolicy }) {
             selected={value.allowCustomerPickStaff === on}
             onSelect={() => set('allowCustomerPickStaff', on)}
             label={on ? 'เลือกได้' : 'ร้านจัดให้'}
+          />
+        ))}
+      </Field>
+
+      <Field
+        label="ขอคะแนนหลังใช้บริการ"
+        explain={
+          value.feedbackEnabled
+            ? 'หลังกดเสร็จสิ้น 2 ชั่วโมง ระบบส่งข้อความชวนให้คะแนน — นับเป็น push ในโควตา LINE ของร้าน ลูกค้าที่ไม่ได้ผูก LINE ให้ร้านส่งลิงก์จากหน้าคิวแทน'
+            : 'ไม่ส่งข้อความขอคะแนน — ร้านยังเปิดลิงก์ให้คะแนนจากหน้าคิวเองได้'
+        }
+      >
+        {[true, false].map((on) => (
+          <Chip
+            key={String(on)}
+            selected={value.feedbackEnabled === on}
+            onSelect={() => set('feedbackEnabled', on)}
+            label={on ? 'ส่ง' : 'ไม่ส่ง'}
           />
         ))}
       </Field>

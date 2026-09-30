@@ -17,6 +17,19 @@ export function manageBookingUrl(tenantSlug: string, code: string): string | nul
   return base ? `${base}/${tenantSlug}/booking/${code}` : null;
 }
 
+/**
+ * The page that asks how the visit went.
+ *
+ * The same booking page, with the rating form opened. Keyed by the booking
+ * code rather than by anything about the customer, which is what lets the
+ * shop hand this to a walk-in who has no LINE at all — a booking code is
+ * already the thing a customer uses to reach their own booking.
+ */
+export function ratingUrl(tenantSlug: string, code: string): string | null {
+  const base = appBase();
+  return base ? `${base}/${tenantSlug}/booking/${code}?rate=1` : null;
+}
+
 /** The shop's portfolio. */
 export function galleryUrl(tenantSlug: string): string | null {
   const base = appBase();

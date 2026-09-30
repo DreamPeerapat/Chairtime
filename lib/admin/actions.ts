@@ -25,6 +25,7 @@ import { findTemplate } from './templates';
 import { findSqlState, isExclusionViolation } from '@/lib/booking/errors';
 import { earnPointsForBooking } from '@/lib/loyalty/earn';
 import { redeemPoints } from '@/lib/loyalty/redeem';
+import { queueFeedbackRequest } from '@/lib/feedback/request';
 import { pointRuleFormSchema, rewardFormSchema, tierFormSchema } from '@/lib/loyalty/validation';
 import { useRewardCode } from '@/lib/loyalty/rewards';
 import { RewardCodeAlreadyUsedError, RewardCodeExpiredError, RewardCodeNotFoundError } from '@/lib/loyalty/errors';
@@ -125,6 +126,18 @@ export async function setBookingStatus(input: unknown): Promise<ActionResult> {
       if (status === 'no_show' || status === 'completed') {
         // Nothing left to remind them about.
         await cancelBookingNotifications(tx, session.tenantId, bookingId);
+      }
+
+      // Guarded by `enteringCompleted`, so pressing เสร็จสิ้น twice asks once —
+      // the same guard the points use. Silent when the shop has the feature
+      // off or the customer has no LINE: a walk-in is handed the link by the
+      // shop instead (see lib/feedback/request.ts).
+      if (enteringCompleted) {
+        await queueFeedbackRequest(tx, {
+          tenantId: session.tenantId,
+          bookingId,
+          now,
+        });
       }
 
       if (enteringNoShow && current.customerId) {
@@ -604,6 +617,7 @@ const bookingPolicySchema = z.object({
   maxAdvanceDays: z.coerce.number().int().min(1).max(365),
   cancelCutoffMin: z.coerce.number().int().min(0).max(30 * 24 * 60),
   allowCustomerPickStaff: z.boolean(),
+  feedbackEnabled: z.boolean(),
 });
 
 export async function saveBookingPolicy(input: unknown): Promise<ActionResult> {

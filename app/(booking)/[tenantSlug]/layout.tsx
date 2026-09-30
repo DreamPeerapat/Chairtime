@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { findTenantBySlug } from '@/lib/booking/queries';
 import { hasPublishedPortfolio } from '@/lib/portfolio/queries';
+import { publicRating } from '@/lib/feedback/queries';
 
 export default async function BookingLayout({
   children,
@@ -14,7 +15,10 @@ export default async function BookingLayout({
   const tenant = await findTenantBySlug(tenantSlug);
   if (!tenant) notFound();
 
-  const hasPortfolio = await hasPublishedPortfolio(tenant.id);
+  const [hasPortfolio, rating] = await Promise.all([
+    hasPublishedPortfolio(tenant.id),
+    publicRating(tenant.id),
+  ]);
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col">
@@ -28,6 +32,17 @@ export default async function BookingLayout({
           <h1 className="truncate text-xl font-semibold">{tenant.name}</h1>
           {tenant.address ? (
             <p className="mt-1 truncate text-xs text-muted">{tenant.address}</p>
+          ) : null}
+          {/* What other customers thought, next to the shop's name — the one
+              place a customer deciding whether to book will actually look.
+              Hidden entirely below a handful of ratings: an average of one is
+              not an average, and showing "5.0 จาก 1 รีวิว" reads as a boast. */}
+          {rating.count >= 3 ? (
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs">
+              <span aria-hidden className="text-amber-400">★</span>
+              <span className="font-medium">{rating.average.toFixed(1)}</span>
+              <span className="text-muted">จาก {rating.count} รีวิว</span>
+            </p>
           ) : null}
         </div>
 

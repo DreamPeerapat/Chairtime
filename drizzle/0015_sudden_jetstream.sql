@@ -1,0 +1,2 @@
+ALTER TABLE "booking_feedback" ADD COLUMN "staff_score" integer;--> statement-breakpoint
+ALTER TABLE "booking_feedback" ADD CONSTRAINT "booking_feedback_staff_score_check" CHECK ("booking_feedback"."staff_score" is null or "booking_feedback"."staff_score" between 1 and 5);

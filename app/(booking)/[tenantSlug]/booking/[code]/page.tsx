@@ -4,20 +4,38 @@ import { DateTime } from 'luxon';
 import { findBookingByCode, findTenantBySlug } from '@/lib/booking/queries';
 import { formatBaht, statusLabel, thaiDateFull, thaiTimeRange } from '@/components/booking/format';
 import { CancelBookingButton } from '@/components/booking/cancel-button';
+import { RatingForm } from '@/components/booking/rating-form';
+import { findFeedbackForBooking } from '@/lib/feedback/queries';
+import { withTenant } from '@/lib/db/tenant';
 
 export const dynamic = 'force-dynamic';
 
 export default async function BookingDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ tenantSlug: string; code: string }>;
+  searchParams: Promise<{ rate?: string }>;
 }) {
   const { tenantSlug, code } = await params;
+  const { rate } = await searchParams;
   const tenant = await findTenantBySlug(tenantSlug);
   if (!tenant) notFound();
 
   const booking = await findBookingByCode(tenant.id, code, tenant.timezone);
   if (!booking) notFound();
+
+  /*
+   * The rating form shows on a finished visit — always, not only when the
+   * LINE message sent them here with ?rate=1. A walk-in reaches this page by
+   * a link the shop handed over, and that link has no reason to carry a flag
+   * the customer cannot see the point of. `?rate=1` only decides whether the
+   * page opens scrolled to it.
+   */
+  const canRate = booking.status === 'completed';
+  const existingFeedback = canRate
+    ? await withTenant(tenant.id, (tx) => findFeedbackForBooking(tx, tenant.id, booking.id))
+    : null;
 
   const status = statusLabel(booking.status);
   const now = DateTime.now().setZone(tenant.timezone);
@@ -46,6 +64,17 @@ export default async function BookingDetailPage({
           <Row label="รวม" value={formatBaht(booking.total)} />
         </dl>
       </div>
+
+      {canRate ? (
+        <div id="rate" className={rate ? 'ct-enter scroll-mt-4' : 'scroll-mt-4'}>
+          <RatingForm
+            tenantSlug={tenantSlug}
+            code={booking.code}
+            existing={existingFeedback}
+            staffName={booking.staffName ?? null}
+          />
+        </div>
+      ) : null}
 
       {booking.status === 'cancelled' ? (
         <p className="text-center text-sm text-muted">การจองนี้ถูกยกเลิกแล้ว</p>

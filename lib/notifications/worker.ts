@@ -19,6 +19,7 @@ import {
   pointsEarnedMessage,
   planExpiringMessage,
   pointsExpiringMessage,
+  feedbackRequestMessage,
   receiptIssuedMessage,
   reminder24hMessage,
   reminder2hMessage,
@@ -27,7 +28,7 @@ import {
   type BookingMessageData,
 } from '@/lib/line/messages';
 import type { LineClient, LineMessage } from '@/lib/line/types';
-import { billingUrl, manageBookingUrl } from '@/lib/line/links';
+import { billingUrl, manageBookingUrl, ratingUrl } from '@/lib/line/links';
 import { describe as describeBilling } from '@/lib/billing/access';
 import { ownerLineUserId } from '@/lib/line/owner-link';
 import { ownerPlatformLineUserId, platformOaClient } from '@/lib/line/platform-oa';
@@ -170,6 +171,7 @@ async function render(
   if (item.template === 'receipt_issued_platform')
     return renderReceiptMessage(tx, tenantId, item, 'platform');
   if (item.template === 'plan_expiring') return renderPlanExpiringMessage(tx, tenantId, item);
+  if (item.template === 'feedback_request') return renderFeedbackRequest(tx, tenantId, item);
 
   const bookingId = typeof item.payload.bookingId === 'string' ? item.payload.bookingId : null;
   if (!bookingId) return null;
@@ -480,4 +482,44 @@ export async function pendingCount(tx: TenantTx, tenantId: string, since: DateTi
       ),
     );
   return rows.length;
+}
+
+/**
+ * The invitation to rate a finished visit.
+ *
+ * Read fresh rather than trusted from the payload, because two hours passed
+ * between queueing this and sending it: a visit the shop has since reopened
+ * or voided should not be asked about, and a customer who unlinked LINE in
+ * the meantime has nowhere to receive it.
+ */
+async function renderFeedbackRequest(
+  tx: TenantTx,
+  tenantId: string,
+  item: DueNotification,
+): Promise<Rendered | null> {
+  const bookingId = typeof item.payload.bookingId === 'string' ? item.payload.bookingId : null;
+  if (!bookingId) return null;
+
+  const [row] = await tx
+    .select({
+      code: schema.booking.code,
+      status: schema.booking.status,
+      lineUserId: schema.customer.lineUserId,
+      shopName: schema.tenant.name,
+      slug: schema.tenant.slug,
+    })
+    .from(schema.booking)
+    .leftJoin(schema.customer, eq(schema.customer.id, schema.booking.customerId))
+    .innerJoin(schema.tenant, eq(schema.tenant.id, schema.booking.tenantId))
+    .where(and(eq(schema.booking.tenantId, tenantId), eq(schema.booking.id, bookingId)));
+
+  if (!row || row.status !== 'completed' || !row.lineUserId) return null;
+
+  const url = ratingUrl(row.slug, row.code);
+  if (!url) return null;
+
+  return {
+    lineUserId: row.lineUserId,
+    message: feedbackRequestMessage({ shopName: row.shopName, ratingUrl: url }),
+  };
 }

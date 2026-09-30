@@ -513,3 +513,55 @@ export function birthdayMessage(data: { shopName: string; points: number }): Lin
     text: [`สุขสันต์วันเกิดค่ะ 🎂`, `${data.shopName} มอบ ${data.points} แต้มให้เป็นของขวัญ`].join('\n'),
   };
 }
+
+/**
+ * How was it? — sent a couple of hours after the shop marks a visit finished.
+ *
+ * A button rather than a question they have to answer in chat: the answer is
+ * captured on the booking's own page, which is also the only way a customer
+ * who never linked LINE can rate at all. One road for everybody.
+ *
+ * No stars in the text. Asking "ให้กี่ดาว" here and then showing five stars on
+ * the page asks the same question twice, and the second one is the one that
+ * counts.
+ */
+export function feedbackRequestMessage(data: {
+  shopName: string;
+  ratingUrl: string;
+}): LineFlexMessage {
+  return {
+    type: 'flex',
+    altText: `${data.shopName} อยากรู้ว่าบริการเป็นอย่างไรบ้าง`,
+    contents: {
+      type: 'bubble',
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'md',
+        contents: [
+          { type: 'text', text: 'ขอบคุณที่ใช้บริการค่ะ', weight: 'bold', size: 'lg', wrap: true },
+          {
+            type: 'text',
+            text: `${data.shopName} อยากรู้ว่าวันนี้เป็นอย่างไรบ้าง ให้คะแนนสักนิดได้ไหมคะ ใช้เวลาไม่ถึงนาที`,
+            wrap: true,
+            size: 'sm',
+            color: MUTED,
+          },
+        ],
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            height: 'sm',
+            color: BRAND,
+            action: { type: 'uri', label: 'ให้คะแนนร้าน', uri: data.ratingUrl },
+          },
+        ],
+      },
+    },
+  };
+}

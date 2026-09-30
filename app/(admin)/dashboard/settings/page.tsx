@@ -81,6 +81,7 @@ export default async function SettingsPage() {
         maxAdvanceDays: policy[0]?.maxAdvanceDays ?? 60,
         cancelCutoffMin: policy[0]?.cancelCutoffMin ?? 180,
         allowCustomerPickStaff: policy[0]?.allowCustomerPickStaff ?? true,
+        feedbackEnabled: policy[0]?.feedbackEnabled ?? false,
       }}
       hasServices={serviceCount.length > 0}
       templates={SHOP_TEMPLATES.map((t) => ({

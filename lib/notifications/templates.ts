@@ -27,6 +27,9 @@ export const NOTIFICATION_TEMPLATES = [
   // demoted (ข้อ 3.5 "ตกชั้น ... เตือนล่วงหน้า") gets warned before it happens.
   'tier_at_risk',
   'birthday',
+  // Asked after the shop marks a visit เสร็จสิ้น, and only when the shop has
+  // turned it on — it is a push, and push comes out of the shop's quota.
+  'feedback_request',
   'winback',
 ] as const;
 
