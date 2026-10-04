@@ -65,6 +65,30 @@ export function LineLaunchSteps({
 
         <Copy value={liffEndpoint} />
 
+        {/*
+          The step that is missed every time, because missing it looks like
+          success. A LINE Login channel starts in Developing status, where
+          only accounts with a developer role on that channel may open it —
+          which is the shop owner. So the owner taps จองคิว, it works, and
+          every customer who taps it gets "400 Bad Request: This channel is
+          now developing status". Nothing in the shop's own setup looks wrong.
+        */}
+        <div className="mt-1 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950/40">
+          <p className="font-medium text-amber-900 dark:text-amber-200">
+            อย่าลืมเปลี่ยน channel เป็น Published
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+            ใน <Term>developers.line.biz</Term> หน้า <Term>Basic settings</Term> ของ LINE Login
+            channel จะมีสถานะ <Term>Developing</Term> อยู่ข้างชื่อ channel — กดเปลี่ยนเป็น{' '}
+            <Term>Published</Term>
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+            ถ้ายังเป็น Developing ตัวเจ้าของร้านจะกดจองได้ตามปกติ แต่ลูกค้าทุกคนจะขึ้น{' '}
+            <Term>400 Bad Request</Term> เพราะ LINE เปิดให้เฉพาะคนที่เป็น developer ของ channel
+            นั้นเท่านั้น
+          </p>
+        </div>
+
         {isVerified ? (
           <form action={saveLiff} className="mt-1 flex flex-col gap-2">
             <label className="text-xs font-medium text-muted">
